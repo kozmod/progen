@@ -5,3 +5,7 @@ tools:
 	gofmt -w .
 	goimports -w .
 	go mod tidy
+
+.PHONT: test
+test:
+	@go test ./... -cover

@@ -152,3 +152,24 @@ ${%s}
 		assert.Error(t, err)
 	})
 }
+
+func Test_replaceVars(t *testing.T) {
+	t.Run("replace_vars", func(t *testing.T) {
+		out := replaceVars([]byte("${a}${b}"), Vars{
+			"a": "A",
+			"b": "B",
+		})
+		assert.Equal(t, []byte("AB"), out)
+	})
+	t.Run("not_replace_vars_if_input_not_contains_vars", func(t *testing.T) {
+		out := replaceVars([]byte("ab"), Vars{
+			"a": "A",
+			"b": "B",
+		})
+		assert.Equal(t, []byte("ab"), out)
+	})
+	t.Run("not_replace_vars_if_var_to_replace_is_empty", func(t *testing.T) {
+		out := replaceVars([]byte("${a}${b}"), Vars{})
+		assert.Equal(t, []byte("${a}${b}"), out)
+	})
+}
