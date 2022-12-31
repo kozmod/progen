@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/kozmod/progen/interanl/entity"
+	"github.com/kozmod/progen/internal/entity"
 	"gopkg.in/yaml.v3"
 )
 

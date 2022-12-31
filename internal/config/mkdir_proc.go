@@ -1,6 +1,6 @@
 package config
 
-import "github.com/kozmod/progen/interanl/proc"
+import "github.com/kozmod/progen/internal/proc"
 
 func MustConfigureMkdirProc(conf Config) (proc.Proc, error) {
 	if len(conf.Dirs) == 0 {

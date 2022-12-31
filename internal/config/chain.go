@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/kozmod/progen/interanl/proc"
+	"github.com/kozmod/progen/internal/proc"
 )
 
 func MustConfigureProcChain(conf Config, order map[string]int) (*proc.Chain, error) {

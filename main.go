@@ -4,8 +4,8 @@ import (
 	"flag"
 	"log"
 
-	"github.com/kozmod/progen/interanl/config"
-	"github.com/kozmod/progen/interanl/entity"
+	"github.com/kozmod/progen/internal/config"
+	"github.com/kozmod/progen/internal/entity"
 )
 
 var (

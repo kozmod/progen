@@ -3,8 +3,8 @@ package config
 import (
 	"fmt"
 
-	"github.com/kozmod/progen/interanl/entity"
-	"github.com/kozmod/progen/interanl/proc"
+	"github.com/kozmod/progen/internal/entity"
+	"github.com/kozmod/progen/internal/proc"
 )
 
 func MustConfigureRunCommandProc(conf Config) (proc.Proc, error) {

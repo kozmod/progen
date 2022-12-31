@@ -8,7 +8,7 @@ import (
 	"os/exec"
 	"path"
 
-	"github.com/kozmod/progen/interanl/entity"
+	"github.com/kozmod/progen/internal/entity"
 )
 
 type MkdirAllProc struct {
