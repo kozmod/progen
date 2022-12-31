@@ -50,14 +50,23 @@ func tryFindAllVars(in []byte) (map[string]struct{}, error) {
 			break
 		}
 		end := strings.Index(content, varEnd)
-		if end == -1 {
-			return nil,
-				fmt.Errorf(
-					"config with vars is invalid: config contains [%s], but not contains [%s]: position [%d]",
-					varStart, varEnd, start)
+		trimStartIndex := start + 2
+		trimEndIndex := end + 1
+
+		nextStart := strings.Index(content[trimStartIndex:], varStart)
+		switch {
+		case end == -1:
+			return nil, fmt.Errorf(
+				"config with vars is invalid: config contains [%s], but not contains [%s]: position [%d]",
+				varStart, varEnd, start)
+		case nextStart != -1 && end >= nextStart+trimStartIndex:
+			return nil, fmt.Errorf(
+				"config with vars is invalid: next 'start' index [%d] lover then 'end' index[%d]",
+				nextStart, end)
 		}
-		vars[content[start+2:end]] = struct{}{}
-		content = content[end+1:]
+
+		vars[content[trimStartIndex:end]] = struct{}{}
+		content = content[trimEndIndex:]
 	}
 	return vars, nil
 }

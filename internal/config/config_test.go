@@ -107,3 +107,48 @@ func Test_YamlRootNodesOrder(t *testing.T) {
 		assert.Len(t, order, 0)
 	})
 }
+
+func Test_tryFindAllVars(t *testing.T) {
+	const (
+		a = "a"
+		b = "b"
+		c = "c"
+		d = "d"
+		e = "e"
+	)
+	t.Run("success_get_vars", func(t *testing.T) {
+		var (
+			in = []byte(fmt.Sprintf(`
+${%s}:
+	${%s}
+	var:${%s}
+	var:github.com/${%s}/some_path
+	
+${%s}
+`, a, b, c, d, e))
+		)
+		vars, err := tryFindAllVars(in)
+		assert.NoError(t, err)
+		assert.Len(t, vars, 5)
+		assert.Contains(t, vars, a)
+		assert.Contains(t, vars, b)
+		assert.Contains(t, vars, c)
+		assert.Contains(t, vars, d)
+		assert.Contains(t, vars, d)
+	})
+	t.Run("success_not_get_when_vars_not exists", func(t *testing.T) {
+		var (
+			in = []byte(``)
+		)
+		vars, err := tryFindAllVars(in)
+		assert.NoError(t, err)
+		assert.Len(t, vars, 0)
+	})
+	t.Run("error_when_var_is_invalid", func(t *testing.T) {
+		var (
+			in = []byte(`${a ${b}`)
+		)
+		_, err := tryFindAllVars(in)
+		assert.Error(t, err)
+	})
+}
