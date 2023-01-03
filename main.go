@@ -4,42 +4,55 @@ import (
 	"flag"
 	"log"
 
+	"github.com/kozmod/progen/internal/factory"
+
 	"github.com/kozmod/progen/internal/config"
 	"github.com/kozmod/progen/internal/entity"
 )
 
 var (
-	configPath = flag.String("c", "", "config file path")
+	flagConfigPath = flag.String("f", "", "config file path")
 )
 
 func main() {
 	flag.Parse()
 
-	if *configPath == entity.Empty {
-		log.Fatal("config file is not set")
+	logger, err := factory.NewLogger()
+	if err != nil {
+		log.Fatalf("create logger: %v", err)
+	}
+	defer func() {
+		if err := logger.Sync(); err != nil {
+			log.Fatal("sync logger: %w", err)
+		}
+	}()
+
+	if *flagConfigPath == entity.Empty {
+		logger.Fatal("config file is not set")
 	}
 
-	rawConfig, err := config.MustPreprocessConfig(*configPath)
+	rawConfig, err := config.PreprocessRawConfigData(*flagConfigPath)
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatalf("preprocess raw config: %v", err)
 	}
+
 	conf, err := config.UnmarshalYamlConfig(rawConfig)
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatalf("unmarshal config: %v", err)
 	}
 
 	order, err := config.YamlRootNodesOrder(rawConfig)
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatalf("define tag order: %v", err)
 	}
 
-	procChain, err := config.MustConfigureProcChain(conf, order)
+	procChain, err := factory.NewProcChain(conf, order, logger)
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatalf("create processors chain: %v", err)
 	}
 
 	err = procChain.Exec()
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatalf("execute chain: %v", err)
 	}
 }

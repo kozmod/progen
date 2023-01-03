@@ -1,8 +1,11 @@
-package config
+package factory
 
-import "github.com/kozmod/progen/internal/proc"
+import (
+	"github.com/kozmod/progen/internal/config"
+	"github.com/kozmod/progen/internal/proc"
+)
 
-func MustConfigureMkdirProc(conf Config) (proc.Proc, error) {
+func NewMkdirProc(conf config.Config) (proc.Proc, error) {
 	if len(conf.Dirs) == 0 {
 		return nil, nil
 	}

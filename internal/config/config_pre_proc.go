@@ -17,7 +17,7 @@ const (
 
 type Vars map[string]string
 
-func MustPreprocessConfig(path string) ([]byte, error) {
+func PreprocessRawConfigData(path string) ([]byte, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("load config: %w", err)

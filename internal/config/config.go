@@ -7,9 +7,9 @@ import (
 )
 
 const (
-	tagDirs  = "dirs"
-	tagFiles = "files"
-	tagCmd   = "cmd"
+	TagDirs      = "dirs"
+	TagTemplates = "tmpl"
+	TagCmd       = "cmd"
 )
 
 type VarsConfig struct {
@@ -27,14 +27,20 @@ func UnmarshalYamlVarsConfig(data []byte) (VarsConfig, error) {
 }
 
 type Config struct {
-	Dirs  []string `yaml:"dirs,flow"`
-	Files []File   `yaml:"files,flow"`
-	Cmd   []string `yaml:"cmd,flow"`
+	Dirs      []string   `yaml:"dirs,flow"`
+	Templates []Template `yaml:"tmpl,flow"`
+	Cmd       []string   `yaml:"cmd,flow"`
 }
 
 type File struct {
 	Path     string `yaml:"path"`
 	Template string `yaml:"template"`
+}
+
+type Template struct {
+	Path string         `yaml:"path"`
+	Text string         `yaml:"text"`
+	Data map[string]any `yaml:"data"`
 }
 
 func UnmarshalYamlConfig(in []byte) (Config, error) {

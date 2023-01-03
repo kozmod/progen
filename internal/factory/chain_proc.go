@@ -1,13 +1,15 @@
-package config
+package factory
 
 import (
 	"fmt"
 	"sort"
 
+	"github.com/kozmod/progen/internal/config"
+	"github.com/kozmod/progen/internal/entity"
 	"github.com/kozmod/progen/internal/proc"
 )
 
-func MustConfigureProcChain(conf Config, order map[string]int) (*proc.Chain, error) {
+func NewProcChain(conf config.Config, order map[string]int, logger entity.Logger) (*proc.Chain, error) {
 
 	type (
 		IndexedProc struct {
@@ -16,10 +18,12 @@ func MustConfigureProcChain(conf Config, order map[string]int) (*proc.Chain, err
 		}
 	)
 
-	confFns := map[string]func(config Config) (proc.Proc, error){
-		tagDirs:  MustConfigureMkdirProc,
-		tagFiles: MustConfigureWriteFileProc,
-		tagCmd:   MustConfigureRunCommandProc,
+	confFns := map[string]func(config config.Config) (proc.Proc, error){
+		config.TagDirs:      NewMkdirProc,
+		config.TagTemplates: NewTextTemplateProc,
+		config.TagCmd: func(config config.Config) (proc.Proc, error) {
+			return NewRunCommandProc(config, logger)
+		},
 	}
 
 	//goland:noinspection SpellCheckingInspection
@@ -32,7 +36,7 @@ func MustConfigureProcChain(conf Config, order map[string]int) (*proc.Chain, err
 		}
 		configuredProc, err := fn(conf)
 		if err != nil {
-			return nil, fmt.Errorf("configur proc for [%s]: %w", key, err)
+			return nil, fmt.Errorf("configure proc for [%s]: %w", key, err)
 		}
 
 		indexedProcs = append(indexedProcs, IndexedProc{
