@@ -19,8 +19,12 @@ func NewProcChain(conf config.Config, order map[string]int, logger entity.Logger
 	)
 
 	confFns := map[string]func(config config.Config) (proc.Proc, error){
-		config.TagDirs:  NewMkdirProc,
-		config.TagFiles: NewFileProc,
+		config.TagDirs: func(config config.Config) (proc.Proc, error) {
+			return NewMkdirProc(config, logger)
+		},
+		config.TagFiles: func(config config.Config) (proc.Proc, error) {
+			return NewFileProc(conf, logger)
+		},
 		config.TagCmd: func(config config.Config) (proc.Proc, error) {
 			return NewRunCommandProc(config, logger)
 		},

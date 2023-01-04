@@ -2,14 +2,17 @@ package factory
 
 import (
 	"github.com/kozmod/progen/internal/config"
+	"github.com/kozmod/progen/internal/entity"
 	"github.com/kozmod/progen/internal/proc"
 )
 
-func NewMkdirProc(conf config.Config) (proc.Proc, error) {
+func NewMkdirProc(conf config.Config, logger entity.Logger) (proc.Proc, error) {
 	if len(conf.Dirs) == 0 {
 		return nil, nil
 	}
-	return proc.NewMkdirAllProc(uniqueVal(conf.Dirs)), nil
+
+	dirSet := uniqueVal(conf.Dirs)
+	return proc.NewMkdirAllProc(dirSet, logger), nil
 }
 
 func uniqueVal(in []string) []string {

@@ -8,7 +8,7 @@ import (
 	"github.com/kozmod/progen/internal/proc"
 )
 
-func NewFileProc(conf config.Config) (proc.Proc, error) {
+func NewFileProc(conf config.Config, logger entity.Logger) (proc.Proc, error) {
 	if len(conf.Files) == 0 {
 		return nil, nil
 	}
@@ -23,5 +23,5 @@ func NewFileProc(conf config.Config) (proc.Proc, error) {
 		files = append(files, tmpl)
 	}
 
-	return proc.NewFileProc(files), nil
+	return proc.NewFileProc(files, logger), nil
 }

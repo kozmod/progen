@@ -7,9 +7,14 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-func NewLogger() (*zap.SugaredLogger, error) {
+func NewLogger(verbose bool) (*zap.SugaredLogger, error) {
+	lvl := zap.ErrorLevel
+	if verbose {
+		lvl = zap.InfoLevel
+	}
+
 	cfg := zap.Config{
-		Level:       zap.NewAtomicLevelAt(zap.InfoLevel),
+		Level:       zap.NewAtomicLevelAt(lvl),
 		Development: false,
 		Sampling:    nil,
 		Encoding:    "console",

@@ -12,12 +12,13 @@ import (
 
 var (
 	flagConfigPath = flag.String("f", "", "config file path")
+	flagVerbose    = flag.Bool("v", false, "verbose output")
 )
 
 func main() {
 	flag.Parse()
 
-	logger, err := factory.NewLogger()
+	logger, err := factory.NewLogger(*flagVerbose)
 	if err != nil {
 		log.Fatalf("create logger: %v", err)
 	}
@@ -33,6 +34,7 @@ func main() {
 	if err != nil {
 		logger.Fatalf("preprocess raw config: %v", err)
 	}
+	logger.Infof("config to apply:\n%s", string(rawConfig))
 
 	conf, err := config.UnmarshalYamlConfig(rawConfig)
 	if err != nil {
