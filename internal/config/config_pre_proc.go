@@ -1,96 +1,47 @@
 package config
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"strings"
+	"text/template"
 
 	"github.com/kozmod/progen/internal/entity"
 	"gopkg.in/yaml.v3"
 )
 
-const (
-	varStart           = "${"
-	varEnd             = "}"
-	SeparatorEqualSign = "="
-)
-
-type Vars map[string]string
-
 func PreprocessRawConfigData(path string) ([]byte, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("load config: %w", err)
+		return nil, fmt.Errorf("read config: %w", err)
 	}
-	varsConf, err := UnmarshalYamlVarsConfig(data)
+
+	conf, err := preprocessRawConfigData(path, data)
 	if err != nil {
-		return nil, fmt.Errorf("parse config: %w", err)
+		return nil, fmt.Errorf("preprocess raw config: %w", err)
 	}
-	existsVars, err := tryFindAllVars(data)
+	return conf, nil
+}
+
+func preprocessRawConfigData(name string, data []byte) ([]byte, error) {
+	var conf map[string]any
+	err := yaml.Unmarshal(data, &conf)
 	if err != nil {
-		return nil, fmt.Errorf("preprocess vars: %w", err)
+		return nil, fmt.Errorf("parse config to map: %w", err)
 	}
-	configVars := parseVars(varsConf.Vars)
-	for key := range existsVars {
-		_, ok := configVars[key]
-		if !ok {
-			return nil, fmt.Errorf("preprocess vars: var is not set: %s", key)
-		}
+
+	temp, err := template.New(name).Parse(string(data))
+	if err != nil {
+		return nil, fmt.Errorf("new template [%s]: %w", name, err)
 	}
-	processedCof := replaceVars(data, configVars)
-	return processedCof, nil
-}
 
-func tryFindAllVars(in []byte) (map[string]struct{}, error) {
-	content := string(in)
-	vars := make(map[string]struct{})
-	for {
-		start := strings.Index(content, varStart)
-		if start == -1 {
-			break
-		}
-		end := strings.Index(content, varEnd)
-		trimStartIndex := start + 2
-		trimEndIndex := end + 1
-
-		nextStart := strings.Index(content[trimStartIndex:], varStart)
-		switch {
-		case end == -1:
-			return nil, fmt.Errorf(
-				"config with vars is invalid: config contains [%s], but not contains [%s]: position [%d]",
-				varStart, varEnd, start)
-		case nextStart != -1 && end >= nextStart+trimStartIndex:
-			return nil, fmt.Errorf(
-				"config with vars is invalid: next 'start' index [%d] lover then 'end' index[%d]",
-				nextStart, end)
-		}
-
-		vars[content[trimStartIndex:end]] = struct{}{}
-		content = content[trimEndIndex:]
+	var buf bytes.Buffer
+	err = temp.Execute(&buf, conf)
+	if err != nil {
+		return nil, fmt.Errorf("execute template [%s]: %w", name, err)
 	}
-	return vars, nil
-}
-
-func parseVars(rawVars []string) Vars {
-	varSet := make(Vars, len(rawVars))
-	for _, v := range rawVars {
-		split := strings.SplitN(v, SeparatorEqualSign, 2)
-		key := strings.TrimSpace(split[0])
-		if len(split) < 2 {
-			varSet[key] = ""
-			continue
-		}
-		varSet[key] = strings.TrimSpace(split[1])
-	}
-	return varSet
-}
-
-func replaceVars(rowConfig []byte, vars Vars) []byte {
-	config := string(rowConfig)
-	for key, val := range vars {
-		config = strings.ReplaceAll(config, varStart+key+varEnd, val)
-	}
-	return []byte(config)
+	return buf.Bytes(), nil
 }
 
 func YamlRootNodesOrder(rowConfig []byte) (map[string]int, error) {

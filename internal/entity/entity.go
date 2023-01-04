@@ -10,11 +10,10 @@ type Logger interface {
 	Infof(template string, args ...any)
 }
 
-type Template struct {
+type File struct {
 	Path string
 	Name string
-	Text []byte
-	Data map[string]any
+	Data []byte
 }
 
 type Command struct {

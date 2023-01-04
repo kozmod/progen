@@ -19,8 +19,8 @@ func NewProcChain(conf config.Config, order map[string]int, logger entity.Logger
 	)
 
 	confFns := map[string]func(config config.Config) (proc.Proc, error){
-		config.TagDirs:      NewMkdirProc,
-		config.TagTemplates: NewTextTemplateProc,
+		config.TagDirs:  NewMkdirProc,
+		config.TagFiles: NewFileProc,
 		config.TagCmd: func(config config.Config) (proc.Proc, error) {
 			return NewRunCommandProc(config, logger)
 		},
@@ -34,9 +34,14 @@ func NewProcChain(conf config.Config, order map[string]int, logger entity.Logger
 		if !ok {
 			continue
 		}
+
 		configuredProc, err := fn(conf)
 		if err != nil {
 			return nil, fmt.Errorf("configure proc for [%s]: %w", key, err)
+		}
+
+		if configuredProc == nil {
+			continue
 		}
 
 		indexedProcs = append(indexedProcs, IndexedProc{

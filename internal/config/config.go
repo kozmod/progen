@@ -7,40 +7,20 @@ import (
 )
 
 const (
-	TagDirs      = "dirs"
-	TagTemplates = "tmpl"
-	TagCmd       = "cmd"
+	TagDirs  = "dirs"
+	TagFiles = "files"
+	TagCmd   = "cmd"
 )
 
-type VarsConfig struct {
-	Vars []string `yaml:"vars,flow"`
-}
-
-func UnmarshalYamlVarsConfig(data []byte) (VarsConfig, error) {
-	var conf VarsConfig
-	err := yaml.Unmarshal(data, &conf)
-	if err != nil {
-		return conf, fmt.Errorf("unmarshal config: %w", err)
-	}
-
-	return conf, nil
-}
-
 type Config struct {
-	Dirs      []string   `yaml:"dirs,flow"`
-	Templates []Template `yaml:"tmpl,flow"`
-	Cmd       []string   `yaml:"cmd,flow"`
+	Dirs  []string `yaml:"dirs,flow"`
+	Files []File   `yaml:"files,flow"`
+	Cmd   []string `yaml:"cmd,flow"`
 }
 
 type File struct {
-	Path     string `yaml:"path"`
-	Template string `yaml:"template"`
-}
-
-type Template struct {
-	Path string         `yaml:"path"`
-	Text string         `yaml:"text"`
-	Data map[string]any `yaml:"data"`
+	Path string `yaml:"path"`
+	Data string `yaml:"data"`
 }
 
 func UnmarshalYamlConfig(in []byte) (Config, error) {

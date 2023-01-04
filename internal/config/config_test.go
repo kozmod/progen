@@ -7,55 +7,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_parseVars(t *testing.T) {
-	const (
-		emptyString = ""
-	)
-
-	t.Run("empty_vars", func(t *testing.T) {
-		vars := parseVars([]string{})
-		assert.Len(t, vars, 0)
-	})
-	t.Run("one_empty_var", func(t *testing.T) {
-		const (
-			a = "A"
-		)
-		vars := parseVars([]string{
-			a + "=",
-		})
-		assert.Len(t, vars, 1)
-		assert.Contains(t, vars, a)
-		assert.Equal(t, emptyString, vars[a])
-	})
-	t.Run("one_not_separated_value", func(t *testing.T) {
-		const (
-			a    = "A"
-			aVal = "A=A=X;Mm"
-		)
-		vars := parseVars([]string{
-			a + "=" + aVal,
-		})
-		assert.Len(t, vars, 1)
-		assert.Contains(t, vars, a)
-		assert.Equal(t, aVal, vars[a])
-	})
-	t.Run("override_value", func(t *testing.T) {
-		const (
-			a            = "A"
-			aVal         = "A=A=X;Mm"
-			aOverrideVal = "override"
-		)
-		vars := parseVars([]string{
-			a + "=" + aVal,
-			a + "=" + aOverrideVal,
-		})
-		assert.Len(t, vars, 1)
-		assert.Contains(t, vars, a)
-		assert.Equal(t, aOverrideVal, vars[a])
-	})
-}
-
 func Test_YamlRootNodesOrder(t *testing.T) {
+	t.Parallel()
+
 	const (
 		dirs  = "dirs"
 		files = "files"
@@ -108,68 +62,47 @@ func Test_YamlRootNodesOrder(t *testing.T) {
 	})
 }
 
-func Test_tryFindAllVars(t *testing.T) {
-	const (
-		a = "a"
-		b = "b"
-		c = "c"
-		d = "d"
-		e = "e"
-	)
-	t.Run("success_get_vars", func(t *testing.T) {
-		var (
-			in = []byte(fmt.Sprintf(`
-${%s}:
-	${%s}
-	var:${%s}
-	var:github.com/${%s}/some_path
-	
-${%s}
-`, a, b, c, d, e))
-		)
-		vars, err := tryFindAllVars(in)
-		assert.NoError(t, err)
-		assert.Len(t, vars, 5)
-		assert.Contains(t, vars, a)
-		assert.Contains(t, vars, b)
-		assert.Contains(t, vars, c)
-		assert.Contains(t, vars, d)
-		assert.Contains(t, vars, d)
-	})
-	t.Run("success_not_get_when_vars_not exists", func(t *testing.T) {
-		var (
-			in = []byte(``)
-		)
-		vars, err := tryFindAllVars(in)
-		assert.NoError(t, err)
-		assert.Len(t, vars, 0)
-	})
-	t.Run("error_when_var_is_invalid", func(t *testing.T) {
-		var (
-			in = []byte(`${a ${b}`)
-		)
-		_, err := tryFindAllVars(in)
-		assert.Error(t, err)
-	})
-}
+func Test_preprocessRawConfigData(t *testing.T) {
+	t.Parallel()
 
-func Test_replaceVars(t *testing.T) {
-	t.Run("replace_vars", func(t *testing.T) {
-		out := replaceVars([]byte("${a}${b}"), Vars{
-			"a": "A",
-			"b": "B",
-		})
-		assert.Equal(t, []byte("AB"), out)
+	const (
+		name = "conf"
+	)
+	t.Run("success_preprocess_raw_config_data", func(t *testing.T) {
+		const (
+			in = `
+matrix:
+  version: 1.19
+steps:
+  name: Setup Go {{ .matrix.version }}
+`
+			expected = `
+matrix:
+  version: 1.19
+steps:
+  name: Setup Go 1.19
+`
+		)
+
+		res, err := preprocessRawConfigData(name, []byte(in))
+		assert.NoError(t, err)
+		assert.Equal(t, expected, string(res))
 	})
-	t.Run("not_replace_vars_if_input_not_contains_vars", func(t *testing.T) {
-		out := replaceVars([]byte("ab"), Vars{
-			"a": "A",
-			"b": "B",
-		})
-		assert.Equal(t, []byte("ab"), out)
-	})
-	t.Run("not_replace_vars_if_var_to_replace_is_empty", func(t *testing.T) {
-		out := replaceVars([]byte("${a}${b}"), Vars{})
-		assert.Equal(t, []byte("${a}${b}"), out)
+
+	t.Run("success_preprocess_raw_config_data", func(t *testing.T) {
+		const (
+			in = `
+steps:
+  name: Setup Go {{ .matrix.version }}
+`
+			expected = `
+steps:
+  name: Setup Go <no value>
+`
+		)
+
+		res, err := preprocessRawConfigData(name, []byte(in))
+		assert.NoError(t, err)
+		assert.Equal(t, expected, string(res))
 	})
 }

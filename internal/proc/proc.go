@@ -7,7 +7,6 @@ import (
 	"os/exec"
 	"path"
 	"strings"
-	"text/template"
 
 	"github.com/kozmod/progen/internal/entity"
 )
@@ -34,21 +33,21 @@ func (p *MkdirAllProc) Exec() error {
 	return nil
 }
 
-type TextTemplateProc struct {
-	fileMode  os.FileMode
-	templates []entity.Template
+type FileProc struct {
+	fileMode os.FileMode
+	files    []entity.File
 }
 
-func NewTextTemplateProc(tmpl []entity.Template) *TextTemplateProc {
-	return &TextTemplateProc{
-		fileMode:  os.ModePerm,
-		templates: tmpl,
+func NewFileProc(files []entity.File) *FileProc {
+	return &FileProc{
+		fileMode: os.ModePerm,
+		files:    files,
 	}
 }
 
-func (p *TextTemplateProc) Exec() error {
-	for _, tmpl := range p.templates {
-		fileDir := tmpl.Path
+func (p *FileProc) Exec() error {
+	for _, file := range p.files {
+		fileDir := file.Path
 		if _, err := os.Stat(fileDir); os.IsNotExist(err) {
 			err = os.MkdirAll(fileDir, p.fileMode)
 			if err != nil {
@@ -56,20 +55,9 @@ func (p *TextTemplateProc) Exec() error {
 			}
 		}
 
-		temp, err := template.New(tmpl.Name).Parse(string(tmpl.Text))
+		err := os.WriteFile(path.Join(file.Path, file.Name), file.Data, p.fileMode)
 		if err != nil {
-			return fmt.Errorf("create template: %w", err)
-		}
-
-		var buffer bytes.Buffer
-		err = temp.Execute(&buffer, tmpl.Data)
-		if err != nil {
-			return fmt.Errorf("execure template [%s]: %w", tmpl.Name, err)
-		}
-
-		err = os.WriteFile(path.Join(tmpl.Path, tmpl.Name), buffer.Bytes(), p.fileMode)
-		if err != nil {
-			return fmt.Errorf("create template file [%s]: %w", tmpl.Name, err)
+			return fmt.Errorf("create file [%s]: %w", file.Name, err)
 		}
 	}
 	return nil
