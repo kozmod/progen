@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"strings"
 	"text/template"
 
 	"github.com/kozmod/progen/internal/entity"
@@ -95,7 +96,8 @@ func (p *RunCommandProc) Exec() error {
 		if err != nil {
 			return fmt.Errorf("run command: %w", err)
 		}
-		p.logger.Infof("command: %s %v\nout: %s", command.Cmd, command.Args,
+		p.logger.Infof("cmd: %s\n%s",
+			strings.Join(append([]string{command.Cmd}, command.Args...), entity.Space),
 			out.String())
 	}
 	return nil

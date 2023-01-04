@@ -24,7 +24,7 @@ func PreprocessRawConfigData(path string) ([]byte, error) {
 	}
 	varsConf, err := UnmarshalYamlVarsConfig(data)
 	if err != nil {
-		return nil, fmt.Errorf("unmarshall config: %w", err)
+		return nil, fmt.Errorf("parse config: %w", err)
 	}
 	existsVars, err := tryFindAllVars(data)
 	if err != nil {

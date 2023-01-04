@@ -22,9 +22,7 @@ func main() {
 		log.Fatalf("create logger: %v", err)
 	}
 	defer func() {
-		if err := logger.Sync(); err != nil {
-			log.Fatal("sync logger: %w", err)
-		}
+		_ = logger.Sync()
 	}()
 
 	if *flagConfigPath == entity.Empty {

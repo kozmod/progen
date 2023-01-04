@@ -2,5 +2,4 @@
 .vs/
 .vscode/
 .idea/
-
-tmp
+tmp/
