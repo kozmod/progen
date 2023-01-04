@@ -10,10 +10,6 @@ tools: ## Run tools (vet, gofmt, goimports, tidy, etc.)
 test: ## Run all tests in project with coverage
 	@go test ./... -cover
 
-.PHONY: clear
-clear: ## Clear the working area and the project
-	rm -rf bin/
-
 .PHONY: list
 list: ## List all make targets
 	@${MAKE} -pRrn : -f $(MAKEFILE_LIST) 2>/dev/null | awk -v RS= -F: '/^# File/,/^# Finished Make data base/ {if ($$1 !~ "^[#.]") {print $$1}}' | egrep -v -e '^[^[:alnum:]]' -e '^$@$$' | sort
