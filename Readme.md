@@ -1,4 +1,6 @@
 # ProGen
+![test](https://github.com/kozmod/progen/actions/workflows/test.yml/badge.svg)
+![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/kozmod/progen)
 
 Simple project's generator.
 
@@ -22,18 +24,24 @@ go install github.com/kozmod/progen@latest
 
 #### Allowed config file's keys
 
-| Key   |                              Type                              |          Description           |
-|:------|:--------------------------------------------------------------:|:------------------------------:|
-| dirs  |                          string slice                          | list of directories to create  |
-| files | Path string \`yaml:"path"\`  <br/> Data string \`yaml:"data"\` | list file's `path` and `data`  |
-| cmd   |                          string slice                          | list of directories to execute |
+| Key               |       Type        |                      Description                      |
+|:------------------|:-----------------:|:-----------------------------------------------------:|
+| dirs              |   string slice    |             list of directories to create             |
+| files             |      struct       |             list file's `path` and `data`             |
+| files.path        |      string       |                       list file                       |
+| files.data        |      string       |                       file data                       |
+| files.get         |      struct       | struct describe `GET` request for getting file's data |
+| files.get.url     |      string       |                      request URL                      |
+| files.get.headers | map[string]string |                    request headers                    |
+| cmd               |   string slice    |            list of directories to execute             |
 
 <b>Note</b>: preprocessing of "raw" config use [text/template](https://pkg.go.dev/text/template) package
-that allow to add custom `yaml` keys tree to avoid duplication
+that allow to add custom `yaml` keys tree to avoid duplication (all tags could be used as template's value)
 
 #### Example
+
 ```yaml
-# custom variables to avoid duplication
+# custom variables to avoid duplication ( for example "{{.vars.GOPROXY}}")
 vars:
   GOPROXY: https://127.0.0.1:8081
   TOKEN: PRIVATE-TOKEN:token
@@ -47,6 +55,12 @@ dirs:
 
 # list files to create
 files:
+  - path: .gitlab-ci.yml
+    # GET file from remote storage
+    get:
+      url: "https://some_file_server.com/files/.gitlab-ci.yml"
+      headers:
+        some_header: header
   - path: .gitignore
     data: |
       .DS_Store
@@ -82,10 +96,13 @@ files:
 cmd:
   - curl -H {{.vars.TOKEN}} {{.vars.REPO_1}}/.gitignore/raw?ref=master -o .gitignore
 ```
+
 ```
 progen -v -f conf.yml
 ```
+
 generated project structure
+
 ```
 .
 ├── api
@@ -94,7 +111,8 @@ generated project structure
 │   └── Dockerfile
 ├── internal
 │   └── client
-└── pkg
+├── pkg
+└── .gitlab-ci.yml
 
 ```
 

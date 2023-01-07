@@ -1,6 +1,7 @@
 package factory
 
 import (
+	"fmt"
 	"path/filepath"
 
 	"github.com/kozmod/progen/internal/config"
@@ -13,15 +14,32 @@ func NewFileProc(conf config.Config, logger entity.Logger) (proc.Proc, error) {
 		return nil, nil
 	}
 
-	files := make([]entity.File, 0, len(conf.Files))
+	producers := make([]entity.FileProducer, 0, len(conf.Files))
 	for _, f := range conf.Files {
-		tmpl := entity.File{
-			Name: filepath.Base(f.Path),
-			Path: filepath.Dir(f.Path),
-			Data: []byte(f.Data),
+
+		var producer entity.FileProducer
+		switch {
+		case f.Data != nil:
+			file := entity.File{
+				Name: filepath.Base(f.Path),
+				Path: filepath.Dir(f.Path),
+				Data: []byte(*f.Data),
+			}
+			producer = proc.NewStoredProducer(file)
+		case f.Get != nil:
+			file := entity.RemoteFile{
+				Name:    filepath.Base(f.Path),
+				Path:    filepath.Dir(f.Path),
+				URL:     f.Get.URL.String(),
+				Headers: f.Get.Headers,
+			}
+			producer = proc.NewRemoteProducer(file)
+		default:
+			return nil, fmt.Errorf("create file processor: `data` or `get` must not be empty")
 		}
-		files = append(files, tmpl)
+
+		producers = append(producers, producer)
 	}
 
-	return proc.NewFileProc(files, logger), nil
+	return proc.NewFileProc(producers, logger), nil
 }

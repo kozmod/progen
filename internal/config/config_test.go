@@ -106,3 +106,57 @@ steps:
 		assert.Equal(t, expected, string(res))
 	})
 }
+
+func Test_ValidateFile(t *testing.T) {
+	const (
+		path = "some_path"
+	)
+	t.Run("not_error_when_get_is_not_nil", func(t *testing.T) {
+		in := File{
+			Path: path,
+			Data: nil,
+			Get:  &Get{},
+		}
+		err := ValidateFile(in)
+		assert.NoError(t, err)
+	})
+	t.Run("not_error_when_data_is_not_nil", func(t *testing.T) {
+		in := File{
+			Path: path,
+			Data: func(s string) *string { return &s }("some data"),
+			Get:  nil,
+		}
+		err := ValidateFile(in)
+		assert.NoError(t, err)
+	})
+	t.Run("error_when_data_and_get_are_nil", func(t *testing.T) {
+		in := File{
+			Path: path,
+			Data: nil,
+			Get:  nil,
+		}
+		err := ValidateFile(in)
+		assert.Error(t, err)
+	})
+	t.Run("error_when_data_and_get_are_not_nil_both", func(t *testing.T) {
+		in := File{
+			Path: path,
+			Data: func(s string) *string { return &s }("some data"),
+			Get:  &Get{},
+		}
+		err := ValidateFile(in)
+		assert.Error(t, err)
+	})
+	t.Run("error_when_path_is_empty", func(t *testing.T) {
+		in := File{
+			Path: "",
+			Get:  &Get{},
+		}
+		err := ValidateFile(in)
+		assert.Error(t, err)
+
+		in.Path = "     "
+		err = ValidateFile(in)
+		assert.Error(t, err)
+	})
+}

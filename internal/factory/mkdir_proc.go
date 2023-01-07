@@ -15,9 +15,9 @@ func NewMkdirProc(conf config.Config, logger entity.Logger) (proc.Proc, error) {
 	return proc.NewMkdirAllProc(dirSet, logger), nil
 }
 
-func uniqueVal(in []string) []string {
-	set := make(map[string]struct{}, len(in))
-	out := make([]string, 0, len(in))
+func uniqueVal[T comparable](in []T) []T {
+	set := make(map[T]struct{}, len(in))
+	out := make([]T, 0, len(in))
 	for _, val := range in {
 		_, ok := set[val]
 		if ok {
