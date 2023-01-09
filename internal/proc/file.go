@@ -68,11 +68,10 @@ type RemoteProducer struct {
 	file   *entity.RemoteFile
 }
 
-func NewRemoteProducer(file entity.RemoteFile) *RemoteProducer {
-	rc := resty.NewWithClient(&http.Client{})
+func NewRemoteProducer(file entity.RemoteFile, client *resty.Client) *RemoteProducer {
 	return &RemoteProducer{
 		file:   &file,
-		client: rc,
+		client: client,
 	}
 }
 

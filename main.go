@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 
 	"github.com/kozmod/progen/internal/factory"
@@ -10,9 +11,14 @@ import (
 	"github.com/kozmod/progen/internal/entity"
 )
 
+const (
+	defaultConfigFilePath = "progen.yml"
+)
+
 var (
-	flagConfigPath = flag.String("f", "", "config file path")
-	flagVerbose    = flag.Bool("v", false, "verbose output")
+	flagConfigPath = flag.String("f", "",
+		fmt.Sprintf("configuration file path (if not set, default configuration is used: %s)", defaultConfigFilePath))
+	flagVerbose = flag.Bool("v", false, "verbose output")
 )
 
 func main() {
@@ -27,7 +33,8 @@ func main() {
 	}()
 
 	if *flagConfigPath == entity.Empty {
-		logger.Fatal("config file is not set")
+		*flagConfigPath = defaultConfigFilePath
+		logger.Infof("default configuration is used: %s", defaultConfigFilePath)
 	}
 
 	rawConfig, err := config.PreprocessRawConfigData(*flagConfigPath)

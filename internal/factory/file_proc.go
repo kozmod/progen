@@ -2,7 +2,10 @@ package factory
 
 import (
 	"fmt"
+	"net/http"
 	"path/filepath"
+
+	"github.com/go-resty/resty/v2"
 
 	"github.com/kozmod/progen/internal/config"
 	"github.com/kozmod/progen/internal/entity"
@@ -17,7 +20,11 @@ func NewFileProc(conf config.Config, logger entity.Logger) (proc.Proc, error) {
 	producers := make([]entity.FileProducer, 0, len(conf.Files))
 	for _, f := range conf.Files {
 
-		var producer entity.FileProducer
+		var (
+			producer entity.FileProducer
+			client   *resty.Client
+		)
+
 		switch {
 		case f.Data != nil:
 			file := entity.File{
@@ -33,7 +40,12 @@ func NewFileProc(conf config.Config, logger entity.Logger) (proc.Proc, error) {
 				URL:     f.Get.URL.String(),
 				Headers: f.Get.Headers,
 			}
-			producer = proc.NewRemoteProducer(file)
+
+			if client == nil {
+				client = resty.NewWithClient(&http.Client{})
+			}
+
+			producer = proc.NewRemoteProducer(file, client)
 		default:
 			return nil, fmt.Errorf("create file processor: `data` or `get` must not be empty")
 		}
