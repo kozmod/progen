@@ -72,38 +72,40 @@ func Test_preprocessRawConfigData(t *testing.T) {
 		const (
 			in = `
 matrix:
-  version: 1.19
+ version: 1.19
 steps:
-  name: Setup Go {{ .matrix.version }}
+ name: Setup Go {{ .matrix.version }}
 `
 			expected = `
 matrix:
-  version: 1.19
+ version: 1.19
 steps:
-  name: Setup Go 1.19
+ name: Setup Go 1.19
 `
 		)
 
-		res, err := preprocessRawConfigData(name, []byte(in))
+		rawConf, mapConf, err := preprocessRawConfigData(name, []byte(in))
 		assert.NoError(t, err)
-		assert.Equal(t, expected, string(res))
+		assert.Equal(t, expected, string(rawConf))
+		assert.NotEmpty(t, mapConf)
 	})
 
 	t.Run("success_preprocess_raw_config_data", func(t *testing.T) {
 		const (
 			in = `
 steps:
-  name: Setup Go {{ .matrix.version }}
+ name: Setup Go {{ .matrix.version }}
 `
 			expected = `
 steps:
-  name: Setup Go <no value>
+ name: Setup Go <no value>
 `
 		)
 
-		res, err := preprocessRawConfigData(name, []byte(in))
+		rawConf, mapConf, err := preprocessRawConfigData(name, []byte(in))
 		assert.NoError(t, err)
-		assert.Equal(t, expected, string(res))
+		assert.Equal(t, expected, string(rawConf))
+		assert.NotEmpty(t, mapConf)
 	})
 }
 
@@ -159,4 +161,32 @@ func Test_ValidateFile(t *testing.T) {
 		err = ValidateFile(in)
 		assert.Error(t, err)
 	})
+}
+
+func Test_(t *testing.T) {
+	var (
+		nilStr     *string
+		defaultStr string
+
+		nilInt     *int
+		defaultInt int
+
+		nilStrict     *struct{}
+		defaultStruct struct{}
+	)
+
+	test := []struct {
+		in  []any
+		exp int
+	}{
+		{in: []any{nilStr, nilInt, nilStrict}, exp: 0},
+		{in: []any{defaultStr, defaultInt, defaultStruct}, exp: 3},
+		{in: []any{nilStr, nilInt, nilStrict, defaultStr, defaultInt, defaultStruct}, exp: 3},
+		{in: []any{nilInt, defaultInt}, exp: 1},
+		{in: []any{}, exp: 0},
+	}
+	for i, tc := range test {
+		res := notNilValues(tc.in...)
+		assert.Equalf(t, tc.exp, res, "case_%d", i)
+	}
 }

@@ -15,16 +15,25 @@ type Logger interface {
 }
 
 type File struct {
-	Path string
-	Name string
-	Data []byte
+	Path     string
+	Name     string
+	Data     []byte
+	Template bool
+}
+
+type LocalFile struct {
+	Path      string
+	Name      string
+	LocalPath string
+	Template  bool
 }
 
 type RemoteFile struct {
-	Path    string
-	Name    string
-	URL     string
-	Headers map[string]string
+	Path     string
+	Name     string
+	URL      string
+	Headers  map[string]string
+	Template bool
 }
 
 type Command struct {

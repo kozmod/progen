@@ -9,7 +9,12 @@ import (
 	"github.com/kozmod/progen/internal/proc"
 )
 
-func NewProcChain(conf config.Config, order map[string]int, logger entity.Logger) (*proc.Chain, error) {
+func NewProcChain(
+	conf config.Config,
+	order map[string]int,
+	templateData map[string]any,
+	logger entity.Logger,
+) (*proc.Chain, error) {
 
 	type (
 		IndexedProc struct {
@@ -23,7 +28,7 @@ func NewProcChain(conf config.Config, order map[string]int, logger entity.Logger
 			return NewMkdirProc(config, logger)
 		},
 		config.TagFiles: func(config config.Config) (proc.Proc, error) {
-			return NewFileProc(conf, logger)
+			return NewFileProc(conf, templateData, logger)
 		},
 		config.TagCmd: func(config config.Config) (proc.Proc, error) {
 			return NewRunCommandProc(config, logger)
