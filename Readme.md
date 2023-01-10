@@ -1,13 +1,19 @@
 # ProGen
+
 ![test](https://github.com/kozmod/progen/actions/workflows/test.yml/badge.svg)
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/kozmod/progen)
 
-Simple project's generator.
+Simple projects generator.
 
 ### Installation
 
 ```console
 go install github.com/kozmod/progen@latest
+```
+
+### Build from source
+```console
+go build -o progen .
 ```
 
 ### About
@@ -20,22 +26,34 @@ go install github.com/kozmod/progen@latest
 |:-----|:------:|:-------------------:|
 | f    | string | path to config file |
 | v    |  bool  |   verbose output    |
-| help |  bool  |        help         |
+| help |  bool  |  flags information  |
 
 #### Allowed config file's keys
 
-| Key               |       Type        |                      Description                      |
-|:------------------|:-----------------:|:-----------------------------------------------------:|
-| dirs              |   string slice    |             list of directories to create             |
-| files             |      struct       |             list file's `path` and `data`             |
-| files.path        |      string       |                       list file                       |
-| files.data        |      string       |                       file data                       |
-| files.get         |      struct       | struct describe `GET` request for getting file's data |
-| files.get.url     |      string       |                      request URL                      |
-| files.get.headers | map[string]string |                    request headers                    |
-| cmd               |   string slice    |            list of directories to execute             |
+| Key               |       Type        | Optional |                         Description                         |
+|:------------------|:-----------------:|:--------:|:-----------------------------------------------------------:|
+|                   |                   |          |                                                             |
+| http              |      struct       |    ✅     |                  http client configuration                  |
+| http.debug        |       bool        |    ✅     |                  http client `DEBUG` mode                   |
+| http.base_url     |      string       |    ✅     |                   http client base `URL`                    |
+| http.headers      | map[string]string |    ✅     |             http client base request `Headers`              |
+|                   |                   |          |                                                             |
+| dirs              |     []string      |    ✅     |                list of directories to create                |
+|                   |                   |          |                                                             |
+| files             |      struct       |    ✅     |                list file's `path` and `data`                |
+| files.path        |      string       |    ❌     |                      save file `path`                       |
+| files.template    |       bool        |    ✅     | flag to apply template variable for file (except of `data`) |
+| files.local       |      string       |    ✳️    |                   local file path to copy                   |
+| files.data        |      string       |    ✳️    |                      save file `data`                       |
+| files.get         |      struct       |    ✳️    |    struct describe `GET` request for getting file's data    |
+| files.get.url     |      string       |    ❌     |                        request `URL`                        |
+| files.get.headers | map[string]string |    ✅     |                       request headers                       |
+|                   |                   |          |                                                             |
+| cmd               |      []slice      |    ✅     |                 list of command to execute                  |
 
-<b>Note</b>: preprocessing of "raw" config use [text/template](https://pkg.go.dev/text/template) package
+✳️ required one of for parent block
+
+❗️<b>Note</b>: preprocessing of "raw" config use [text/template](https://pkg.go.dev/text/template) package
 that allow to add custom `yaml` keys tree to avoid duplication (all tags could be used as template's value)
 
 #### Example
@@ -44,8 +62,15 @@ that allow to add custom `yaml` keys tree to avoid duplication (all tags could b
 # custom variables to avoid duplication ( for example "{{.vars.GOPROXY}}")
 vars:
   GOPROXY: https://127.0.0.1:8081
-  TOKEN: PRIVATE-TOKEN:token
-  REPO_1: https://gitlab.some.com/api/v4/projects/23/repository/files
+  TOKEN: token
+  REPO_1: https://gitlab.repo_1.com/api/v4/projects/23/repository/files
+
+# common http client configuration  
+http:
+  debug: false
+  base_url: https://gitlab.repo_2.com/api/v4/projects/5/repository/files/
+  headers:
+    PRIVATE-TOKEN: {{ .vars.TOKEN }}
 
 # list directories to create
 dirs:
@@ -55,64 +80,65 @@ dirs:
 
 # list files to create
 files:
+
   - path: .gitlab-ci.yml
     # GET file from remote storage
     get:
+      # reset url of common http client configuration 
       url: "https://some_file_server.com/files/.gitlab-ci.yml"
+      # reset headers of common http client configuration (tag:http)
       headers:
         some_header: header
+
+  - path: Dockerfile
+    # process file as template (apply variables which declared in this config)
+    template: true
+    # GET file from remote storage (using common http client config)
+    get:
+      # reuse `base` URL of common http client config
+      url: Dockerfile/raw?ref=feature/project_templates"
+
   - path: .gitignore
+    # copy file from location
+    local: some/dir/.gitignore.gotmpl
+
+  - path: .env
+    # template (false/true) is not necessary - all files with `data` section process as template
+    template: true
     data: |
-      .DS_Store
-      .vs/
-      .vscode/
-      .idea/
-      tmp/
-  - path: deploy/Dockerfile
-    data: |
-      FROM golang:1.18.3-alpine as builder
-
-      ENV GOPROXY "{{.vars.GOPROXY}} ,proxy.golang.org,direct"
-      ENV GO111MODULE on
-      ENV CGO_ENABLED 1
-      ENV GOOS linux
-      ENV GOARCH amd64
-
-      WORKDIR /app
-      COPY . .
-      RUN --mount=type=cache,target=/go build -o main .
-
-      FROM alpine:3.16
-      ARG config_file
-
-      RUN apk --no-cache --update --upgrade add curl
-
-      WORKDIR /app
-      COPY configs/${config_file:-config.yaml} configs/config.yaml
-      COPY --from=0 /app/main .
-      CMD ["./main"]
+      GOPROXY="{{.vars.GOPROXY}} ,proxy.golang.org,direct"
 
 # list commands to execute
 cmd:
-  - curl -H {{.vars.TOKEN}} {{.vars.REPO_1}}/.gitignore/raw?ref=master -o .gitignore
+  - curl -H PRIVATE-TOKEN:{{.vars.TOKEN}} {{.vars.REPO_1}}/.editorconfig/raw?ref=master -o .editorconfig
 ```
 
+#### Generate project structure from configuration file
+
+use configuration file with default name (`progen.yaml`)
+
+```console
+progen -v
 ```
+
+or define custom config location using `-f`
+
+```console
 progen -v -f conf.yml
 ```
 
 generated project structure
 
-```
+```console
 .
 ├── api
-├── conf.yml
-├── deploy
-│   └── Dockerfile
+├── progen.yml
 ├── internal
 │   └── client
 ├── pkg
-└── .gitlab-ci.yml
-
+├── .editorconfig 
+├── .gitlab-ci.yml
+├── .env
+└── Dockerfile
 ```
 
