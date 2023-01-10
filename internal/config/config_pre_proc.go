@@ -11,37 +11,37 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func PreprocessRawConfigData(path string) ([]byte, error) {
+func PreprocessRawConfigData(path string) ([]byte, map[string]any, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("read config: %w", err)
+		return nil, nil, fmt.Errorf("read config: %w", err)
 	}
 
-	conf, err := preprocessRawConfigData(path, data)
+	rawConf, mapConf, err := preprocessRawConfigData(path, data)
 	if err != nil {
-		return nil, fmt.Errorf("preprocess raw config: %w", err)
+		return nil, nil, fmt.Errorf("preprocess raw config: %w", err)
 	}
-	return conf, nil
+	return rawConf, mapConf, nil
 }
 
-func preprocessRawConfigData(name string, data []byte) ([]byte, error) {
+func preprocessRawConfigData(name string, data []byte) ([]byte, map[string]any, error) {
 	var conf map[string]any
 	err := yaml.Unmarshal(data, &conf)
 	if err != nil {
-		return nil, fmt.Errorf("parse config to map: %w", err)
+		return nil, nil, fmt.Errorf("parse config to map: %w", err)
 	}
 
 	temp, err := template.New(name).Parse(string(data))
 	if err != nil {
-		return nil, fmt.Errorf("new template [%s]: %w", name, err)
+		return nil, nil, fmt.Errorf("new template [%s]: %w", name, err)
 	}
 
 	var buf bytes.Buffer
 	err = temp.Execute(&buf, conf)
 	if err != nil {
-		return nil, fmt.Errorf("execute template [%s]: %w", name, err)
+		return nil, nil, fmt.Errorf("execute template [%s]: %w", name, err)
 	}
-	return buf.Bytes(), nil
+	return buf.Bytes(), conf, nil
 }
 
 func YamlRootNodesOrder(rowConfig []byte) (map[string]int, error) {

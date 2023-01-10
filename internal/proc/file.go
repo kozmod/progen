@@ -1,26 +1,30 @@
 package proc
 
 import (
+	"bytes"
 	"fmt"
 	"net/http"
 	"os"
 	"path"
+	"text/template"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/kozmod/progen/internal/entity"
 )
 
 type FileProc struct {
-	fileMode  os.FileMode
-	producers []entity.FileProducer
-	logger    entity.Logger
+	fileMode     os.FileMode
+	producers    []entity.FileProducer
+	logger       entity.Logger
+	templateData map[string]any
 }
 
-func NewFileProc(producers []entity.FileProducer, logger entity.Logger) *FileProc {
+func NewFileProc(producers []entity.FileProducer, templateData map[string]any, logger entity.Logger) *FileProc {
 	return &FileProc{
-		fileMode:  os.ModePerm,
-		producers: producers,
-		logger:    logger,
+		fileMode:     os.ModePerm,
+		producers:    producers,
+		templateData: templateData,
+		logger:       logger,
 	}
 }
 
@@ -28,23 +32,38 @@ func (p *FileProc) Exec() error {
 	for _, producer := range p.producers {
 		file, err := producer.Get()
 		if err != nil {
-			return fmt.Errorf("get file to write: %w", err)
+			return fmt.Errorf("process file: get file to write: %w", err)
 		}
 
 		fileDir := file.Path
 		if _, err := os.Stat(fileDir); os.IsNotExist(err) {
 			err = os.MkdirAll(fileDir, p.fileMode)
 			if err != nil {
-				return fmt.Errorf("create template dir [%s]: %w", fileDir, err)
+				return fmt.Errorf("process file: create file dir [%s]: %w", fileDir, err)
 			}
 		}
 
 		filePath := path.Join(file.Path, file.Name)
+
+		if file.Template {
+			temp, err := template.New(filePath).Parse(string(file.Data))
+			if err != nil {
+				return fmt.Errorf("process file: new file template [%s]: %w", filePath, err)
+			}
+
+			var buf bytes.Buffer
+			err = temp.Execute(&buf, p.templateData)
+			if err != nil {
+				return fmt.Errorf("process file: execute template [%s]: %w", filePath, err)
+			}
+			file.Data = buf.Bytes()
+		}
+
 		err = os.WriteFile(filePath, file.Data, p.fileMode)
 		if err != nil {
-			return fmt.Errorf("create file [%s]: %w", file.Name, err)
+			return fmt.Errorf("process file: create file [%s]: %w", file.Name, err)
 		}
-		p.logger.Infof("file created: %s", filePath)
+		p.logger.Infof("file created (template: %v): %s", file.Template, filePath)
 	}
 	return nil
 }
@@ -61,6 +80,29 @@ func NewStoredProducer(file entity.File) *StoredProducer {
 
 func (p *StoredProducer) Get() (*entity.File, error) {
 	return p.file, nil
+}
+
+type LocalProducer struct {
+	file entity.LocalFile
+}
+
+func NewLocalProducer(file entity.LocalFile) *LocalProducer {
+	return &LocalProducer{
+		file: file,
+	}
+}
+
+func (p *LocalProducer) Get() (*entity.File, error) {
+	data, err := os.ReadFile(p.file.LocalPath)
+	if err != nil {
+		return nil, fmt.Errorf("read local: %w", err)
+	}
+	return &entity.File{
+		Name:     p.file.Name,
+		Path:     p.file.Path,
+		Data:     data,
+		Template: p.file.Template,
+	}, nil
 }
 
 type RemoteProducer struct {
@@ -90,9 +132,10 @@ func (p *RemoteProducer) Get() (*entity.File, error) {
 	statusCode := rs.StatusCode()
 	if statusCode >= http.StatusOK && statusCode < http.StatusMultipleChoices {
 		return &entity.File{
-			Name: p.file.Name,
-			Path: p.file.Path,
-			Data: rs.Body(),
+			Name:     p.file.Name,
+			Path:     p.file.Path,
+			Data:     rs.Body(),
+			Template: p.file.Template,
 		}, nil
 
 	}

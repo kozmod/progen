@@ -5,10 +5,9 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/kozmod/progen/internal/factory"
-
 	"github.com/kozmod/progen/internal/config"
 	"github.com/kozmod/progen/internal/entity"
+	"github.com/kozmod/progen/internal/factory"
 )
 
 const (
@@ -37,7 +36,7 @@ func main() {
 		logger.Infof("default configuration is used: %s", defaultConfigFilePath)
 	}
 
-	rawConfig, err := config.PreprocessRawConfigData(*flagConfigPath)
+	rawConfig, templateData, err := config.PreprocessRawConfigData(*flagConfigPath)
 	if err != nil {
 		logger.Fatalf("preprocess raw config: %v", err)
 	}
@@ -53,12 +52,10 @@ func main() {
 		logger.Fatalf("define tag order: %v", err)
 	}
 
-	procChain, err := factory.NewProcChain(conf, order, logger)
+	procChain, err := factory.NewProcChain(conf, order, templateData, logger)
 	if err != nil {
 		logger.Fatalf("create processors chain: %v", err)
 	}
-
-	_ = procChain
 
 	err = procChain.Exec()
 	if err != nil {

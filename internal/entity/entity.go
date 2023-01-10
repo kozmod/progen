@@ -11,20 +11,32 @@ type FileProducer interface {
 
 //goland:noinspection SpellCheckingInspection
 type Logger interface {
-	Infof(template string, args ...any)
+	Infof(format string, args ...any)
+	Errorf(format string, any ...any)
+	Warnf(format string, any ...any)
+	Debugf(format string, any ...any)
 }
 
 type File struct {
-	Path string
-	Name string
-	Data []byte
+	Path     string
+	Name     string
+	Data     []byte
+	Template bool
+}
+
+type LocalFile struct {
+	Path      string
+	Name      string
+	LocalPath string
+	Template  bool
 }
 
 type RemoteFile struct {
-	Path    string
-	Name    string
-	URL     string
-	Headers map[string]string
+	Path     string
+	Name     string
+	URL      string
+	Headers  map[string]string
+	Template bool
 }
 
 type Command struct {

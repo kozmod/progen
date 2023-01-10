@@ -10,7 +10,7 @@ import (
 func NewLogger(verbose bool) (*zap.SugaredLogger, error) {
 	lvl := zap.ErrorLevel
 	if verbose {
-		lvl = zap.InfoLevel
+		lvl = zap.DebugLevel
 	}
 
 	cfg := zap.Config{

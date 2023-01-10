@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"net/url"
+	"reflect"
 	"strings"
 
 	"github.com/kozmod/progen/internal/entity"
@@ -17,20 +18,29 @@ const (
 )
 
 type Config struct {
-	Dirs  []string `yaml:"dirs,flow"`
-	Files []File   `yaml:"files,flow"`
-	Cmd   []string `yaml:"cmd,flow"`
+	HTTP  *HTTPClient `yaml:"http"`
+	Dirs  []string    `yaml:"dirs,flow"`
+	Files []File      `yaml:"files,flow"`
+	Cmd   []string    `yaml:"cmd,flow"`
+}
+
+type HTTPClient struct {
+	BaseURL AddrURL           `yaml:"base_url"`
+	Headers map[string]string `yaml:"headers"`
+	Debug   bool              `yaml:"debug"`
 }
 
 type File struct {
-	Path string  `yaml:"path"`
-	Data *string `yaml:"data"`
-	Get  *Get    `yaml:"get"`
+	Path     string  `yaml:"path"`
+	Data     *string `yaml:"data"`
+	Get      *Get    `yaml:"get"`
+	Local    *string `yaml:"local"`
+	Template bool    `yaml:"template"`
 }
 
 type Get struct {
 	Headers map[string]string `yaml:"headers"`
-	URL     AddrURL           `yaml:"url"`
+	URL     string            `yaml:"url"`
 }
 
 type AddrURL struct {
@@ -54,13 +64,13 @@ func UnmarshalYamlConfig(in []byte) (Config, error) {
 	var conf Config
 	err := yaml.Unmarshal(in, &conf)
 	if err != nil {
-		return conf, fmt.Errorf("unmarshal config: %w", err)
+		return conf, err
 	}
 
 	for i, file := range conf.Files {
 		err = ValidateFile(file)
 		if err != nil {
-			return conf, fmt.Errorf("unmarshal config: validate files: %d [%s]: %w", i, file.Path, err)
+			return conf, fmt.Errorf("validate files: %d [%s]: %w", i, file.Path, err)
 		}
 	}
 
@@ -68,13 +78,26 @@ func UnmarshalYamlConfig(in []byte) (Config, error) {
 }
 
 func ValidateFile(file File) error {
+	notNil := notNilValues(file.Get, file.Data, file.Local)
 	switch {
-	case file.Get != nil && file.Data != nil:
-		return fmt.Errorf("files: `get` and `data` tags can not be present both")
-	case file.Get == nil && file.Data == nil:
-		return fmt.Errorf("files: `get` and `data` are empty both")
+	case notNil == 0:
+		return fmt.Errorf("files: `get`, `data`, `local` tags - only one can be present")
+	case notNil > 1:
+		return fmt.Errorf("files: `get`, `data`, `local` - all are empty")
 	case strings.TrimSpace(file.Path) == entity.Empty:
-		return fmt.Errorf("files: `path` is empty")
+		return fmt.Errorf("files: save `path` are empty")
 	}
 	return nil
+}
+
+func notNilValues(values ...any) int {
+	counter := 0
+	for _, value := range values {
+		val := reflect.ValueOf(value)
+		if val.Kind() == reflect.Ptr && val.IsNil() {
+			continue
+		}
+		counter++
+	}
+	return counter
 }
