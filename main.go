@@ -57,8 +57,6 @@ func main() {
 		logger.Fatalf("create processors chain: %v", err)
 	}
 
-	_ = procChain
-
 	err = procChain.Exec()
 	if err != nil {
 		logger.Fatalf("execute chain: %v", err)

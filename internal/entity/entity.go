@@ -11,7 +11,10 @@ type FileProducer interface {
 
 //goland:noinspection SpellCheckingInspection
 type Logger interface {
-	Infof(template string, args ...any)
+	Infof(format string, args ...any)
+	Errorf(format string, any ...any)
+	Warnf(format string, any ...any)
+	Debugf(format string, any ...any)
 }
 
 type File struct {

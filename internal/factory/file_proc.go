@@ -17,13 +17,11 @@ func NewFileProc(conf config.Config, templateData map[string]any, logger entity.
 	}
 
 	producers := make([]entity.FileProducer, 0, len(conf.Files))
+
+	var client *resty.Client
 	for _, f := range conf.Files {
 
-		var (
-			producer entity.FileProducer
-			client   *resty.Client
-		)
-
+		var producer entity.FileProducer
 		switch {
 		case f.Data != nil:
 			file := entity.File{
@@ -44,7 +42,7 @@ func NewFileProc(conf config.Config, templateData map[string]any, logger entity.
 			}
 
 			if client == nil {
-				client = NewHTTPClient(conf.HTTP)
+				client = NewHTTPClient(conf.HTTP, logger)
 			}
 
 			producer = proc.NewRemoteProducer(file, client)
