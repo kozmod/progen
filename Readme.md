@@ -28,24 +28,25 @@ go build -o progen .
 | v    |  bool  |   verbose output    |
 | help |  bool  |  flags information  |
 
-#### Allowed config file's keys
+#### Action config file's tags
 
 | Key               |       Type        | Optional |                         Description                         |
 |:------------------|:-----------------:|:--------:|:-----------------------------------------------------------:|
 |                   |                   |          |                                                             |
-| http              |      struct       |    ✅     |                  http client configuration                  |
+| http              |                   |    ✅     |                  http client configuration                  |
 | http.debug        |       bool        |    ✅     |                  http client `DEBUG` mode                   |
 | http.base_url     |      string       |    ✅     |                   http client base `URL`                    |
 | http.headers      | map[string]string |    ✅     |             http client base request `Headers`              |
 |                   |                   |          |                                                             |
 | dirs              |     []string      |    ✅     |                list of directories to create                |
 |                   |                   |          |                                                             |
-| files             |      struct       |    ✅     |                list file's `path` and `data`                |
+| files             |                   |    ✅     |                list file's `path` and `data`                |
 | files.path        |      string       |    ❌     |                      save file `path`                       |
 | files.template    |       bool        |    ✅     | flag to apply template variable for file (except of `data`) |
 | files.local       |      string       |    ✳️    |                   local file path to copy                   |
 | files.data        |      string       |    ✳️    |                      save file `data`                       |
-| files.get         |      struct       |    ✳️    |    struct describe `GET` request for getting file's data    |
+|                   |                   |          |                                                             |
+| files.get         |                   |    ✳️    |    struct describe `GET` request for getting file's data    |
 | files.get.url     |      string       |    ❌     |                        request `URL`                        |
 | files.get.headers | map[string]string |    ✅     |                       request headers                       |
 |                   |                   |          |                                                             |
@@ -53,17 +54,32 @@ go build -o progen .
 
 ✳️ required one of for parent block
 
-❗️<b>Note</b>: preprocessing of "raw" config use [text/template](https://pkg.go.dev/text/template) package
-that allow to add custom `yaml` keys tree to avoid duplication (all tags could be used as template's value)
-
 #### Example
 
 ```yaml
-# custom variables to avoid duplication ( for example "{{.vars.GOPROXY}}")
+## preprocessing of "raw" config use `text/template` of golang's stdlib
+## and can be used to avoid duplication
+## ❗️ `template variables` should be declared 
+##     as comments for success `yaml` parsing
+##     and only can be applied for current config
+
+## `template variables` declaration 👇🏻 
+# {{$gitlab_suffix := "/raw?ref=some_branch"}}
+
+## Example:
+## {{printf `%s%s` `.editorconfig` $gitlab_suffix}} ->  .editorconfig/raw?ref=some_branch
+## {{$gitlab_suffix}} -> /raw?ref=some_branch
+
+## yaml tags witch not using as `action tags`  👇🏻
+## also can be use as `template variables` for current configuration 
+## and can be applied to file data got from source (`local`, `get` tags)
 vars:
   GOPROXY: https://127.0.0.1:8081
   TOKEN: token
   REPO_1: https://gitlab.repo_1.com/api/v4/projects/23/repository/files
+## Example:
+## {{.vars.GOPROXY}} -> https://127.0.0.1:8081
+## {{.vars.REPO_1}} -> https://gitlab.repo_1.com/api/v4/projects/23/repository/files
 
 # common http client configuration  
 http:
@@ -72,30 +88,33 @@ http:
   headers:
     PRIVATE-TOKEN: {{ .vars.TOKEN }}
 
-# list directories to create
+# list directories to create 👇🏻
 dirs:
   - api
   - internal/client
   - pkg
 
-# list files to create
+# list files to create 👇🏻
 files:
+  - path: .editorconfig
+    get:
+      url: "{{printf `%s%s` `.editorconfig` $gitlab_suffix}}"
 
   - path: .gitlab-ci.yml
     # GET file from remote storage
     get:
-      # reset url of common http client configuration 
+      # reset url of common http client configuration (http.base_url)
       url: "https://some_file_server.com/files/.gitlab-ci.yml"
-      # reset headers of common http client configuration (tag:http)
+      # reset headers of common http client configuration (http.headers)
       headers:
         some_header: header
 
   - path: Dockerfile
-    # process file as template (apply variables which declared in this config)
+    # process file as template (apply tags which declared in this config)
     template: true
     # GET file from remote storage (using common http client config)
     get:
-      # reuse `base` URL of common http client config
+      # reuse `base` URL of common http client config (http.base_url)
       url: Dockerfile/raw?ref=feature/project_templates"
 
   - path: .gitignore
@@ -108,7 +127,7 @@ files:
     data: |
       GOPROXY="{{.vars.GOPROXY}} ,proxy.golang.org,direct"
 
-# list commands to execute
+# list commands to execute 👇🏻
 cmd:
   - curl -H PRIVATE-TOKEN:{{.vars.TOKEN}} {{.vars.REPO_1}}/.editorconfig/raw?ref=master -o .editorconfig
 ```
@@ -137,8 +156,9 @@ generated project structure
 │   └── client
 ├── pkg
 ├── .editorconfig 
-├── .gitlab-ci.yml
 ├── .env
+├── .gitignore
+├── .gitlab-ci.yml
 └── Dockerfile
 ```
 
