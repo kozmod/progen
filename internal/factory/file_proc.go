@@ -2,6 +2,7 @@ package factory
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 
 	"github.com/go-resty/resty/v2"
@@ -26,25 +27,31 @@ func NewFileProc(
 	var client *resty.Client
 	for _, f := range conf.Files {
 		var (
-			name     = filepath.Base(f.Path)
-			path     = filepath.Dir(f.Path)
+			file = entity.File{
+				Name: filepath.Base(f.Path),
+				Path: filepath.Dir(f.Path),
+				Perm: os.ModePerm,
+			}
 			template = !f.ExecTmplSkip
 		)
+
+		if f.Perm != nil {
+			file.Perm = f.Perm.FileMode
+		}
 
 		var producer entity.FileProducer
 		switch {
 		case f.Data != nil:
 			file := entity.DataFile{
-				Name:     name,
-				Path:     path,
+				File:     file,
 				Data:     []byte(*f.Data),
 				ExecTmpl: template,
 			}
 			producer = proc.NewStoredProducer(file)
+
 		case f.Get != nil:
 			file := entity.RemoteFile{
-				Name:     name,
-				Path:     path,
+				File:     file,
 				URL:      f.Get.URL,
 				Headers:  f.Get.Headers,
 				ExecTmpl: template,
@@ -55,10 +62,10 @@ func NewFileProc(
 			}
 
 			producer = proc.NewRemoteProducer(file, client)
+
 		case f.Local != nil:
 			file := entity.LocalFile{
-				Name:      name,
-				Path:      path,
+				File:      file,
 				LocalPath: *f.Local,
 				ExecTmpl:  template,
 			}

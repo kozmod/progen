@@ -12,18 +12,20 @@ import (
 )
 
 type FileProc struct {
-	fileMode  os.FileMode
-	producers []entity.FileProducer
-	logger    entity.Logger
-	executor  templateExecutor
+	defaultPerm  os.FileMode
+	producers    []entity.FileProducer
+	logger       entity.Logger
+	templateData map[string]any
+	executor     templateExecutor
 }
 
 func NewFileProc(producers []entity.FileProducer, templateData map[string]any, logger entity.Logger) *FileProc {
 	return &FileProc{
-		fileMode:  os.ModePerm,
-		producers: producers,
-		executor:  templateExecutor{templateData: templateData},
-		logger:    logger,
+		defaultPerm:  os.ModePerm,
+		producers:    producers,
+		templateData: templateData,
+		executor:     templateExecutor{templateData: templateData},
+		logger:       logger,
 	}
 }
 
@@ -36,7 +38,7 @@ func (p *FileProc) Exec() error {
 
 		fileDir := file.Path
 		if _, err := os.Stat(fileDir); os.IsNotExist(err) {
-			err = os.MkdirAll(fileDir, p.fileMode)
+			err = os.MkdirAll(fileDir, p.defaultPerm)
 			if err != nil {
 				return fmt.Errorf("process file: create file dir [%s]: %w", fileDir, err)
 			}
@@ -54,11 +56,11 @@ func (p *FileProc) Exec() error {
 			}
 		}
 
-		err = os.WriteFile(filePath, file.Data, p.fileMode)
+		err = os.WriteFile(filePath, file.Data, file.Perm)
 		if err != nil {
 			return fmt.Errorf("process file: create file [%s]: %w", file.Name, err)
 		}
-		p.logger.Infof("file created (template: %v): %s", file.ExecTmpl, filePath)
+		p.logger.Infof("file created [template: %v, perm: %v]: %s", file.ExecTmpl, file.Perm, filePath)
 	}
 	return nil
 }
@@ -87,8 +89,8 @@ func (p *DryRunFileProc) Exec() error {
 		}
 
 		fileDir := file.Path
-		if _, err := os.Stat(fileDir); os.IsNotExist(err) {
-			p.logger.Infof("process file: create dir [%s] to store file [%s]", fileDir, file.Name)
+		if _, err = os.Stat(fileDir); os.IsNotExist(err) {
+			p.logger.Infof("process file: create dir to store file [%s]: %s", file.Name, fileDir)
 		}
 
 		filePath := path.Join(file.Path, file.Name)
@@ -100,7 +102,7 @@ func (p *DryRunFileProc) Exec() error {
 			}
 			file.Data = data
 		}
-		p.logger.Infof("file created [template: %v, path: %s]:\n%s", file.ExecTmpl, filePath, string(file.Data))
+		p.logger.Infof("file created [template: %v, perm: %v]: %s\n%s", file.ExecTmpl, file.Perm, filePath, string(file.Data))
 	}
 	return nil
 }
@@ -135,8 +137,7 @@ func (p *LocalProducer) Get() (*entity.DataFile, error) {
 		return nil, fmt.Errorf("read local: %w", err)
 	}
 	return &entity.DataFile{
-		Name:     p.file.Name,
-		Path:     p.file.Path,
+		File:     p.file.File,
 		Data:     data,
 		ExecTmpl: p.file.ExecTmpl,
 	}, nil
@@ -169,8 +170,7 @@ func (p *RemoteProducer) Get() (*entity.DataFile, error) {
 	statusCode := rs.StatusCode()
 	if statusCode >= http.StatusOK && statusCode < http.StatusMultipleChoices {
 		return &entity.DataFile{
-			Name:     p.file.Name,
-			Path:     p.file.Path,
+			File:     p.file.File,
 			Data:     rs.Body(),
 			ExecTmpl: p.file.ExecTmpl,
 		}, nil
