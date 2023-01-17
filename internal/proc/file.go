@@ -1,30 +1,28 @@
 package proc
 
 import (
-	"bytes"
 	"fmt"
 	"net/http"
 	"os"
 	"path"
-	"text/template"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/kozmod/progen/internal/entity"
 )
 
 type FileProc struct {
-	fileMode     os.FileMode
-	producers    []entity.FileProducer
-	logger       entity.Logger
-	templateData map[string]any
+	fileMode  os.FileMode
+	producers []entity.FileProducer
+	logger    entity.Logger
+	executor  templateExecutor
 }
 
 func NewFileProc(producers []entity.FileProducer, templateData map[string]any, logger entity.Logger) *FileProc {
 	return &FileProc{
-		fileMode:     os.ModePerm,
-		producers:    producers,
-		templateData: templateData,
-		logger:       logger,
+		fileMode:  os.ModePerm,
+		producers: producers,
+		executor:  templateExecutor{templateData: templateData},
+		logger:    logger,
 	}
 }
 
@@ -46,17 +44,13 @@ func (p *FileProc) Exec() error {
 		filePath := path.Join(file.Path, file.Name)
 
 		if file.Template {
-			temp, err := template.New(filePath).Parse(string(file.Data))
-			if err != nil {
-				return fmt.Errorf("process file: new file template [%s]: %w", filePath, err)
+			if file.Template {
+				data, err := p.executor.Exec(filePath, file.Data)
+				if err != nil {
+					return fmt.Errorf("process file: %w", err)
+				}
+				file.Data = data
 			}
-
-			var buf bytes.Buffer
-			err = temp.Execute(&buf, p.templateData)
-			if err != nil {
-				return fmt.Errorf("process file: execute template [%s]: %w", filePath, err)
-			}
-			file.Data = buf.Bytes()
 		}
 
 		err = os.WriteFile(filePath, file.Data, p.fileMode)
@@ -64,6 +58,48 @@ func (p *FileProc) Exec() error {
 			return fmt.Errorf("process file: create file [%s]: %w", file.Name, err)
 		}
 		p.logger.Infof("file created (template: %v): %s", file.Template, filePath)
+	}
+	return nil
+}
+
+type DryRunFileProc struct {
+	fileMode  os.FileMode
+	producers []entity.FileProducer
+	logger    entity.Logger
+	executor  templateExecutor
+}
+
+func NewDryRunFileProc(producers []entity.FileProducer, templateData map[string]any, logger entity.Logger) *DryRunFileProc {
+	return &DryRunFileProc{
+		fileMode:  os.ModePerm,
+		producers: producers,
+		executor:  templateExecutor{templateData: templateData},
+		logger:    logger,
+	}
+}
+
+func (p *DryRunFileProc) Exec() error {
+	for _, producer := range p.producers {
+		file, err := producer.Get()
+		if err != nil {
+			return fmt.Errorf("process file: get file to write: %w", err)
+		}
+
+		fileDir := file.Path
+		if _, err := os.Stat(fileDir); os.IsNotExist(err) {
+			p.logger.Infof("process file: create dir [%s] to store file [%s]", fileDir, file.Name)
+		}
+
+		filePath := path.Join(file.Path, file.Name)
+
+		if file.Template {
+			data, err := p.executor.Exec(filePath, file.Data)
+			if err != nil {
+				return fmt.Errorf("process file: %w", err)
+			}
+			file.Data = data
+		}
+		p.logger.Infof("file created [template: %v, path: %s]:\n%s", file.Template, filePath, string(file.Data))
 	}
 	return nil
 }

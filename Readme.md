@@ -12,6 +12,7 @@ go install github.com/kozmod/progen@latest
 ```
 
 ### Build from source
+
 ```console
 go build -o progen .
 ```
@@ -22,11 +23,12 @@ go build -o progen .
 
 #### Allowed config file's keys
 
-| Name |  Type  |     Description     |
-|:-----|:------:|:-------------------:|
-| f    | string | path to config file |
-| v    |  bool  |   verbose output    |
-| help |  bool  |  flags information  |
+| Name |  Type  |                            Description                             |
+|:-----|:------:|:------------------------------------------------------------------:|
+| f    | string |                        path to config file                         |
+| v    |  bool  |                           verbose output                           |
+| dr   |  bool  | `dry run` mode <br/>(to verbose output should be combine with`-v`) |
+| help |  bool  |                             show flags                             |
 
 #### Action config file's tags
 
@@ -86,7 +88,7 @@ http:
   debug: false
   base_url: https://gitlab.repo_2.com/api/v4/projects/5/repository/files/
   headers:
-    PRIVATE-TOKEN: {{ .vars.TOKEN }}
+    PRIVATE-TOKEN: { { .vars.TOKEN } }
 
 # list directories to create 👇🏻
 dirs:

@@ -6,12 +6,17 @@ import (
 	"github.com/kozmod/progen/internal/proc"
 )
 
-func NewMkdirProc(conf config.Config, logger entity.Logger) (proc.Proc, error) {
+func NewMkdirProc(conf config.Config, logger entity.Logger, dryRun bool) (proc.Proc, error) {
 	if len(conf.Dirs) == 0 {
 		return nil, nil
 	}
 
 	dirSet := uniqueVal(conf.Dirs)
+
+	if dryRun {
+		return proc.NewDryRunMkdirAllProc(dirSet, logger), nil
+	}
+
 	return proc.NewMkdirAllProc(dirSet, logger), nil
 }
 
