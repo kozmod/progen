@@ -9,19 +9,19 @@ import (
 	"github.com/kozmod/progen/internal/entity"
 )
 
-type RunCommandProc struct {
+type CommandProc struct {
 	commands []entity.Command
 	logger   entity.Logger
 }
 
-func NewRunCommandProc(commands []entity.Command, logger entity.Logger) *RunCommandProc {
-	return &RunCommandProc{
+func NewCommandProc(commands []entity.Command, logger entity.Logger) *CommandProc {
+	return &CommandProc{
 		commands: commands,
 		logger:   logger,
 	}
 }
 
-func (p *RunCommandProc) Exec() error {
+func (p *CommandProc) Exec() error {
 	for _, command := range p.commands {
 		cmd := exec.Command(command.Cmd, command.Args...)
 		var out bytes.Buffer
@@ -33,6 +33,26 @@ func (p *RunCommandProc) Exec() error {
 		p.logger.Infof("execute:\ncmd: %s\nout: %s",
 			strings.Join(append([]string{command.Cmd}, command.Args...), entity.Space),
 			out.String())
+	}
+	return nil
+}
+
+type DryRunCommandProc struct {
+	commands []entity.Command
+	logger   entity.Logger
+}
+
+func NewDryRunCommandProc(commands []entity.Command, logger entity.Logger) *DryRunCommandProc {
+	return &DryRunCommandProc{
+		commands: commands,
+		logger:   logger,
+	}
+}
+
+func (p *DryRunCommandProc) Exec() error {
+	for _, command := range p.commands {
+		p.logger.Infof("execute cmd: %s",
+			strings.Join(append([]string{command.Cmd}, command.Args...), entity.Space))
 	}
 	return nil
 }

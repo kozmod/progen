@@ -31,3 +31,24 @@ func (p *MkdirAllProc) Exec() error {
 	}
 	return nil
 }
+
+type DryRunMkdirAllProc struct {
+	fileMode os.FileMode
+	dirs     []string
+	logger   entity.Logger
+}
+
+func NewDryRunMkdirAllProc(dirs []string, logger entity.Logger) *DryRunMkdirAllProc {
+	return &DryRunMkdirAllProc{
+		fileMode: os.ModePerm,
+		dirs:     dirs,
+		logger:   logger,
+	}
+}
+
+func (p *DryRunMkdirAllProc) Exec() error {
+	for _, dir := range p.dirs {
+		p.logger.Infof("dir created: %s", dir)
+	}
+	return nil
+}

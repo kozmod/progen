@@ -11,7 +11,12 @@ import (
 	"github.com/kozmod/progen/internal/proc"
 )
 
-func NewFileProc(conf config.Config, templateData map[string]any, logger entity.Logger) (proc.Proc, error) {
+func NewFileProc(
+	conf config.Config,
+	templateData map[string]any,
+	logger entity.Logger,
+	dryRun bool,
+) (proc.Proc, error) {
 	if len(conf.Files) == 0 {
 		return nil, nil
 	}
@@ -60,6 +65,10 @@ func NewFileProc(conf config.Config, templateData map[string]any, logger entity.
 		}
 
 		producers = append(producers, producer)
+	}
+
+	if dryRun {
+		return proc.NewDryRunFileProc(producers, templateData, logger), nil
 	}
 
 	return proc.NewFileProc(producers, templateData, logger), nil

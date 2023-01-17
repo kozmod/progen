@@ -14,6 +14,7 @@ func NewProcChain(
 	order map[string]int,
 	templateData map[string]any,
 	logger entity.Logger,
+	dryRun bool,
 ) (*proc.Chain, error) {
 
 	type (
@@ -25,13 +26,13 @@ func NewProcChain(
 
 	confFns := map[string]func(config config.Config) (proc.Proc, error){
 		config.TagDirs: func(config config.Config) (proc.Proc, error) {
-			return NewMkdirProc(config, logger)
+			return NewMkdirProc(config, logger, dryRun)
 		},
 		config.TagFiles: func(config config.Config) (proc.Proc, error) {
-			return NewFileProc(conf, templateData, logger)
+			return NewFileProc(conf, templateData, logger, dryRun)
 		},
 		config.TagCmd: func(config config.Config) (proc.Proc, error) {
-			return NewRunCommandProc(config, logger)
+			return NewRunCommandProc(config, logger, dryRun)
 		},
 	}
 

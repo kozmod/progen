@@ -15,9 +15,18 @@ const (
 )
 
 var (
-	flagConfigPath = flag.String("f", "",
+	flagConfigPath = flag.String(
+		"f",
+		entity.Empty,
 		fmt.Sprintf("configuration file path (if not set, default configuration is used: %s)", defaultConfigFilePath))
-	flagVerbose = flag.Bool("v", false, "verbose output")
+	flagVerbose = flag.Bool(
+		"v",
+		false,
+		"verbose output")
+	flagDryRun = flag.Bool(
+		"dr",
+		false,
+		"dry run mode (to verbose output should be combine with`-v`)")
 )
 
 func main() {
@@ -52,7 +61,7 @@ func main() {
 		logger.Fatalf("define tag order: %v", err)
 	}
 
-	procChain, err := factory.NewProcChain(conf, order, templateData, logger)
+	procChain, err := factory.NewProcChain(conf, order, templateData, logger, *flagDryRun)
 	if err != nil {
 		logger.Fatalf("create processors chain: %v", err)
 	}

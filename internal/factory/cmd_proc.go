@@ -9,7 +9,7 @@ import (
 	"github.com/kozmod/progen/internal/proc"
 )
 
-func NewRunCommandProc(conf config.Config, logger entity.Logger) (proc.Proc, error) {
+func NewRunCommandProc(conf config.Config, logger entity.Logger, dryRun bool) (proc.Proc, error) {
 	if len(conf.Cmd) == 0 {
 		return nil, nil
 	}
@@ -25,7 +25,11 @@ func NewRunCommandProc(conf config.Config, logger entity.Logger) (proc.Proc, err
 		commands = append(commands, command)
 	}
 
-	return proc.NewRunCommandProc(commands, logger), nil
+	if dryRun {
+		return proc.NewDryRunCommandProc(commands, logger), nil
+	}
+
+	return proc.NewCommandProc(commands, logger), nil
 }
 
 func commandFromString(cmd string) entity.Command {
