@@ -3,7 +3,10 @@ package main
 import (
 	"flag"
 	"fmt"
+	"golang.org/x/sync/errgroup"
 	"log"
+	"os"
+	"time"
 
 	"github.com/kozmod/progen/internal/config"
 	"github.com/kozmod/progen/internal/entity"
@@ -40,25 +43,67 @@ func main() {
 		_ = logger.Sync()
 	}()
 
+	defer func(start time.Time) {
+		logger.Infof("execution time: %v", time.Since(start))
+	}(time.Now())
+
 	if *flagConfigPath == entity.Empty {
 		*flagConfigPath = defaultConfigFilePath
 		logger.Infof("default configuration is used: %s", defaultConfigFilePath)
 	}
 
-	rawConfig, templateData, err := config.PreprocessRawConfigData(*flagConfigPath)
+	data, err := os.ReadFile(*flagConfigPath)
+	if err != nil {
+		logger.Fatalf("read config: %v", err)
+	}
+
+	rawConfig, templateData, err := config.PreprocessRawConfigData(*flagConfigPath, data)
 	if err != nil {
 		logger.Fatalf("preprocess raw config: %v", err)
 	}
-	logger.Infof("config to apply:\n%s", string(rawConfig))
 
-	conf, err := config.UnmarshalYamlConfig(rawConfig)
-	if err != nil {
-		logger.Fatalf("unmarshal config: %v", err)
+	var (
+		eg errgroup.Group
+
+		conf  config.Config
+		files []config.File
+		order map[string]int
+	)
+
+	eg.Go(func() error {
+		c, err := config.UnmarshalYamlConfig(rawConfig)
+		if err != nil {
+			return fmt.Errorf("unmarshal config: %w", err)
+		}
+		conf = c
+		return nil
+	})
+
+	eg.Go(func() error {
+		f, err := config.UnmarshalYamlFiles(data)
+		if err != nil {
+			return fmt.Errorf("unmarshal file config: %w", err)
+		}
+		files = f
+		return nil
+	})
+
+	eg.Go(func() error {
+		o, err := config.YamlRootNodesOrder(rawConfig)
+		if err != nil {
+			return fmt.Errorf("get root node order: %w", err)
+		}
+		order = o
+		return nil
+	})
+
+	if err = eg.Wait(); err != nil {
+		logger.Fatalf("prepare config: %v", err)
 	}
 
-	order, err := config.YamlRootNodesOrder(rawConfig)
+	conf, err = config.PrepareFiles(conf, files)
 	if err != nil {
-		logger.Fatalf("define tag order: %v", err)
+		logger.Fatalf("prepare config files section: %v", err)
 	}
 
 	procChain, err := factory.NewProcChain(conf, order, templateData, logger, *flagDryRun)

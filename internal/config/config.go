@@ -6,9 +6,9 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/kozmod/progen/internal/entity"
-
 	"gopkg.in/yaml.v3"
+
+	"github.com/kozmod/progen/internal/entity"
 )
 
 const (
@@ -31,11 +31,11 @@ type HTTPClient struct {
 }
 
 type File struct {
-	Path     string  `yaml:"path"`
-	Data     *string `yaml:"data"`
-	Get      *Get    `yaml:"get"`
-	Local    *string `yaml:"local"`
-	Template bool    `yaml:"template"`
+	Path         string  `yaml:"path"`
+	Data         *string `yaml:"data"`
+	Get          *Get    `yaml:"get"`
+	Local        *string `yaml:"local"`
+	ExecTmplSkip bool    `yaml:"tmpl_skip"`
 }
 
 type Get struct {
@@ -44,10 +44,10 @@ type Get struct {
 }
 
 type AddrURL struct {
-	*url.URL
+	*url.URL `yaml:",inline"`
 }
 
-func (addr *AddrURL) UnmarshalYAML(unmarshal func(interface{}) error) error {
+func (addr *AddrURL) UnmarshalYAML(unmarshal func(any) error) error {
 	var raw string
 	if err := unmarshal(&raw); err != nil {
 		return err
@@ -70,11 +70,22 @@ func UnmarshalYamlConfig(in []byte) (Config, error) {
 	for i, file := range conf.Files {
 		err = ValidateFile(file)
 		if err != nil {
-			return conf, fmt.Errorf("validate files: %d [%s]: %w", i, file.Path, err)
+			return conf, fmt.Errorf("validate config: files: %d [%s]: %w", i, file.Path, err)
 		}
 	}
 
 	return conf, nil
+}
+
+func UnmarshalYamlFiles(in []byte) ([]File, error) {
+	var files struct {
+		Files []File `yaml:"files,flow"`
+	}
+	err := yaml.Unmarshal(in, &files)
+	if err != nil {
+		return nil, err
+	}
+	return files.Files, nil
 }
 
 func ValidateFile(file File) error {

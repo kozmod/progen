@@ -3,7 +3,6 @@ package config
 import (
 	"bytes"
 	"fmt"
-	"os"
 	"strings"
 	"text/template"
 
@@ -11,20 +10,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func PreprocessRawConfigData(path string) ([]byte, map[string]any, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return nil, nil, fmt.Errorf("read config: %w", err)
-	}
-
-	rawConf, mapConf, err := preprocessRawConfigData(path, data)
-	if err != nil {
-		return nil, nil, fmt.Errorf("preprocess raw config: %w", err)
-	}
-	return rawConf, mapConf, nil
-}
-
-func preprocessRawConfigData(name string, data []byte) ([]byte, map[string]any, error) {
+func PreprocessRawConfigData(name string, data []byte) ([]byte, map[string]any, error) {
 	var conf map[string]any
 	err := yaml.Unmarshal(data, &conf)
 	if err != nil {
@@ -44,6 +30,26 @@ func preprocessRawConfigData(name string, data []byte) ([]byte, map[string]any, 
 	return buf.Bytes(), conf, nil
 }
 
+func PrepareFiles(conf Config, files []File) (Config, error) {
+	if c, f := len(conf.Files), len(files); c != f {
+		return conf, fmt.Errorf("len of files is not match [%d/%d]", c, f)
+	}
+
+	for i, file := range conf.Files {
+		if file.ExecTmplSkip {
+			if file.Data == nil {
+				continue
+			}
+			data := files[i].Data
+			if data == nil {
+				return conf, fmt.Errorf("file is empty: %d", i)
+			}
+			conf.Files[i].Data = files[i].Data
+		}
+	}
+	return conf, nil
+}
+
 func YamlRootNodesOrder(rowConfig []byte) (map[string]int, error) {
 	root := yaml.Node{}
 	err := yaml.Unmarshal(rowConfig, &root)
@@ -54,6 +60,7 @@ func YamlRootNodesOrder(rowConfig []byte) (map[string]int, error) {
 	if len(rootContent) != 1 {
 		return nil, fmt.Errorf("define order: content is empty")
 	}
+
 	contentNode := rootContent[0]
 	if contentNode == nil {
 		return nil, fmt.Errorf("define order: config content is empty")

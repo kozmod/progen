@@ -32,29 +32,31 @@ go build -o progen .
 
 #### Action config file's tags
 
-| Key               |       Type        | Optional |                         Description                         |
-|:------------------|:-----------------:|:--------:|:-----------------------------------------------------------:|
-|                   |                   |          |                                                             |
-| http              |                   |    ✅     |                  http client configuration                  |
-| http.debug        |       bool        |    ✅     |                  http client `DEBUG` mode                   |
-| http.base_url     |      string       |    ✅     |                   http client base `URL`                    |
-| http.headers      | map[string]string |    ✅     |             http client base request `Headers`              |
-|                   |                   |          |                                                             |
-| dirs              |     []string      |    ✅     |                list of directories to create                |
-|                   |                   |          |                                                             |
-| files             |                   |    ✅     |                list file's `path` and `data`                |
-| files.path        |      string       |    ❌     |                      save file `path`                       |
-| files.template    |       bool        |    ✅     | flag to apply template variable for file (except of `data`) |
-| files.local       |      string       |    ✳️    |                   local file path to copy                   |
-| files.data        |      string       |    ✳️    |                      save file `data`                       |
-|                   |                   |          |                                                             |
-| files.get         |                   |    ✳️    |    struct describe `GET` request for getting file's data    |
-| files.get.url     |      string       |    ❌     |                        request `URL`                        |
-| files.get.headers | map[string]string |    ✅     |                       request headers                       |
-|                   |                   |          |                                                             |
-| cmd               |      []slice      |    ✅     |                 list of command to execute                  |
+| Key               |       Type        | Optional |                                    Description                                    |
+|:------------------|:-----------------:|:--------:|:---------------------------------------------------------------------------------:|
+|                   |                   |          |                                                                                   |
+| http              |                   |    ✅     |                             http client configuration                             |
+| http.debug        |       bool        |    ✅     |                             http client `DEBUG` mode                              |
+| http.base_url     |      string       |    ✅     |                              http client base `URL`                               |
+| http.headers      | map[string]string |    ✅     |                        http client base request `Headers`                         |
+|                   |                   |          |                                                                                   |
+| dirs              |     []string      |    ✅     |                           list of directories to create                           |
+|                   |                   |          |                                                                                   |
+| files             |                   |    ✅     |                           list file's `path` and `data`                           |
+| files.path        |      string       |    ❌     |                                 save file `path`                                  |
+| files.tmpl_skip   |       bool        |    ✅     |          flag to skip processing file data as template(except of `data`)          |
+| files.local       |      string       |    ✳️    |                              local file path to copy                              |
+| files.data        |      string       |    ✳️    |                                 save file `data`                                  |
+|                   |                   |          |                                                                                   |
+| files.get         |                   |    ✳️    |               struct describe `GET` request for getting file's data               |
+| files.get.url     |      string       |    ❌     |                                   request `URL`                                   |
+| files.get.headers | map[string]string |    ✅     |                                  request headers                                  |
+|                   |                   |          |                                                                                   |
+| cmd               |      []slice      |    ✅     |                            list of command to execute                             |
 
 ✳️ required one of for parent block
+
+ **❗Note:** all action execute on declaration order
 
 #### Example
 
@@ -88,7 +90,7 @@ http:
   debug: false
   base_url: https://gitlab.repo_2.com/api/v4/projects/5/repository/files/
   headers:
-    PRIVATE-TOKEN: { { .vars.TOKEN } }
+    PRIVATE-TOKEN: {{ .vars.TOKEN }}
 
 # list directories to create 👇🏻
 dirs:
@@ -113,7 +115,7 @@ files:
 
   - path: Dockerfile
     # process file as template (apply tags which declared in this config)
-    template: true
+    tmpl_skip: false
     # GET file from remote storage (using common http client config)
     get:
       # reuse `base` URL of common http client config (http.base_url)
@@ -124,8 +126,8 @@ files:
     local: some/dir/.gitignore.gotmpl
 
   - path: .env
-    # template (false/true) is not necessary - all files with `data` section process as template
-    template: true
+    # skip file processing as template
+    tmpl_skip: true
     data: |
       GOPROXY="{{.vars.GOPROXY}} ,proxy.golang.org,direct"
 

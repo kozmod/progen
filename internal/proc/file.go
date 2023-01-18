@@ -7,6 +7,7 @@ import (
 	"path"
 
 	"github.com/go-resty/resty/v2"
+
 	"github.com/kozmod/progen/internal/entity"
 )
 
@@ -43,8 +44,8 @@ func (p *FileProc) Exec() error {
 
 		filePath := path.Join(file.Path, file.Name)
 
-		if file.Template {
-			if file.Template {
+		if file.ExecTmpl {
+			if file.ExecTmpl {
 				data, err := p.executor.Exec(filePath, file.Data)
 				if err != nil {
 					return fmt.Errorf("process file: %w", err)
@@ -57,7 +58,7 @@ func (p *FileProc) Exec() error {
 		if err != nil {
 			return fmt.Errorf("process file: create file [%s]: %w", file.Name, err)
 		}
-		p.logger.Infof("file created (template: %v): %s", file.Template, filePath)
+		p.logger.Infof("file created (template: %v): %s", file.ExecTmpl, filePath)
 	}
 	return nil
 }
@@ -92,29 +93,29 @@ func (p *DryRunFileProc) Exec() error {
 
 		filePath := path.Join(file.Path, file.Name)
 
-		if file.Template {
+		if file.ExecTmpl {
 			data, err := p.executor.Exec(filePath, file.Data)
 			if err != nil {
 				return fmt.Errorf("process file: %w", err)
 			}
 			file.Data = data
 		}
-		p.logger.Infof("file created [template: %v, path: %s]:\n%s", file.Template, filePath, string(file.Data))
+		p.logger.Infof("file created [template: %v, path: %s]:\n%s", file.ExecTmpl, filePath, string(file.Data))
 	}
 	return nil
 }
 
 type StoredProducer struct {
-	file *entity.File
+	file *entity.DataFile
 }
 
-func NewStoredProducer(file entity.File) *StoredProducer {
+func NewStoredProducer(file entity.DataFile) *StoredProducer {
 	return &StoredProducer{
 		file: &file,
 	}
 }
 
-func (p *StoredProducer) Get() (*entity.File, error) {
+func (p *StoredProducer) Get() (*entity.DataFile, error) {
 	return p.file, nil
 }
 
@@ -128,16 +129,16 @@ func NewLocalProducer(file entity.LocalFile) *LocalProducer {
 	}
 }
 
-func (p *LocalProducer) Get() (*entity.File, error) {
+func (p *LocalProducer) Get() (*entity.DataFile, error) {
 	data, err := os.ReadFile(p.file.LocalPath)
 	if err != nil {
 		return nil, fmt.Errorf("read local: %w", err)
 	}
-	return &entity.File{
+	return &entity.DataFile{
 		Name:     p.file.Name,
 		Path:     p.file.Path,
 		Data:     data,
-		Template: p.file.Template,
+		ExecTmpl: p.file.ExecTmpl,
 	}, nil
 }
 
@@ -153,7 +154,7 @@ func NewRemoteProducer(file entity.RemoteFile, client *resty.Client) *RemoteProd
 	}
 }
 
-func (p *RemoteProducer) Get() (*entity.File, error) {
+func (p *RemoteProducer) Get() (*entity.DataFile, error) {
 	var (
 		url = p.file.URL
 	)
@@ -167,11 +168,11 @@ func (p *RemoteProducer) Get() (*entity.File, error) {
 
 	statusCode := rs.StatusCode()
 	if statusCode >= http.StatusOK && statusCode < http.StatusMultipleChoices {
-		return &entity.File{
+		return &entity.DataFile{
 			Name:     p.file.Name,
 			Path:     p.file.Path,
 			Data:     rs.Body(),
-			Template: p.file.Template,
+			ExecTmpl: p.file.ExecTmpl,
 		}, nil
 
 	}
