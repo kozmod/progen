@@ -25,25 +25,29 @@ func NewFileProc(
 
 	var client *resty.Client
 	for _, f := range conf.Files {
+		var (
+			name     = filepath.Base(f.Path)
+			path     = filepath.Dir(f.Path)
+			template = !f.ExecTmplSkip
+		)
 
 		var producer entity.FileProducer
 		switch {
 		case f.Data != nil:
-			file := entity.File{
-				Name: filepath.Base(f.Path),
-				Path: filepath.Dir(f.Path),
-				Data: []byte(*f.Data),
-				// always `false` because template preprocess on raw config preprocessing step
-				Template: false,
+			file := entity.DataFile{
+				Name:     name,
+				Path:     path,
+				Data:     []byte(*f.Data),
+				ExecTmpl: template,
 			}
 			producer = proc.NewStoredProducer(file)
 		case f.Get != nil:
 			file := entity.RemoteFile{
-				Name:     filepath.Base(f.Path),
-				Path:     filepath.Dir(f.Path),
+				Name:     name,
+				Path:     path,
 				URL:      f.Get.URL,
 				Headers:  f.Get.Headers,
-				Template: f.Template,
+				ExecTmpl: template,
 			}
 
 			if client == nil {
@@ -53,10 +57,10 @@ func NewFileProc(
 			producer = proc.NewRemoteProducer(file, client)
 		case f.Local != nil:
 			file := entity.LocalFile{
-				Name:      filepath.Base(f.Path),
-				Path:      filepath.Dir(f.Path),
+				Name:      name,
+				Path:      path,
 				LocalPath: *f.Local,
-				Template:  f.Template,
+				ExecTmpl:  template,
 			}
 			producer = proc.NewLocalProducer(file)
 

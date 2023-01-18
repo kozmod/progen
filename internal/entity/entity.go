@@ -6,7 +6,7 @@ const (
 )
 
 type FileProducer interface {
-	Get() (*File, error)
+	Get() (*DataFile, error)
 }
 
 //goland:noinspection SpellCheckingInspection
@@ -17,18 +17,18 @@ type Logger interface {
 	Debugf(format string, any ...any)
 }
 
-type File struct {
+type DataFile struct {
 	Path     string
 	Name     string
 	Data     []byte
-	Template bool
+	ExecTmpl bool
 }
 
 type LocalFile struct {
 	Path      string
 	Name      string
 	LocalPath string
-	Template  bool
+	ExecTmpl  bool
 }
 
 type RemoteFile struct {
@@ -36,7 +36,7 @@ type RemoteFile struct {
 	Name     string
 	URL      string
 	Headers  map[string]string
-	Template bool
+	ExecTmpl bool
 }
 
 type Command struct {
