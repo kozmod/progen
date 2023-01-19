@@ -1,5 +1,7 @@
 package entity
 
+import "os"
+
 const (
 	Space = " "
 	Empty = ""
@@ -17,23 +19,31 @@ type Logger interface {
 	Debugf(format string, any ...any)
 }
 
+type Dir struct {
+	Path string
+	Perm os.FileMode
+}
+
+type File struct {
+	Path string
+	Name string
+	Perm os.FileMode
+}
+
 type DataFile struct {
-	Path     string
-	Name     string
+	File
 	Data     []byte
 	ExecTmpl bool
 }
 
 type LocalFile struct {
-	Path      string
-	Name      string
+	File
 	LocalPath string
 	ExecTmpl  bool
 }
 
 type RemoteFile struct {
-	Path     string
-	Name     string
+	File
 	URL      string
 	Headers  map[string]string
 	ExecTmpl bool

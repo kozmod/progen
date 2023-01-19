@@ -3,10 +3,11 @@ package main
 import (
 	"flag"
 	"fmt"
-	"golang.org/x/sync/errgroup"
 	"log"
 	"os"
 	"time"
+
+	"golang.org/x/sync/errgroup"
 
 	"github.com/kozmod/progen/internal/config"
 	"github.com/kozmod/progen/internal/entity"

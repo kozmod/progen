@@ -3,7 +3,9 @@ package config
 import (
 	"fmt"
 	"net/url"
+	"os"
 	"reflect"
+	"strconv"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -19,9 +21,9 @@ const (
 
 type Config struct {
 	HTTP  *HTTPClient `yaml:"http"`
-	Dirs  []string    `yaml:"dirs,flow"`
 	Files []File      `yaml:"files,flow"`
 	Cmd   []string    `yaml:"cmd,flow"`
+	Dirs  []Dir       `yaml:"dirs,flow"`
 }
 
 type HTTPClient struct {
@@ -30,12 +32,43 @@ type HTTPClient struct {
 	Debug   bool              `yaml:"debug"`
 }
 
+type Dir struct {
+	Path string `yaml:"path"`
+	Perm *Perm  `yaml:"perm"`
+}
+
+func (dir *Dir) UnmarshalYAML(unmarshal func(any) error) error {
+	var raw string
+	err := unmarshal(&raw)
+	if err == nil {
+		*dir = Dir{
+			Perm: nil,
+			Path: raw,
+		}
+		return nil
+	}
+
+	if _, ok := err.(*yaml.TypeError); !ok {
+		return fmt.Errorf("unmarshal dir: string: %w", err)
+	}
+
+	type alias Dir
+	var val alias
+	err = unmarshal(&val)
+	if err != nil {
+		return fmt.Errorf("unmarshal dir: struct: %w", err)
+	}
+	*dir = Dir(val)
+	return nil
+}
+
 type File struct {
 	Path         string  `yaml:"path"`
 	Data         *string `yaml:"data"`
 	Get          *Get    `yaml:"get"`
 	Local        *string `yaml:"local"`
 	ExecTmplSkip bool    `yaml:"tmpl_skip"`
+	Perm         *Perm   `yaml:"perm"`
 }
 
 type Get struct {
@@ -57,6 +90,24 @@ func (addr *AddrURL) UnmarshalYAML(unmarshal func(any) error) error {
 		return fmt.Errorf("unmarshal url: %w", err)
 	}
 	addr.URL = u
+	return nil
+}
+
+type Perm struct {
+	os.FileMode `yaml:",inline"`
+}
+
+func (perm *Perm) UnmarshalYAML(unmarshal func(any) error) error {
+	var raw string
+	if err := unmarshal(&raw); err != nil {
+		return fmt.Errorf("unmarshal perm: %w", err)
+	}
+	fm, err := strconv.ParseUint(raw, 0, 32)
+	if err != nil {
+		return fmt.Errorf("unmarshal perm unit: %w", err)
+	}
+
+	*perm = Perm{FileMode: os.FileMode(fm)}
 	return nil
 }
 
