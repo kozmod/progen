@@ -5,7 +5,7 @@
 ![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/kozmod/progen)
 
 Simple projects generator.
-
+___
 ### Installation
 
 ```console
@@ -17,12 +17,12 @@ go install github.com/kozmod/progen@latest
 ```console
 go build -o progen .
 ```
-
+___
 ### About
 
-`progen` use `yml` config file to generate directories, files and execute commands
-
-#### Allowed config file's keys
+`progen` use `yml` config file to generate directories, files and execute commands ([actions](#Actions))
+___
+### Args
 
 | Name |  Type  |                            Description                             |
 |:-----|:------:|:------------------------------------------------------------------:|
@@ -30,8 +30,8 @@ go build -o progen .
 | v    |  bool  |                           verbose output                           |
 | dr   |  bool  | `dry run` mode <br/>(to verbose output should be combine with`-v`) |
 | help |  bool  |                             show flags                             |
-
-#### Action config file's tags
+___
+### Actions
 
 | Key               |       Type        | Optional |                                    Description                                    |
 |:------------------|:-----------------:|:--------:|:---------------------------------------------------------------------------------:|
@@ -58,8 +58,8 @@ go build -o progen .
 ✳️ required one of for parent block
 
  **❗Note:** all action execute on declaration order
-
-#### Example
+___
+### Example
 
 ```yaml
 ## preprocessing of "raw" config use `text/template` of golang's stdlib
@@ -136,22 +136,22 @@ files:
 cmd:
   - curl -H PRIVATE-TOKEN:{{.vars.TOKEN}} {{.vars.REPO_1}}/.editorconfig/raw?ref=master -o .editorconfig
 ```
+___
+### Generate
 
-#### Generate project structure from configuration file
-
-use configuration file with default name (`progen.yaml`)
+`progen` use `progen.yaml` as default configuration file
 
 ```console
 progen -v
 ```
 
-or define custom config location using `-f`
+`-f` flag set custom configuration file
 
 ```console
 progen -v -f conf.yml
 ```
 
-generated project structure
+generated files and directories
 
 ```console
 .

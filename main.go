@@ -21,7 +21,7 @@ var (
 	flagConfigPath = flag.String(
 		"f",
 		entity.Empty,
-		fmt.Sprintf("configuration file path (if not set, default configuration is used: %s)", defaultConfigFilePath))
+		fmt.Sprintf("configuration file path (default file: %s)", defaultConfigFilePath))
 	flagVerbose = flag.Bool(
 		"v",
 		false,
