@@ -2,6 +2,7 @@
 
 ![test](https://github.com/kozmod/progen/actions/workflows/test.yml/badge.svg)
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/kozmod/progen)
+![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/kozmod/progen)
 
 Simple projects generator.
 
