@@ -10,22 +10,12 @@ builds:
       - -s -w -X github.com/kozmod/progen/internal.Version=v{{.Version}}
     env:
       - CGO_ENABLED=0
-    goos:
-      - darwin
-      - linux
-      - windows
     goarch:
       - amd64
       - arm64
 archives:
-  - replacements:
-      darwin: Darwin
-      linux: Linux
-      windows: Windows
-      386: i386
-      amd64: x86_64
-    files:
-      - README.md
+  - files:
+      - Readme.md
       - LICENSE
 checksum:
   name_template: "checksum.txt"

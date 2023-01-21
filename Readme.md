@@ -40,31 +40,31 @@ ___
 
 ### Actions
 
-| Key                                |       Type        |    Optional    |                           Description                           |
-|:-----------------------------------|:-----------------:|:--------------:|:---------------------------------------------------------------:|
-|                                    |                   |                |                                                                 |
-| http                               |                   |       ✅        |                    http client configuration                    |
-| http.debug                         |       bool        |       ✅        |                    http client `DEBUG` mode                     |
-| http.base_url                      |      string       |       ✅        |                     http client base `URL`                      |
-| http.headers                       | map[string]string |       ✅        |               http client base request `Headers`                |
-|                                    |                   |                |                                                                 |
-| dirs`<unique_suffix>` <sup>1</sup> |     []string      |       ✅        |                  list of directories to create                  |
-|                                    |                   |                |                                                                 |
-| files`<unique_suffix>`             |                   |       ✅        |                  list file's `path` and `data`                  |
-| files.path                         |      string       |       ❌        |                        save file `path`                         |
-| files.tmpl_skip                    |       bool        |       ✅        | flag to skip processing file data as template(except of `data`) |
-| files.local                        |      string       | ✳ <sup>2</sup> |                     local file path to copy                     |
-| files.data                         |      string       |       ✳        |                        save file `data`                         |
-|                                    |                   |                |                                                                 |
-| files.get                          |                   |       ✳        |      struct describe `GET` request for getting file's data      |
-| files.get.url                      |      string       |       ❌        |                          request `URL`                          |
-| files.get.headers                  | map[string]string |       ✅        |                         request headers                         |
-|                                    |                   |                |                                                                 |
-| cmd`<unique_suffix>`               |      []slice      |       ✅        |                   list of command to execute                    |
+| Key                               |       Type        |    Optional    |                           Description                           |
+|:----------------------------------|:-----------------:|:--------------:|:---------------------------------------------------------------:|
+|                                   |                   |                |                                                                 |
+| http                              |                   |       ✅        |                    http client configuration                    |
+| http.debug                        |       bool        |       ✅        |                    http client `DEBUG` mode                     |
+| http.base_url                     |      string       |       ✅        |                     http client base `URL`                      |
+| http.headers                      | map[string]string |       ✅        |               http client base request `Headers`                |
+|                                   |                   |                |                                                                 |
+| dirs`<unique_suffix>`<sup>1</sup> |     []string      |       ✅        |                  list of directories to create                  |
+|                                   |                   |                |                                                                 |
+| files`<unique_suffix>`            |                   |       ✅        |                  list file's `path` and `data`                  |
+| files.path                        |      string       |       ❌        |                        save file `path`                         |
+| files.tmpl_skip                   |       bool        |       ✅        | flag to skip processing file data as template(except of `data`) |
+| files.local                       |      string       | 🔹<sup>2</sup> |                     local file path to copy                     |
+| files.data                        |      string       |       🔹       |                        save file `data`                         |
+|                                   |                   |                |                                                                 |
+| files.get                         |                   |       🔹       |      struct describe `GET` request for getting file's data      |
+| files.get.url                     |      string       |       ❌        |                          request `URL`                          |
+| files.get.headers                 | map[string]string |       ✅        |                         request headers                         |
+|                                   |                   |                |                                                                 |
+| cmd`<unique_suffix>`              |      []slice      |       ✅        |                   list of command to execute                    |
 
 1. all action execute on declaration order. Base actions (`dir`, `files`,`cmd`) could be configured
    with `<unique_suffix>` to separate action execution.
-2. `✳` only one must be specified in parent section
+2. 🔹 only one must be specified in parent section
 
 ___
 
