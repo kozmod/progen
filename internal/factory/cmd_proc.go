@@ -4,18 +4,18 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kozmod/progen/internal/config"
 	"github.com/kozmod/progen/internal/entity"
 	"github.com/kozmod/progen/internal/proc"
 )
 
-func NewRunCommandProc(conf config.Config, logger entity.Logger, dryRun bool) (proc.Proc, error) {
-	if len(conf.Cmd) == 0 {
+//goland:noinspection SpellCheckingInspection
+func NewRunCommandProc(cmds []string, logger entity.Logger, dryRun bool) (proc.Proc, error) {
+	if len(cmds) == 0 {
 		return nil, nil
 	}
 
-	commands := make([]entity.Command, 0, len(conf.Cmd))
-	for _, cmd := range conf.Cmd {
+	commands := make([]entity.Command, 0, len(cmds))
+	for _, cmd := range cmds {
 		cmd = strings.TrimSpace(cmd)
 		if len(cmd) == 0 {
 			return nil, fmt.Errorf("command is empty")

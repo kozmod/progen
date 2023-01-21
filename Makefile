@@ -1,14 +1,14 @@
 .PHONT: tools
 tools: ## Run tools (vet, gofmt, goimports, tidy, etc.)
 	@go version
-	go vet ./...
 	gofmt -w .
 	goimports -w .
+	go vet ./...
 	@go mod tidy
 
 .PHONT: test
 test: ## Run all tests in project with coverage
-	@go test ./... -cover
+	@go test ./... -cover  -coverprofile cover.out  && go tool cover -func cover.out
 
 .PHONY: list
 list: ## List all make targets

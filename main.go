@@ -3,16 +3,18 @@ package main
 import (
 	"flag"
 	"fmt"
-	"golang.org/x/sync/errgroup"
 	"log"
 	"os"
 	"time"
+
+	"golang.org/x/sync/errgroup"
 
 	"github.com/kozmod/progen/internal/config"
 	"github.com/kozmod/progen/internal/entity"
 	"github.com/kozmod/progen/internal/factory"
 )
 
+//goland:noinspection SpellCheckingInspection
 const (
 	defaultConfigFilePath = "progen.yml"
 )
@@ -66,8 +68,7 @@ func main() {
 		eg errgroup.Group
 
 		conf  config.Config
-		files []config.File
-		order map[string]int
+		files map[string][]config.File
 	)
 
 	eg.Go(func() error {
@@ -88,15 +89,6 @@ func main() {
 		return nil
 	})
 
-	eg.Go(func() error {
-		o, err := config.YamlRootNodesOrder(rawConfig)
-		if err != nil {
-			return fmt.Errorf("get root node order: %w", err)
-		}
-		order = o
-		return nil
-	})
-
 	if err = eg.Wait(); err != nil {
 		logger.Fatalf("prepare config: %v", err)
 	}
@@ -106,7 +98,7 @@ func main() {
 		logger.Fatalf("prepare config files section: %v", err)
 	}
 
-	procChain, err := factory.NewProcChain(conf, order, templateData, logger, *flagDryRun)
+	procChain, err := factory.NewProcChain(conf, templateData, logger, *flagDryRun)
 	if err != nil {
 		logger.Fatalf("create processors chain: %v", err)
 	}

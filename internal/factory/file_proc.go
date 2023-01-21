@@ -12,19 +12,20 @@ import (
 )
 
 func NewFileProc(
-	conf config.Config,
+	files []config.File,
+	http *config.HTTPClient,
 	templateData map[string]any,
 	logger entity.Logger,
 	dryRun bool,
 ) (proc.Proc, error) {
-	if len(conf.Files) == 0 {
+	if len(files) == 0 {
 		return nil, nil
 	}
 
-	producers := make([]entity.FileProducer, 0, len(conf.Files))
+	producers := make([]entity.FileProducer, 0, len(files))
 
 	var client *resty.Client
-	for _, f := range conf.Files {
+	for _, f := range files {
 		var (
 			name     = filepath.Base(f.Path)
 			path     = filepath.Dir(f.Path)
@@ -51,7 +52,7 @@ func NewFileProc(
 			}
 
 			if client == nil {
-				client = NewHTTPClient(conf.HTTP, logger)
+				client = NewHTTPClient(http, logger)
 			}
 
 			producer = proc.NewRemoteProducer(file, client)

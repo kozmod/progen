@@ -58,7 +58,7 @@ func (p *FileProc) Exec() error {
 		if err != nil {
 			return fmt.Errorf("process file: create file [%s]: %w", file.Name, err)
 		}
-		p.logger.Infof("file created (template: %v): %s", file.ExecTmpl, filePath)
+		p.logger.Infof("file created [template: %v]: %s", file.ExecTmpl, filePath)
 	}
 	return nil
 }

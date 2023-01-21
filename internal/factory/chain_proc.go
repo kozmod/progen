@@ -11,63 +11,64 @@ import (
 
 func NewProcChain(
 	conf config.Config,
-	order map[string]int,
 	templateData map[string]any,
 	logger entity.Logger,
 	dryRun bool,
 ) (*proc.Chain, error) {
 
 	type (
-		IndexedProc struct {
-			index int
-			proc  proc.Proc
+		ProcGenerator struct {
+			line   int32
+			procFn func() (proc.Proc, error)
 		}
 	)
 
-	confFns := map[string]func(config config.Config) (proc.Proc, error){
-		config.TagDirs: func(config config.Config) (proc.Proc, error) {
-			return NewMkdirProc(config, logger, dryRun)
-		},
-		config.TagFiles: func(config config.Config) (proc.Proc, error) {
-			return NewFileProc(conf, templateData, logger, dryRun)
-		},
-		config.TagCmd: func(config config.Config) (proc.Proc, error) {
-			return NewRunCommandProc(config, logger, dryRun)
-		},
+	var generators []ProcGenerator
+	for _, dirs := range conf.Dirs {
+		d := dirs
+		generators = append(generators,
+			ProcGenerator{
+				line: d.Line,
+				procFn: func() (proc.Proc, error) {
+					return NewMkdirProc(d.Val, logger, dryRun)
+				},
+			})
 	}
 
-	//goland:noinspection SpellCheckingInspection
-	indexedProcs := make([]IndexedProc, 0, len(confFns))
-
-	for key, fn := range confFns {
-		index, ok := order[key]
-		if !ok {
-			continue
-		}
-
-		configuredProc, err := fn(conf)
-		if err != nil {
-			return nil, fmt.Errorf("configure proc for [%s]: %w", key, err)
-		}
-
-		if configuredProc == nil {
-			continue
-		}
-
-		indexedProcs = append(indexedProcs, IndexedProc{
-			index: index,
-			proc:  configuredProc,
-		})
+	for _, files := range conf.Files {
+		f := files
+		generators = append(generators,
+			ProcGenerator{
+				line: f.Line,
+				procFn: func() (proc.Proc, error) {
+					return NewFileProc(f.Val, conf.HTTP, templateData, logger, dryRun)
+				},
+			})
 	}
 
-	sort.Slice(indexedProcs, func(i, j int) bool {
-		return indexedProcs[i].index < indexedProcs[j].index
+	for _, commands := range conf.Cmd {
+		cmd := commands
+		generators = append(generators,
+			ProcGenerator{
+				line: cmd.Line,
+				procFn: func() (proc.Proc, error) {
+					return NewRunCommandProc(cmd.Val, logger, dryRun)
+				},
+			})
+	}
+
+	sort.Slice(generators, func(i, j int) bool {
+		return generators[i].line < generators[j].line
 	})
 
 	//goland:noinspection SpellCheckingInspection
-	procs := make([]proc.Proc, 0, len(indexedProcs))
-	for _, indexedProc := range indexedProcs {
-		procs = append(procs, indexedProc.proc)
+	procs := make([]proc.Proc, 0, len(generators))
+	for i, generator := range generators {
+		p, err := generator.procFn()
+		if err != nil {
+			return nil, fmt.Errorf("configure proc for [%d]: %w", i, err)
+		}
+		procs = append(procs, p)
 	}
 
 	return proc.NewProcChane(procs), nil

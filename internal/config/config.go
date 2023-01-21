@@ -15,19 +15,26 @@ const (
 	TagDirs  = "dirs"
 	TagFiles = "files"
 	TagCmd   = "cmd"
+	TagHTTP  = "http"
 )
 
 type Config struct {
-	HTTP  *HTTPClient `yaml:"http"`
-	Dirs  []string    `yaml:"dirs,flow"`
-	Files []File      `yaml:"files,flow"`
-	Cmd   []string    `yaml:"cmd,flow"`
+	HTTP  *HTTPClient         `yaml:"http"`
+	Dirs  []Section[[]string] `yaml:"dirs,flow"`
+	Files []Section[[]File]   `yaml:"files,flow"`
+	Cmd   []Section[[]string] `yaml:"cmd,flow"`
 }
 
 type HTTPClient struct {
 	BaseURL AddrURL           `yaml:"base_url"`
 	Headers map[string]string `yaml:"headers"`
 	Debug   bool              `yaml:"debug"`
+}
+
+type Section[T any] struct {
+	Line int32
+	Tag  string
+	Val  T
 }
 
 type File struct {
@@ -60,32 +67,83 @@ func (addr *AddrURL) UnmarshalYAML(unmarshal func(any) error) error {
 	return nil
 }
 
-func UnmarshalYamlConfig(in []byte) (Config, error) {
-	var conf Config
-	err := yaml.Unmarshal(in, &conf)
-	if err != nil {
-		return conf, err
+func UnmarshalYamlConfig(rawConfig []byte) (Config, error) {
+	var (
+		conf     Config
+		rootTags map[string]yaml.Node
+	)
+
+	if err := yaml.Unmarshal(rawConfig, &rootTags); err != nil {
+		return conf, fmt.Errorf("unmarshal url: %w", err)
 	}
 
-	for i, file := range conf.Files {
-		err = ValidateFile(file)
+	for tag, node := range rootTags {
+		var err error
+
+		switch {
+		case tag == TagHTTP:
+			var client HTTPClient
+			err = node.Decode(&client)
+			conf.HTTP = &client
+		case strings.Index(tag, TagDirs) == 0:
+			dir := Section[[]string]{Line: int32(node.Line), Tag: tag}
+			err = node.Decode(&dir.Val)
+			conf.Dirs = append(conf.Dirs, dir)
+		case strings.Index(tag, TagFiles) == 0:
+			files := Section[[]File]{Line: int32(node.Line), Tag: tag}
+			err = node.Decode(&files.Val)
+			conf.Files = append(conf.Files, files)
+		case strings.Index(tag, TagCmd) == 0:
+			cmd := Section[[]string]{Line: int32(node.Line), Tag: tag}
+			err = node.Decode(&cmd.Val)
+			conf.Cmd = append(conf.Cmd, cmd)
+		}
+
 		if err != nil {
-			return conf, fmt.Errorf("validate config: files: %d [%s]: %w", i, file.Path, err)
+			return conf, fmt.Errorf("unmarshal tag [%s]: %w", tag, err)
 		}
 	}
 
+	for i, files := range conf.Files {
+		for _, file := range files.Val {
+			err := ValidateFile(file)
+			if err != nil {
+				return conf, fmt.Errorf("validate config: files: %d [%s]: %w", i, file.Path, err)
+			}
+		}
+	}
 	return conf, nil
 }
 
-func UnmarshalYamlFiles(in []byte) ([]File, error) {
-	var files struct {
-		Files []File `yaml:"files,flow"`
-	}
-	err := yaml.Unmarshal(in, &files)
+func UnmarshalYamlFiles(rawConfig []byte) (map[string][]File, error) {
+	var (
+		fileByIndex = make(map[string][]File)
+		rootTags    map[string]yaml.Node
+	)
+
+	err := yaml.Unmarshal(rawConfig, &rootTags)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unmarshal url: %w", err)
 	}
-	return files.Files, nil
+
+	for tag, node := range rootTags {
+		switch {
+		case strings.Index(tag, TagFiles) == 0:
+			var files []File
+			err = node.Decode(&files)
+			if err != nil {
+				return nil, fmt.Errorf("unmarshal files config [%s]: %w", tag, err)
+			}
+			for _, file := range files {
+				err = ValidateFile(file)
+				if err != nil {
+					return nil, fmt.Errorf("validate config: files [tag: %s, path: %s]: %w", tag, file.Path, err)
+				}
+			}
+			fileByIndex[tag] = files
+		}
+	}
+	return fileByIndex, nil
 }
 
 func ValidateFile(file File) error {

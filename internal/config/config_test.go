@@ -1,66 +1,10 @@
 package config
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
-
-func Test_YamlRootNodesOrder(t *testing.T) {
-	t.Parallel()
-
-	const (
-		dirs  = "dirs"
-		files = "files"
-		cmd   = "cmd"
-	)
-
-	t.Run("success_get_order", func(t *testing.T) {
-		var (
-			in = []byte(fmt.Sprintf(`
-%s:
-  - "a/a"
-  - "ccc"
-%s:
-  - path: a/x
-    template: >
-      Hello {{.}}
-
-      You are doing great. Keep learning.
-      Do not stop {{.}}
-  - path: a/b
-    template: xxx
-%s:
-  - pwd
-  - ls -al
-`, dirs, files, cmd))
-		)
-		order, err := YamlRootNodesOrder(in)
-		assert.NoError(t, err)
-		assert.Len(t, order, 3)
-		assert.Equal(t, order[dirs], 0)
-		assert.Equal(t, order[files], 1)
-		assert.Equal(t, order[cmd], 2)
-	})
-	t.Run("success_with_empty_node", func(t *testing.T) {
-		var (
-			in = []byte(fmt.Sprintf(`%s:`, dirs))
-		)
-		order, err := YamlRootNodesOrder(in)
-		assert.NoError(t, err)
-		assert.Len(t, order, 1)
-		assert.Equal(t, order[dirs], 0)
-	})
-	t.Run("success_and_empty_order_when_node_without_colon_sign", func(t *testing.T) {
-		var (
-			in = []byte(fmt.Sprintf(`%s`, dirs))
-		)
-		order, err := YamlRootNodesOrder(in)
-		assert.NoError(t, err)
-		assert.Len(t, order, 0)
-	})
-}
 
 func Test_preprocessRawConfigData(t *testing.T) {
 	t.Parallel()
@@ -189,4 +133,103 @@ func Test_(t *testing.T) {
 		res := notNilValues(tc.in...)
 		assert.Equalf(t, tc.exp, res, "case_%d", i)
 	}
+}
+
+func Test_UnmarshalYamlConfig(t *testing.T) {
+	const (
+		in = `
+cmd:
+  - pwd
+
+dirs:
+  - x/api/{{.vars.service_name}}/v1
+  - s
+
+dirs2:
+  - y/api
+
+cmd1:
+  - ls -a
+
+files:
+  - path: x/DDDDDD
+    tmpl_skip: true
+    data: |
+      ENV GOPROXY "{{.vars.GOPROXY}} ,proxy.golang.org,direct"
+
+cmd2:
+  - ls -lS
+  - whoami
+`
+	)
+
+	conf, err := UnmarshalYamlConfig([]byte(in))
+	a := assert.New(t)
+	a.NoError(err)
+	a.Len(conf.Files, 1)
+	a.Len(conf.Dirs, 2)
+	a.Len(conf.Cmd, 3)
+
+	assertCmdFn := func(tag string, line int32, expected ...string) {
+		var (
+			section Section[[]string]
+			found   bool
+		)
+
+		for _, cmd := range conf.Cmd {
+			if cmd.Tag == tag {
+				section = cmd
+				found = true
+				break
+			}
+		}
+		a.True(found)
+		a.NotNil(section)
+		a.Equal(line, section.Line)
+		a.Contains(section.Tag, TagCmd)
+		commands := section.Val
+		a.Equal(expected, commands)
+
+	}
+
+	assertCmdFn("cmd", 3, "pwd")
+	assertCmdFn("cmd1", 13, "ls -a")
+	assertCmdFn("cmd2", 22, "ls -lS", "whoami")
+
+	assertDirsFn := func(tag string, line int32, expected ...string) {
+		var (
+			section Section[[]string]
+			found   bool
+		)
+
+		for _, d := range conf.Dirs {
+			if d.Tag == tag {
+				section = d
+				found = true
+				break
+			}
+		}
+		a.True(found)
+		a.NotNil(section)
+		a.Equal(line, section.Line)
+		a.Contains(section.Tag, TagDirs)
+		d := section.Val
+		a.Equal(expected, d)
+
+	}
+
+	assertDirsFn("dirs", 6, "x/api/{{.vars.service_name}}/v1", "s")
+	assertDirsFn("dirs2", 10, "y/api")
+
+	files := conf.Files[0]
+	a.Equal(int32(16), files.Line)
+	a.Equal(TagFiles, files.Tag)
+	a.Len(files.Val, 1)
+
+	file := files.Val[0]
+	a.Equal("x/DDDDDD", file.Path)
+	a.NotNil(file.Data)
+	a.Equal("ENV GOPROXY \"{{.vars.GOPROXY}} ,proxy.golang.org,direct\"\n", *file.Data)
+	a.True(file.ExecTmplSkip)
+
 }
