@@ -8,7 +8,11 @@ tools: ## Run tools (vet, gofmt, goimports, tidy, etc.)
 
 .PHONT: test
 test: ## Run all tests in project with coverage
-	@go test ./... -cover  -coverprofile cover.out  && go tool cover -func cover.out
+	@go test ./... -cover
+
+.PHONT: build
+build: ## Build binaries with `-ldflags` (Version)
+	go build -ldflags "-s -w -X 'github.com/kozmod/progen/internal.Version=$(shell ./version.sh get)'" -o progen .
 
 .PHONY: list
 list: ## List all make targets

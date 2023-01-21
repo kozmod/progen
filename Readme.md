@@ -16,7 +16,7 @@ go install github.com/kozmod/progen@latest
 ### Build from source
 
 ```console
-go build -o progen .
+make build
 ```
 
 ___
@@ -28,38 +28,39 @@ ___
 
 ### Args
 
-| Name |  Type  |                            Description                             |
-|:-----|:------:|:------------------------------------------------------------------:|
-| f    | string |                        path to config file                         |
-| v    |  bool  |                           verbose output                           |
-| dr   |  bool  | `dry run` mode <br/>(to verbose output should be combine with`-v`) |
-| help |  bool  |                             show flags                             |
+| Name    |  Type  |                            Description                             |
+|:--------|:------:|:------------------------------------------------------------------:|
+| f       | string |                        path to config file                         |
+| v       |  bool  |                           verbose output                           |
+| dr      |  bool  | `dry run` mode <br/>(to verbose output should be combine with`-v`) |
+| version |  bool  |                           print version                            |
+| help    |  bool  |                             show flags                             |
 
 ___
 
 ### Actions
 
-| Key                               |       Type        |   Optional    |                           Description                           |
-|:----------------------------------|:-----------------:|:-------------:|:---------------------------------------------------------------:|
-|                                   |                   |               |                                                                 |
-| http                              |                   |       ✅       |                    http client configuration                    |
-| http.debug                        |       bool        |       ✅       |                    http client `DEBUG` mode                     |
-| http.base_url                     |      string       |       ✅       |                     http client base `URL`                      |
-| http.headers                      | map[string]string |       ✅       |               http client base request `Headers`                |
-|                                   |                   |               |                                                                 |
-| dirs`<unique_suffix>`<sup>1</sup> |     []string      |       ✅       |                  list of directories to create                  |
-|                                   |                   |               |                                                                 |
-| files`<unique_suffix>`            |                   |       ✅       |                  list file's `path` and `data`                  |
-| files.path                        |      string       |       ❌       |                        save file `path`                         |
-| files.tmpl_skip                   |       bool        |       ✅       | flag to skip processing file data as template(except of `data`) |
-| files.local                       |      string       | ✳<sup>2</sup> |                     local file path to copy                     |
-| files.data                        |      string       |       ✳       |                        save file `data`                         |
-|                                   |                   |               |                                                                 |
-| files.get                         |                   |       ✳       |      struct describe `GET` request for getting file's data      |
-| files.get.url                     |      string       |       ❌       |                          request `URL`                          |
-| files.get.headers                 | map[string]string |       ✅       |                         request headers                         |
-|                                   |                   |               |                                                                 |
-| cmd`<unique_suffix>`              |      []slice      |       ✅       |                   list of command to execute                    |
+| Key                                |       Type        |    Optional    |                           Description                           |
+|:-----------------------------------|:-----------------:|:--------------:|:---------------------------------------------------------------:|
+|                                    |                   |                |                                                                 |
+| http                               |                   |       ✅        |                    http client configuration                    |
+| http.debug                         |       bool        |       ✅        |                    http client `DEBUG` mode                     |
+| http.base_url                      |      string       |       ✅        |                     http client base `URL`                      |
+| http.headers                       | map[string]string |       ✅        |               http client base request `Headers`                |
+|                                    |                   |                |                                                                 |
+| dirs`<unique_suffix>` <sup>1</sup> |     []string      |       ✅        |                  list of directories to create                  |
+|                                    |                   |                |                                                                 |
+| files`<unique_suffix>`             |                   |       ✅        |                  list file's `path` and `data`                  |
+| files.path                         |      string       |       ❌        |                        save file `path`                         |
+| files.tmpl_skip                    |       bool        |       ✅        | flag to skip processing file data as template(except of `data`) |
+| files.local                        |      string       | ✳ <sup>2</sup> |                     local file path to copy                     |
+| files.data                         |      string       |       ✳        |                        save file `data`                         |
+|                                    |                   |                |                                                                 |
+| files.get                          |                   |       ✳        |      struct describe `GET` request for getting file's data      |
+| files.get.url                      |      string       |       ❌        |                          request `URL`                          |
+| files.get.headers                  | map[string]string |       ✅        |                         request headers                         |
+|                                    |                   |                |                                                                 |
+| cmd`<unique_suffix>`               |      []slice      |       ✅        |                   list of command to execute                    |
 
 1. all action execute on declaration order. Base actions (`dir`, `files`,`cmd`) could be configured
    with `<unique_suffix>` to separate action execution.
@@ -99,7 +100,7 @@ http:
   debug: false
   base_url: https://gitlab.repo_2.com/api/v4/projects/5/repository/files/
   headers:
-    PRIVATE-TOKEN: { { .vars.TOKEN } }
+    PRIVATE-TOKEN: {{ .vars.TOKEN }}
 
 # list directories to create 👇🏻
 dirs:
