@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/kozmod/progen/internal"
 	"log"
 	"os"
 	"time"
@@ -32,10 +33,19 @@ var (
 		"dr",
 		false,
 		"dry run mode (to verbose output should be combine with`-v`)")
+	flagVersion = flag.Bool(
+		"version",
+		false,
+		"output version")
 )
 
 func main() {
 	flag.Parse()
+
+	if flagVersion != nil && *flagVersion {
+		fmt.Println(internal.GetVersion())
+		return
+	}
 
 	logger, err := factory.NewLogger(*flagVerbose)
 	if err != nil {
