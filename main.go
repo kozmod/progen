@@ -1,53 +1,29 @@
 package main
 
 import (
-	"flag"
 	"fmt"
-	"github.com/kozmod/progen/internal"
 	"log"
 	"os"
 	"time"
 
 	"golang.org/x/sync/errgroup"
 
+	"github.com/kozmod/progen/internal"
 	"github.com/kozmod/progen/internal/config"
-	"github.com/kozmod/progen/internal/entity"
 	"github.com/kozmod/progen/internal/factory"
-)
-
-//goland:noinspection SpellCheckingInspection
-const (
-	defaultConfigFilePath = "progen.yml"
-)
-
-var (
-	flagConfigPath = flag.String(
-		"f",
-		entity.Empty,
-		fmt.Sprintf("configuration file path (default file: %s)", defaultConfigFilePath))
-	flagVerbose = flag.Bool(
-		"v",
-		false,
-		"verbose output")
-	flagDryRun = flag.Bool(
-		"dr",
-		false,
-		"dry run mode (to verbose output should be combine with`-v`)")
-	flagVersion = flag.Bool(
-		"version",
-		false,
-		"output version")
+	"github.com/kozmod/progen/internal/flag"
 )
 
 func main() {
-	flag.Parse()
 
-	if flagVersion != nil && *flagVersion {
+	flags := flag.ParseFlags()
+
+	if flags.Version {
 		fmt.Println(internal.GetVersion())
 		return
 	}
 
-	logger, err := factory.NewLogger(*flagVerbose)
+	logger, err := factory.NewLogger(flags.Verbose)
 	if err != nil {
 		log.Fatalf("create logger: %v", err)
 	}
@@ -59,17 +35,14 @@ func main() {
 		logger.Infof("execution time: %v", time.Since(start))
 	}(time.Now())
 
-	if *flagConfigPath == entity.Empty {
-		*flagConfigPath = defaultConfigFilePath
-		logger.Infof("default configuration is used: %s", defaultConfigFilePath)
-	}
+	logger.Infof("configuration file: %s", flags.ConfigPath)
 
-	data, err := os.ReadFile(*flagConfigPath)
+	data, err := os.ReadFile(flags.ConfigPath)
 	if err != nil {
 		logger.Fatalf("read config: %v", err)
 	}
 
-	rawConfig, templateData, err := config.PreprocessRawConfigData(*flagConfigPath, data)
+	rawConfig, templateData, err := config.PreprocessRawConfigData(flags.ConfigPath, data)
 	if err != nil {
 		logger.Fatalf("preprocess raw config: %v", err)
 	}
@@ -108,7 +81,7 @@ func main() {
 		logger.Fatalf("prepare config files section: %v", err)
 	}
 
-	procChain, err := factory.NewProcChain(conf, templateData, logger, *flagDryRun)
+	procChain, err := factory.NewProcChain(conf, templateData, logger, flags.DryRun)
 	if err != nil {
 		logger.Fatalf("create processors chain: %v", err)
 	}
