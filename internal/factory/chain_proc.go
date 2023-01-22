@@ -66,10 +66,13 @@ func NewProcChain(
 	for i, generator := range generators {
 		p, err := generator.procFn()
 		if err != nil {
-			return nil, fmt.Errorf("configure proc for [%d]: %w", i, err)
+			return nil, fmt.Errorf("configure proc [%d]: %w", i, err)
+		}
+		if p == nil {
+			continue
 		}
 		procs = append(procs, p)
 	}
 
-	return proc.NewProcChane(procs), nil
+	return proc.NewProcChain(procs), nil
 }

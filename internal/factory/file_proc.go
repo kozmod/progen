@@ -19,6 +19,7 @@ func NewFileProc(
 	dryRun bool,
 ) (proc.Proc, error) {
 	if len(files) == 0 {
+		logger.Infof("`files` section is empty")
 		return nil, nil
 	}
 
