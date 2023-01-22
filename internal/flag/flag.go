@@ -5,8 +5,9 @@ import (
 	"fmt"
 )
 
+//goland:noinspection SpellCheckingInspection
 const (
-	defaultConfigFilePath = "tmp/progen_test.yml"
+	defaultConfigFilePath = "progen.yml"
 )
 
 type Flags struct {
