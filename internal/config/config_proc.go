@@ -6,14 +6,18 @@ import (
 	"text/template"
 
 	"gopkg.in/yaml.v3"
+
+	"github.com/kozmod/progen/internal/entity"
 )
 
-func PreprocessRawConfigData(name string, data []byte) ([]byte, map[string]any, error) {
+func PreprocessRawConfigData(name string, data []byte, templateVars map[string]any) ([]byte, map[string]any, error) {
 	var conf map[string]any
 	err := yaml.Unmarshal(data, &conf)
 	if err != nil {
 		return nil, nil, fmt.Errorf("parse config to map: %w", err)
 	}
+
+	conf = entity.MergeKeys(conf, templateVars)
 
 	temp, err := template.New(name).Parse(string(data))
 	if err != nil {

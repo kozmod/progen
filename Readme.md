@@ -1,21 +1,23 @@
 # ProGen
-
 ![test](https://github.com/kozmod/progen/actions/workflows/test.yml/badge.svg)
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/kozmod/progen)
 ![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/kozmod/progen)
+![GitHub release date](https://img.shields.io/github/release-date/kozmod/progen)
+![GitHub last commit](https://img.shields.io/github/last-commit/kozmod/progen)
+![GitHub MIT license](https://img.shields.io/github/license/kozmod/progen)
 
 Simple projects generator.
 ___
 
 ### Installation
 
-```console
+```shell
 go install github.com/kozmod/progen@latest
 ```
 
 ### Build from source
 
-```console
+```shell
 make build
 ```
 
@@ -28,49 +30,50 @@ ___
 
 ### Args
 
-| Name    |  Type  |                            Description                             |
-|:--------|:------:|:------------------------------------------------------------------:|
-| f       | string |                        path to config file                         |
-| v       |  bool  |                           verbose output                           |
-| dr      |  bool  | `dry run` mode <br/>(to verbose output should be combine with`-v`) |
-| version |  bool  |                           print version                            |
-| help    |  bool  |                             show flags                             |
+| Name       |  Type  | Description                                                                                  |
+|:-----------|:------:|:---------------------------------------------------------------------------------------------|
+| `-f`       | string | path to config file                                                                          |
+| `-v`       |  bool  | verbose output                                                                               |
+| `-dr`      |  bool  | `dry run` mode <br/>(to verbose output should be combine with`-v`)                           |
+| `-tvar`    |  bool  | [text/template](https://pkg.go.dev/text/template) variables (override config variables tree) |
+| `-version` |  bool  | print version                                                                                |
+| `-help`    |  bool  | show flags                                                                                   |
 
 ___
 
 ### Actions
 
-| Key                               |       Type        |    Optional    |                           Description                           |
-|:----------------------------------|:-----------------:|:--------------:|:---------------------------------------------------------------:|
-|                                   |                   |                |                                                                 |
-| http                              |                   |       ✅        |                    http client configuration                    |
-| http.debug                        |       bool        |       ✅        |                    http client `DEBUG` mode                     |
-| http.base_url                     |      string       |       ✅        |                     http client base `URL`                      |
-| http.headers                      | map[string]string |       ✅        |               http client base request `Headers`                |
-|                                   |                   |                |                                                                 |
-| dirs`<unique_suffix>`<sup>1</sup> |     []string      |       ✅        |                  list of directories to create                  |
-|                                   |                   |                |                                                                 |
-| files`<unique_suffix>`            |                   |       ✅        |                  list file's `path` and `data`                  |
-| files.path                        |      string       |       ❌        |                        save file `path`                         |
-| files.tmpl_skip                   |       bool        |       ✅        | flag to skip processing file data as template(except of `data`) |
-| files.local                       |      string       | ✳️<sup>2</sup> |                     local file path to copy                     |
-| files.data                        |      string       |       ✳️       |                        save file `data`                         |
-|                                   |                   |                |                                                                 |
-| files.get                         |                   |       ✳️       |      struct describe `GET` request for getting file's data      |
-| files.get.url                     |      string       |       ❌        |                          request `URL`                          |
-| files.get.headers                 | map[string]string |       ✅        |                         request headers                         |
-|                                   |                   |                |                                                                 |
-| cmd`<unique_suffix>`              |      []slice      |       ✅        |                   list of command to execute                    |
+| Key                               |       Type        | Optional        | Description                                                     |
+|:----------------------------------|:-----------------:|:----------------|:----------------------------------------------------------------|
+|                                   |                   |                 |                                                                 |
+| http                              |                   | ✅               | http client configuration                                       |
+| http.debug                        |       bool        | ✅               | http client `DEBUG` mode                                        |
+| http.base_url                     |      string       | ✅               | http client base `URL`                                          |
+| http.headers                      | map[string]string | ✅               | http client base request `Headers`                              |
+|                                   |                   |                 |                                                                 |
+| dirs`<unique_suffix>`<sup>1</sup> |     []string      | ✅               | list of directories to create                                   |
+|                                   |                   |                 |                                                                 |
+| files`<unique_suffix>`            |                   | ✅               | list file's `path` and `data`                                   |
+| files.path                        |      string       | ❌               | save file `path`                                                |
+| files.tmpl_skip                   |       bool        | ✅               | flag to skip processing file data as template(except of `data`) |
+| files.local                       |      string       | `❕`<sup>2</sup> | local file path to copy                                         |
+| files.data                        |      string       | `❕`             | save file `data`                                                |
+|                                   |                   |                 |                                                                 |
+| files.get                         |                   | `❕`             | struct describe `GET` request for getting file's data           |
+| files.get.url                     |      string       | ❌               | request `URL`                                                   |
+| files.get.headers                 | map[string]string | ✅               | request headers                                                 |
+|                                   |                   |                 |                                                                 |
+| cmd`<unique_suffix>`              |      []slice      | ✅               | list of command to execute                                      |
 
 1. all action execute on declaration order. Base actions (`dir`, `files`,`cmd`) could be configured
    with `<unique_suffix>` to separate action execution.
-2. ✳️ only one must be specified in parent section
+2. `❕` only one must be specified in parent section
 
 ___
 
-### Usage
+## Usage
 
-#### Generate
+### Generate
 
 `prohen` execute commands and generate files and directories based on configuration file
 
@@ -92,6 +95,7 @@ cmd:
   - touch second_file.txt
   - tree
 ```
+
 ```console
 % progen -v
 2023-01-22 12:44:55	INFO	dir created: x/y
@@ -106,21 +110,12 @@ out:
     ├── some_file.txt
     └── y
 ```
-#### Text files
-Instead of specifying a config file, you can pass a single `progen.yml` in the pipe the file in via `STDIN`. 
-To pipe a `progen.yml` from `STDIN`:
-```console
-progen - < progen.yml
-```
-or
-```console
-cat progen.yml | progen -
-```
-If you use `STDIN`  the system ignores any `-f` option.
 
-#### Execution order
+### Execution order
+
 All actions execute in declared order. Base actions (`dir`, `files`,`cmd`) could be configured
 with `<unique_suffix>` to separate action execution.
+
 ```yaml
 ## progen.yml
 
@@ -133,6 +128,7 @@ dirs2:
 cmd2:
   - chmod -R 777 api
 ```
+
 ```
 % progen -v
 2023-01-22 13:38:52	INFO	dir created: api/some_project/v1
@@ -141,12 +137,14 @@ cmd2:
 2023-01-22 13:38:52	INFO	execute: chmod -R 777 api
 ```
 
-#### Templates
+### Templates
 
 Configuration preprocessing uses [text/template](https://pkg.go.dev/text/template) of golang's stdlib.
-Using templates could be useful to avoiding duplication in configuration file. 
-All `text/template` variables must be declared as comments and can be used only to configure data of configuration file (all ones skipping for `file.data` section).
-Configuration's `yaml` tag tree also use as `text/template` variables dictionary and can be use for avoiding duplication in configuration file 
+Using templates could be useful to avoiding duplication in configuration file.
+All `text/template` variables must be declared as comments and can be used only to configure data of configuration
+file (all ones skipping for `file.data` section).
+Configuration's `yaml` tag tree also use as `text/template` variables dictionary and can be use for avoiding duplication
+in configuration file
 and files contents (`files` section).
 
 ```yaml
@@ -160,8 +158,8 @@ vars:
   file_path: some/file/path
 
 dirs:
-  - api/{{$project_name}}/v1 # using `text/template` variables
-  - internal/{{.vars.file_path}} # using `vars` section
+  - api/{{$project_name}}/v1 # used from `text/template` variables
+  - internal/{{.vars.file_path}} # used from `vars` section
   - pkg/{{printf `%s-%s` $project_name `data`}}
 
 files:
@@ -178,6 +176,7 @@ cmd:
   - cat pkg/{{printf `%s-%s` $project_name `data`}}/some_file.txt
   - tree
 ```
+
 ```console
 % progen -v
 2023-01-22 13:03:58	INFO	dir created: api/SOME_PROJECT/v1
@@ -209,8 +208,60 @@ out:
 │       └── some_file.txt
 └── progen.yml
 ```
-#### Http Client
+
+any part of template variable tree can be override using `-tvar` flag
+
+```yaml
+## `text/template` variables declaration 👇
+# {{$project_name := "SOME_PROJECT"}}
+
+## unmapped section (not `dirs`, `files`, `cmd`, `http`) can be use as template variables
+vars:
+  file_path: some/file/path
+  file_path_2: some/file/path_2
+
+dirs:
+  - api/{{$project_name}}/v1 # used from `text/template` variables
+  - internal/{{.vars.file_path}} # used from `vars` section
+  - internal/{{.vars.file_path_2}} # used overridden `vars` which set through args (-tvar=.vars.file_path 2=override path)
+```
+
+```console
+% progen -v -dr -tvar=.vars.file_path_2=overrided_path
+2023-01-22 22:25:47	INFO	configuration file: progen_test_vars.yml
+2023-01-22 22:25:47	INFO	dir created: api/SOME_PROJECT/v1
+2023-01-22 22:25:47	INFO	dir created: internal/some/file/path
+2023-01-22 22:25:47	INFO	dir created: internal/overrided_path
+```
+
+### Text files
+
+Instead of specifying a config file, you can pass a single `progen.yml` in the pipe the file in via `STDIN`.
+To pipe a `progen.yml` from `STDIN`:
+
+```console
+progen - < progen.yml
+```
+
+or
+
+```console
+cat progen.yml | progen -
+```
+
+If you use `STDIN`  the system ignores any `-f` option.
+
+**Example** (get `progen.yml` from gitlab repository with replacing [text/template](https://pkg.go.dev/text/template)
+variables using `-tvar` flag):
+
+```console
+curl -H PRIVATE-TOKEN:token https://gitlab.some.com/api/v4/projects/13/repository/files/shared%2Fteplates%2Fsimple%2Fprogen.yml/raw\?ref\=feature/templates | progen -v -dr -tvar=.vars.GOPROXY=some_proxy -
+```
+
+### Http Client
+
 HTTP client configuration
+
 ```yaml
 ## progen.yml
 
@@ -220,10 +271,12 @@ http:
   headers:
     PRIVATE-TOKEN: glpat-SOME_TOKEN
 ```
-#### Files
-File's content can be declared in configuration file (`files.data` tag) or 
-can be received from local file  (`files.local`) or remote (`files.get`). 
-Any file's content uses as [text/template](https://pkg.go.dev/text/template) 
+
+### Files
+
+File's content can be declared in configuration file (`files.data` tag) or
+can be received from local file  (`files.local`) or remote (`files.get`).
+Any file's content uses as [text/template](https://pkg.go.dev/text/template)
 and configuration's `yaml` tag tree applies as template variables.
 
 ```yaml
@@ -235,42 +288,43 @@ http:
   base_url: https://gitlab.repo_2.com/api/v4/projects/5/repository/files/
   headers:
     PRIVATE-TOKEN: glpat-SOME_TOKEN
-    
+
 # {{$project_name := "SOME_PROJECT"}}
 # {{$gitlab_suffix := "/raw?ref=some_branch"}}
 
 files:
-   - path: files/Readme.md
-      # skip file processing as template
-     tmpl_skip: true
-     data: |
-        Project name: {{$project_name}}
+  - path: files/Readme.md
+    # skip file processing as template
+    tmpl_skip: true
+    data: |
+      Project name: {{$project_name}}
 
-   - path: files/.gitignore
-      # copy file from location
-     local: some/dir/.gitignore.gotmpl
+  - path: files/.gitignore
+    # copy file from location
+    local: some/dir/.gitignore.gotmpl
 
-   - path: files/.editorconfig
-     get:
-        url: "{{printf `%s%s` `.editorconfig` $gitlab_suffix}}"
+  - path: files/.editorconfig
+    get:
+      url: "{{printf `%s%s` `.editorconfig` $gitlab_suffix}}"
 
-   - path: files/.gitlab-ci.yml
-      # GET file from remote storage
-     get:
-        # reset URL which set in http client configuration (http.base_url)
-        url: "https://some_file_server.com/files/.gitlab-ci.yml"
-        # reset headers of common http client configuration (http.headers)
-        headers:
-           some_header: header
+  - path: files/.gitlab-ci.yml
+    # GET file from remote storage
+    get:
+      # reset URL which set in http client configuration (http.base_url)
+      url: "https://some_file_server.com/files/.gitlab-ci.yml"
+      # reset headers of common http client configuration (http.headers)
+      headers:
+        some_header: header
 
-   - path: files/Dockerfile
-      # process file as template (apply tags which declared in this config)
-     tmpl_skip: false
-      # GET file from remote storage (using common http client config)
-     get:
-        # reuse `base` URL of common http client config (http.base_url)
-        url: Dockerfile/raw?ref=feature/project_templates"
+  - path: files/Dockerfile
+    # process file as template (apply tags which declared in this config)
+    tmpl_skip: false
+    # GET file from remote storage (using common http client config)
+    get:
+      # reuse `base` URL of common http client config (http.base_url)
+      url: Dockerfile/raw?ref=feature/project_templates"
 ```
+
 ```console
 % progen -v
 2023-01-22 15:47:45	INFO	file created [template: false]: files/Readme.md

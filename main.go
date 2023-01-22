@@ -41,7 +41,10 @@ func main() {
 		logger.Fatalf("read config: %v", err)
 	}
 
-	rawConfig, templateData, err := config.PreprocessRawConfigData(flags.ConfigPath, data)
+	rawConfig, templateData, err := config.PreprocessRawConfigData(
+		flags.ConfigPath,
+		data,
+		flags.TemplateVars.Vars)
 	if err != nil {
 		logger.Fatalf("preprocess raw config: %v", err)
 	}

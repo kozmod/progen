@@ -1,35 +1,14 @@
 package entity
 
-import "strings"
-
 const (
-	Space = " "
-	Empty = ""
-	Dash  = "-"
+	Space      = " "
+	Empty      = ""
+	Dash       = "-"
+	Dot        = "."
+	EqualsSign = "="
 
 	NewLine = '\n'
 )
-
-type Flags struct {
-	ConfigPath string
-	Verbose    bool
-	DryRun     bool
-	Version    bool
-	ReadStdin  bool
-}
-
-func (f *Flags) FileLocationMessage() string {
-	switch {
-	case f == nil:
-		return Empty
-	case f.ReadStdin:
-		return "stdin"
-	case strings.TrimSpace(f.ConfigPath) != Empty:
-		return f.ConfigPath
-	default:
-		return Empty
-	}
-}
 
 type FileProducer interface {
 	Get() (*DataFile, error)
