@@ -53,10 +53,10 @@ ___
 | files`<unique_suffix>`            |                   |       ✅        |                  list file's `path` and `data`                  |
 | files.path                        |      string       |       ❌        |                        save file `path`                         |
 | files.tmpl_skip                   |       bool        |       ✅        | flag to skip processing file data as template(except of `data`) |
-| files.local                       |      string       | 🔹<sup>2</sup> |                     local file path to copy                     |
-| files.data                        |      string       |       🔹       |                        save file `data`                         |
+| files.local                       |      string       | ✳️<sup>2</sup> |                     local file path to copy                     |
+| files.data                        |      string       |       ✳️       |                        save file `data`                         |
 |                                   |                   |                |                                                                 |
-| files.get                         |                   |       🔹       |      struct describe `GET` request for getting file's data      |
+| files.get                         |                   |       ✳️       |      struct describe `GET` request for getting file's data      |
 | files.get.url                     |      string       |       ❌        |                          request `URL`                          |
 | files.get.headers                 | map[string]string |       ✅        |                         request headers                         |
 |                                   |                   |                |                                                                 |
@@ -64,122 +64,208 @@ ___
 
 1. all action execute on declaration order. Base actions (`dir`, `files`,`cmd`) could be configured
    with `<unique_suffix>` to separate action execution.
-2. 🔹 only one must be specified in parent section
+2. ✳️ only one must be specified in parent section
 
 ___
 
 ### Usage
 
+#### Generate
+
+`prohen` execute commands and generate files and directories based on configuration file
+
 ```yaml
-## preprocessing of "raw" config use `text/template` of golang's stdlib
-## and can be used to avoid duplication
-## ❗️ `template variables` should be declared 
-##     as comments for success `yaml` parsing
-##     and only can be applied for current config
+## progen.yml
 
-## `template variables` declaration 👇🏻 
-# {{$gitlab_suffix := "/raw?ref=some_branch"}}
+# list directories to creation
+dirs:
+  - x/y
 
-## Example:
-## {{printf `%s%s` `.editorconfig` $gitlab_suffix}} ->  .editorconfig/raw?ref=some_branch
-## {{$gitlab_suffix}} -> /raw?ref=some_branch
+# list files to creation
+files:
+  - path: x/some_file.txt
+    data: |
+      some data
 
-## yaml tags witch not using as `action tags`  👇🏻
-## also can be use as `template variables` for current configuration 
-## and can be applied to file data got from source (`local`, `get` tags)
+# list commands to execution 
+cmd:
+  - touch second_file.txt
+  - tree
+```
+
+```console
+% progen -v
+2023-01-22 12:44:55	INFO	dir created: x/y
+2023-01-22 12:44:55	INFO	file created [template: false]: x/some_file.txt
+2023-01-22 12:44:55	INFO	execute: touch second_file.txt
+2023-01-22 12:44:55	INFO	execute: tree
+out:
+.
+├── progen.yml
+├── second_file.txt
+└── x
+    ├── some_file.txt
+    └── y
+```
+
+#### Execution order
+All actions execute in declared order. Base actions (`dir`, `files`,`cmd`) could be configured
+with `<unique_suffix>` to separate action execution.
+```yaml
+## progen.yml
+
+dirs1:
+  - api/some_project/v1
+cmd1:
+  - chmod -R 777 api
+dirs2:
+  - api/some_project_2/v1
+cmd2:
+  - chmod -R 777 api
+```
+```
+% progen -v
+2023-01-22 13:38:52	INFO	dir created: api/some_project/v1
+2023-01-22 13:38:52	INFO	execute: chmod -R 777 api
+2023-01-22 13:38:52	INFO	dir created: api/some_project_2/v1
+2023-01-22 13:38:52	INFO	execute: chmod -R 777 api
+```
+
+#### Templates
+
+Configuration preprocessing uses [text/template](https://pkg.go.dev/text/template) of golang's stdlib.
+Using templates could be useful to avoiding duplication in configuration file. 
+All `text/template` variables must be declared as comments and can be used only to configure data of configuration file (all ones skipping for `file.data` section).
+Configuration's `yaml` tag tree also use as `text/template` variables dictionary and can be use for avoiding duplication in configuration file 
+and files contents (`files` section).
+
+```yaml
+## progen.yml
+
+## `text/template` variables declaration 👇
+# {{$project_name := "SOME_PROJECT"}}
+
+## unmapped section (not `dirs`, `files`, `cmd`, `http`) can be use as template variables
 vars:
-  GOPROXY: https://127.0.0.1:8081
-  TOKEN: token
-  REPO_1: https://gitlab.repo_1.com/api/v4/projects/23/repository/files
-## Example:
-## {{.vars.GOPROXY}} -> https://127.0.0.1:8081
-## {{.vars.REPO_1}} -> https://gitlab.repo_1.com/api/v4/projects/23/repository/files
+  file_path: some/file/path
+
+dirs:
+  - api/{{$project_name}}/v1 # using `text/template` variables
+  - internal/{{.vars.file_path}} # using `vars` section
+  - pkg/{{printf `%s-%s` $project_name `data`}}
+
+files:
+  - path: internal/{{$project_name}}.txt
+    data: |
+      Project name:{{$project_name}}
+  - path: pkg/{{printf `%s-%s` $project_name `data`}}/some_file.txt
+    tmpl_skip: true
+    data: |
+      {{$project_name}}
+
+cmd:
+  - cat internal/{{$project_name}}.txt
+  - cat pkg/{{printf `%s-%s` $project_name `data`}}/some_file.txt
+  - tree
+```
+```console
+% progen -v
+2023-01-22 13:03:58	INFO	dir created: api/SOME_PROJECT/v1
+2023-01-22 13:03:58	INFO	dir created: internal/some/file/path
+2023-01-22 13:03:58	INFO	dir created: pkg/SOME_PROJECT-data
+2023-01-22 13:03:58	INFO	file created [template: true]: internal/SOME_PROJECT.txt
+2023-01-22 13:03:58	INFO	file created [template: false]: pkg/SOME_PROJECT-data/some_file.txt
+2023-01-22 13:03:58	INFO	execute: cat internal/SOME_PROJECT.txt
+out:
+Project name:SOME_PROJECT
+
+2023-01-22 13:03:58	INFO	execute: cat pkg/SOME_PROJECT-data/some_file.txt
+out:
+{{$project_name}}
+
+2023-01-22 13:03:58	INFO	execute: tree
+out:
+.
+├── api
+│   └── SOME_PROJECT
+│       └── v1
+├── internal
+│   ├── SOME_PROJECT.txt
+│   └── some
+│       └── file
+│           └── path
+├── pkg
+│   └── SOME_PROJECT-data
+│       └── some_file.txt
+└── progen.yml
+```
+#### Http Client
+HTTP client configuration
+```yaml
+## progen.yml
+
+http:
+  debug: false
+  base_url: https://gitlab.repo_2.com/api/v4/projects/5/repository/files/
+  headers:
+    PRIVATE-TOKEN: glpat-SOME_TOKEN
+```
+#### Files
+File's content can be declared in configuration file (`files.data` tag) or 
+can be received from local file  (`files.local`) or remote (`files.get`). 
+Any file's content uses as [text/template](https://pkg.go.dev/text/template) 
+and configuration's `yaml` tag tree applies as template variables.
+
+```yaml
+## progen.yml
 
 # common http client configuration  
 http:
   debug: false
   base_url: https://gitlab.repo_2.com/api/v4/projects/5/repository/files/
   headers:
-    PRIVATE-TOKEN: {{ .vars.TOKEN }}
+    PRIVATE-TOKEN: glpat-SOME_TOKEN
+    
+# {{$project_name := "SOME_PROJECT"}}
+# {{$gitlab_suffix := "/raw?ref=some_branch"}}
 
-# list directories to create 👇🏻
-dirs:
-  - api
-  - internal/client
-  - pkg
-
-# list files to create 👇🏻
 files:
-  - path: .editorconfig
-    get:
-      url: "{{printf `%s%s` `.editorconfig` $gitlab_suffix}}"
+   - path: files/Readme.md
+      # skip file processing as template
+     tmpl_skip: true
+     data: |
+        Project name: {{$project_name}}
 
-  - path: .gitlab-ci.yml
-    # GET file from remote storage
-    get:
-      # reset url of common http client configuration (http.base_url)
-      url: "https://some_file_server.com/files/.gitlab-ci.yml"
-      # reset headers of common http client configuration (http.headers)
-      headers:
-        some_header: header
+   - path: files/.gitignore
+      # copy file from location
+     local: some/dir/.gitignore.gotmpl
 
-  - path: Dockerfile
-    # process file as template (apply tags which declared in this config)
-    tmpl_skip: false
-    # GET file from remote storage (using common http client config)
-    get:
-      # reuse `base` URL of common http client config (http.base_url)
-      url: Dockerfile/raw?ref=feature/project_templates"
+   - path: files/.editorconfig
+     get:
+        url: "{{printf `%s%s` `.editorconfig` $gitlab_suffix}}"
 
-  - path: .gitignore
-    # copy file from location
-    local: some/dir/.gitignore.gotmpl
+   - path: files/.gitlab-ci.yml
+      # GET file from remote storage
+     get:
+        # reset URL which set in http client configuration (http.base_url)
+        url: "https://some_file_server.com/files/.gitlab-ci.yml"
+        # reset headers of common http client configuration (http.headers)
+        headers:
+           some_header: header
 
-  - path: .env
-    # skip file processing as template
-    tmpl_skip: true
-    data: |
-      GOPROXY="{{.vars.GOPROXY}} ,proxy.golang.org,direct"
-
-# list commands to execute (with zero `<unique_suffix>`)👇🏻    
-cmd:
-  - pwd
-
-# list commands to execute (with `_2` `<unique_suffix>`) 👇🏻
-cmd_2:
-  - curl -H PRIVATE-TOKEN:{{.vars.TOKEN}} {{.vars.REPO_1}}/buf.gen.yaml/raw?ref=master -o buf.gen.yaml
+   - path: files/Dockerfile
+      # process file as template (apply tags which declared in this config)
+     tmpl_skip: false
+      # GET file from remote storage (using common http client config)
+     get:
+        # reuse `base` URL of common http client config (http.base_url)
+        url: Dockerfile/raw?ref=feature/project_templates"
 ```
-
-___
-
-### Generate
-
-`progen` use `progen.yaml` as default configuration file
-
 ```console
-progen -v
+% progen -v
+2023-01-22 15:47:45	INFO	file created [template: false]: files/Readme.md
+2023-01-22 15:47:45	INFO	file created [template: true]: files/.gitignore
+2023-01-22 15:47:45	INFO	file created [template: true]: files/.editorconfig
+2023-01-22 15:47:45	INFO	file created [template: true]: files/.gitlab-ci.yml
+2023-01-22 15:47:45	INFO	file created [template: true]: files/Dockerfile
 ```
-
-`-f` flag set custom configuration file
-
-```console
-progen -v -f conf.yml
-```
-
-generated files and directories
-
-```console
-.
-├── api
-├── progen.yml
-├── internal
-│   └── client
-├── pkg
-├── buf.gen.yaml
-├── .editorconfig 
-├── .env
-├── .gitignore
-├── .gitlab-ci.yml
-└── Dockerfile
-```
-
