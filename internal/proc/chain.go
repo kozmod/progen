@@ -10,7 +10,7 @@ type Chain struct {
 	processors []Proc
 }
 
-func NewProcChane(processors []Proc) *Chain {
+func NewProcChain(processors []Proc) *Chain {
 	return &Chain{
 		processors: processors,
 	}

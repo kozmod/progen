@@ -7,6 +7,7 @@ import (
 
 func NewMkdirProc(dirs []string, logger entity.Logger, dryRun bool) (proc.Proc, error) {
 	if len(dirs) == 0 {
+		logger.Infof("`dir` section is empty")
 		return nil, nil
 	}
 

@@ -11,6 +11,7 @@ import (
 //goland:noinspection SpellCheckingInspection
 func NewRunCommandProc(cmds []string, logger entity.Logger, dryRun bool) (proc.Proc, error) {
 	if len(cmds) == 0 {
+		logger.Infof("`cmd` section is empty")
 		return nil, nil
 	}
 
