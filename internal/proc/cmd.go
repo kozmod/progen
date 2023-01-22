@@ -30,9 +30,14 @@ func (p *CommandProc) Exec() error {
 		if err != nil {
 			return fmt.Errorf("run command: %w", err)
 		}
-		p.logger.Infof("execute:\ncmd: %s\nout: %s",
-			strings.Join(append([]string{command.Cmd}, command.Args...), entity.Space),
-			out.String())
+
+		p.logger.Infof(func() string {
+			info := fmt.Sprintf("execute: %s", strings.Join(append([]string{command.Cmd}, command.Args...), entity.Space))
+			if output := out.String(); strings.TrimSpace(output) != entity.Empty {
+				info += fmt.Sprintf("\nout:\n%s", output)
+			}
+			return info
+		}())
 	}
 	return nil
 }
