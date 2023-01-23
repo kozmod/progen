@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"log"
-	"os"
 	"time"
 
 	"golang.org/x/sync/errgroup"
@@ -35,9 +34,9 @@ func main() {
 		logger.Infof("execution time: %v", time.Since(start))
 	}(time.Now())
 
-	logger.Infof("configuration file: %s", flags.ConfigPath)
+	logger.Infof("configuration file: %s", flags.FileLocationMessage())
 
-	data, err := os.ReadFile(flags.ConfigPath)
+	data, err := config.NewConfigReader(flags).Read()
 	if err != nil {
 		logger.Fatalf("read config: %v", err)
 	}

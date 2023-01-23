@@ -3,6 +3,9 @@ package flag
 import (
 	"flag"
 	"fmt"
+	"strings"
+
+	"github.com/kozmod/progen/internal/entity"
 )
 
 //goland:noinspection SpellCheckingInspection
@@ -10,15 +13,8 @@ const (
 	defaultConfigFilePath = "progen.yml"
 )
 
-type Flags struct {
-	ConfigPath string
-	Verbose    bool
-	DryRun     bool
-	Version    bool
-}
-
-func ParseFlags() Flags {
-	var f Flags
+func ParseFlags() entity.Flags {
+	var f entity.Flags
 	flag.StringVar(
 		&f.ConfigPath,
 		"f",
@@ -40,5 +36,13 @@ func ParseFlags() Flags {
 		false,
 		"output version")
 	flag.Parse()
+
+	for _, arg := range flag.Args() {
+		if strings.TrimSpace(arg) == entity.Dash {
+			f.ReadStdin = true
+			break
+		}
+	}
+
 	return f
 }

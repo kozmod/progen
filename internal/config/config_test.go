@@ -1,6 +1,7 @@
 package config
 
 import (
+	"bytes"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -243,5 +244,43 @@ var:
 		_, err := UnmarshalYamlConfig([]byte(in))
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "config not contains executable actions")
+	})
+}
+
+func Test_Read(t *testing.T) {
+	t.Run("success_read_config_data", func(t *testing.T) {
+		const (
+			in = `
+dirs1:
+  - api/{{.vars.pn}}/v1
+cmd1:
+  - chmod -R 777 api
+dirs2:
+  - api/{{.vars2.pn}}/v1
+cmd2:
+  - chmod -R 777 api
+`
+		)
+
+		var stdin bytes.Buffer
+		stdin.Write([]byte(in))
+
+		reader := Reader{reader: &stdin}
+		b, err := reader.Read()
+		assert.NoError(t, err)
+		assert.Equal(t, in, string(b))
+	})
+	t.Run("success_read_empty_config", func(t *testing.T) {
+		const (
+			in = ``
+		)
+
+		var stdin bytes.Buffer
+		stdin.Write([]byte(in))
+
+		reader := Reader{reader: &stdin}
+		b, err := reader.Read()
+		assert.NoError(t, err)
+		assert.Equal(t, in, string(b))
 	})
 }
