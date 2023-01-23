@@ -92,7 +92,6 @@ cmd:
   - touch second_file.txt
   - tree
 ```
-
 ```console
 % progen -v
 2023-01-22 12:44:55	INFO	dir created: x/y
@@ -107,6 +106,17 @@ out:
     ├── some_file.txt
     └── y
 ```
+#### Text files
+Instead of specifying a config file, you can pass a single `progen.yml` in the pipe the file in via `STDIN`. 
+To pipe a `progen.yml` from `STDIN`:
+```console
+progen - < progen.yml
+```
+or
+```console
+cat progen.yml | progen -
+```
+If you use `STDIN`  the system ignores any `-f` option.
 
 #### Execution order
 All actions execute in declared order. Base actions (`dir`, `files`,`cmd`) could be configured
