@@ -112,6 +112,11 @@ func UnmarshalYamlConfig(rawConfig []byte) (Config, error) {
 			}
 		}
 	}
+
+	if files, dirs, cmd := len(conf.Files), len(conf.Dirs), len(conf.Cmd); files == 0 && dirs == 0 && cmd == 0 {
+		return conf, fmt.Errorf("validate config: config not contains executable actions [dirs: %d, files: %d, cms: %d]", dirs, files, cmd)
+	}
+
 	return conf, nil
 }
 
