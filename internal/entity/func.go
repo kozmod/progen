@@ -13,3 +13,22 @@ func Unique[T comparable](in []T) []T {
 	}
 	return out
 }
+
+func MergeKeys(dst, src map[string]any) map[string]any {
+	if dst == nil {
+		return src
+	}
+	for key, rightVal := range src {
+		if leftVal, present := dst[key]; present {
+			switch rightVal.(type) {
+			case map[string]any:
+				dst[key] = MergeKeys(leftVal.(map[string]any), rightVal.(map[string]any))
+			default:
+				dst[key] = rightVal
+			}
+		} else {
+			dst[key] = rightVal
+		}
+	}
+	return dst
+}

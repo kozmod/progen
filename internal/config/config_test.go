@@ -29,7 +29,7 @@ steps:
 `
 		)
 
-		rawConf, mapConf, err := PreprocessRawConfigData(name, []byte(in))
+		rawConf, mapConf, err := PreprocessRawConfigData(name, []byte(in), nil)
 		assert.NoError(t, err)
 		assert.Equal(t, expected, string(rawConf))
 		assert.NotEmpty(t, mapConf)
@@ -47,7 +47,7 @@ steps:
 `
 		)
 
-		rawConf, mapConf, err := PreprocessRawConfigData(name, []byte(in))
+		rawConf, mapConf, err := PreprocessRawConfigData(name, []byte(in), nil)
 		assert.NoError(t, err)
 		assert.Equal(t, expected, string(rawConf))
 		assert.NotEmpty(t, mapConf)

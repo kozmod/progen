@@ -7,6 +7,8 @@ import (
 	"io"
 	"os"
 
+	"github.com/kozmod/progen/internal/flag"
+
 	"github.com/kozmod/progen/internal/entity"
 )
 
@@ -15,7 +17,7 @@ type Reader struct {
 	path   string
 }
 
-func NewConfigReader(f entity.Flags) *Reader {
+func NewConfigReader(f flag.Flags) *Reader {
 	if f.ReadStdin {
 		return &Reader{
 			reader: os.Stdin,
