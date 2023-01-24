@@ -1,4 +1,5 @@
 # ProGen
+
 ![test](https://github.com/kozmod/progen/actions/workflows/test.yml/badge.svg)
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/kozmod/progen)
 ![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/kozmod/progen)
@@ -20,7 +21,6 @@ go install github.com/kozmod/progen@latest
 ```shell
 make build
 ```
-
 ___
 
 ### About
@@ -35,6 +35,7 @@ ___
 | `-f`       | string | path to config file                                                                          |
 | `-v`       |  bool  | verbose output                                                                               |
 | `-dr`      |  bool  | `dry run` mode <br/>(to verbose output should be combine with`-v`)                           |
+| `-awd`     |  bool  | application working directory                                                                |
 | `-tvar`    |  bool  | [text/template](https://pkg.go.dev/text/template) variables (override config variables tree) |
 | `-version` |  bool  | print version                                                                                |
 | `-help`    |  bool  | show flags                                                                                   |
