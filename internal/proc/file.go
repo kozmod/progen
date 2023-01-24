@@ -135,10 +135,8 @@ func (p *LocalProducer) Get() (*entity.DataFile, error) {
 		return nil, fmt.Errorf("read local: %w", err)
 	}
 	return &entity.DataFile{
-		Name:     p.file.Name,
-		Path:     p.file.Path,
+		Template: p.file.Template,
 		Data:     data,
-		ExecTmpl: p.file.ExecTmpl,
 	}, nil
 }
 
@@ -159,7 +157,9 @@ func (p *RemoteProducer) Get() (*entity.DataFile, error) {
 		url = p.file.URL
 	)
 
-	rq := p.client.R().SetHeaders(p.file.Headers)
+	rq := p.client.R().
+		SetHeaders(p.file.Headers).
+		SetQueryParams(p.file.QueryParams)
 
 	rs, err := rq.Get(url)
 	if err != nil {
@@ -169,10 +169,8 @@ func (p *RemoteProducer) Get() (*entity.DataFile, error) {
 	statusCode := rs.StatusCode()
 	if statusCode >= http.StatusOK && statusCode < http.StatusMultipleChoices {
 		return &entity.DataFile{
-			Name:     p.file.Name,
-			Path:     p.file.Path,
+			Template: p.file.Template,
 			Data:     rs.Body(),
-			ExecTmpl: p.file.ExecTmpl,
 		}, nil
 
 	}

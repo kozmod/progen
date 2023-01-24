@@ -23,25 +23,30 @@ type Logger interface {
 }
 
 type DataFile struct {
-	Path     string
-	Name     string
-	Data     []byte
-	ExecTmpl bool
+	Template
+	Data []byte
 }
 
 type LocalFile struct {
-	Path      string
-	Name      string
+	Template
 	LocalPath string
-	ExecTmpl  bool
 }
 
 type RemoteFile struct {
+	Template
+	HTTPClientParams
+}
+
+type Template struct {
 	Path     string
 	Name     string
-	URL      string
-	Headers  map[string]string
 	ExecTmpl bool
+}
+
+type HTTPClientParams struct {
+	URL         string
+	Headers     map[string]string
+	QueryParams map[string]string
 }
 
 type Command struct {

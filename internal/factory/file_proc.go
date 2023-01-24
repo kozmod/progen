@@ -28,28 +28,29 @@ func NewFileProc(
 	var client *resty.Client
 	for _, f := range files {
 		var (
-			name     = filepath.Base(f.Path)
-			path     = filepath.Dir(f.Path)
-			template = !f.ExecTmplSkip
+			tmpl = entity.Template{
+				Name:     filepath.Base(f.Path),
+				Path:     filepath.Dir(f.Path),
+				ExecTmpl: !f.ExecTmplSkip,
+			}
 		)
 
 		var producer entity.FileProducer
 		switch {
 		case f.Data != nil:
 			file := entity.DataFile{
-				Name:     name,
-				Path:     path,
+				Template: tmpl,
 				Data:     []byte(*f.Data),
-				ExecTmpl: template,
 			}
 			producer = proc.NewStoredProducer(file)
 		case f.Get != nil:
 			file := entity.RemoteFile{
-				Name:     name,
-				Path:     path,
-				URL:      f.Get.URL,
-				Headers:  f.Get.Headers,
-				ExecTmpl: template,
+				Template: tmpl,
+				HTTPClientParams: entity.HTTPClientParams{
+					URL:         f.Get.URL,
+					Headers:     f.Get.Headers,
+					QueryParams: f.Get.QueryParams,
+				},
 			}
 
 			if client == nil {
@@ -59,10 +60,8 @@ func NewFileProc(
 			producer = proc.NewRemoteProducer(file, client)
 		case f.Local != nil:
 			file := entity.LocalFile{
-				Name:      name,
-				Path:      path,
+				Template:  tmpl,
 				LocalPath: *f.Local,
-				ExecTmpl:  template,
 			}
 			producer = proc.NewLocalProducer(file)
 
