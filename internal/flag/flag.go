@@ -20,6 +20,8 @@ type Flags struct {
 	Version      bool
 	ReadStdin    bool
 	TemplateVars TemplateVarsFlag
+	// AWD application working directory
+	AWD string
 }
 
 func (f *Flags) FileLocationMessage() string {
@@ -62,6 +64,11 @@ func ParseFlags() Flags {
 		&f.TemplateVars,
 		"tvar",
 		"template variables (override config variables tree)")
+	flag.StringVar(
+		&f.AWD,
+		"awd",
+		entity.Dot,
+		"application working directory")
 	flag.Parse()
 
 	for _, arg := range flag.Args() {

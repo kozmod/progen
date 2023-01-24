@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	"golang.org/x/sync/errgroup"
@@ -29,6 +30,17 @@ func main() {
 	defer func() {
 		_ = logger.Sync()
 	}()
+
+	{
+		if err := os.Chdir(flags.AWD); err != nil {
+			logger.Fatalf("changes the application working directory: %v", err)
+		}
+		awd, err := os.Getwd()
+		if err != nil {
+			logger.Fatalf("get the application working directory: %v", err)
+		}
+		logger.Infof("current working direcotry: %s", awd)
+	}
 
 	defer func(start time.Time) {
 		logger.Infof("execution time: %v", time.Since(start))
