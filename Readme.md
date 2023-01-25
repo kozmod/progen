@@ -21,6 +21,7 @@ go install github.com/kozmod/progen@latest
 ```shell
 make build
 ```
+
 ___
 
 ### About
@@ -51,6 +52,7 @@ ___
 | http.debug                        |       bool        | ✅               | http client `DEBUG` mode                                        |
 | http.base_url                     |      string       | ✅               | http client base `URL`                                          |
 | http.headers                      | map[string]string | ✅               | http client base request `Headers`                              |
+| http.query_params                 | map[string]string | ✅               | http client base request `Query Parameters`                     |
 |                                   |                   |                 |                                                                 |
 | dirs`<unique_suffix>`<sup>1</sup> |     []string      | ✅               | list of directories to create                                   |
 |                                   |                   |                 |                                                                 |
@@ -62,7 +64,8 @@ ___
 |                                   |                   |                 |                                                                 |
 | files.get                         |                   | `❕`             | struct describe `GET` request for getting file's data           |
 | files.get.url                     |      string       | ❌               | request `URL`                                                   |
-| files.get.headers                 | map[string]string | ✅               | request headers                                                 |
+| files.get.headers                 | map[string]string | ✅               | request `Headers`                                               |
+| files.query_params                | map[string]string | ✅               | request `Query Parameters`                                      |
 |                                   |                   |                 |                                                                 |
 | cmd`<unique_suffix>`              |      []slice      | ✅               | list of command to execute                                      |
 
@@ -271,6 +274,8 @@ http:
   base_url: https://gitlab.repo_2.com/api/v4/projects/5/repository/files/
   headers:
     PRIVATE-TOKEN: glpat-SOME_TOKEN
+  query_params:
+    PARAM_1: Val_1
 ```
 
 ### Files
@@ -316,6 +321,8 @@ files:
       # reset headers of common http client configuration (http.headers)
       headers:
         some_header: header
+      query_params:
+        PARAM_1: Val_1
 
   - path: files/Dockerfile
     # process file as template (apply tags which declared in this config)

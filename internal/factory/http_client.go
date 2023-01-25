@@ -13,6 +13,7 @@ func NewHTTPClient(conf *config.HTTPClient, logger entity.Logger) *resty.Client 
 
 	client := resty.New().
 		SetHeaders(conf.Headers).
+		SetQueryParams(conf.QueryParams).
 		SetBaseURL(conf.BaseURL.String())
 	if logger != nil {
 		client.SetLogger(logger)

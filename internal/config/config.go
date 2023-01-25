@@ -26,9 +26,9 @@ type Config struct {
 }
 
 type HTTPClient struct {
-	BaseURL AddrURL           `yaml:"base_url"`
-	Headers map[string]string `yaml:"headers"`
-	Debug   bool              `yaml:"debug"`
+	HTTPClientParams `yaml:",inline"`
+	BaseURL          AddrURL `yaml:"base_url"`
+	Debug            bool    `yaml:"debug"`
 }
 
 type Section[T any] struct {
@@ -46,8 +46,13 @@ type File struct {
 }
 
 type Get struct {
-	Headers map[string]string `yaml:"headers"`
-	URL     string            `yaml:"url"`
+	HTTPClientParams `yaml:",inline"`
+	URL              string `yaml:"url"`
+}
+
+type HTTPClientParams struct {
+	Headers     map[string]string `yaml:"headers"`
+	QueryParams map[string]string `yaml:"query_params"`
 }
 
 type AddrURL struct {
