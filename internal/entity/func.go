@@ -1,5 +1,7 @@
 package entity
 
+import "reflect"
+
 func Unique[T comparable](in []T) []T {
 	set := make(map[T]struct{}, len(in))
 	out := make([]T, 0, len(in))
@@ -31,4 +33,16 @@ func MergeKeys(dst, src map[string]any) map[string]any {
 		}
 	}
 	return dst
+}
+
+func NotNilValues(values ...any) int {
+	counter := 0
+	for _, value := range values {
+		val := reflect.ValueOf(value)
+		if val.Kind() == reflect.Ptr && val.IsNil() {
+			continue
+		}
+		counter++
+	}
+	return counter
 }

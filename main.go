@@ -46,7 +46,7 @@ func main() {
 		logger.Infof("execution time: %v", time.Since(start))
 	}(time.Now())
 
-	logger.Infof("configuration file: %s", flags.FileLocationMessage())
+	logger.Infof("configuration read: %s", flags.FileLocationMessage())
 
 	data, err := config.NewConfigReader(flags).Read()
 	if err != nil {

@@ -45,13 +45,11 @@ func (p *FileProc) Exec() error {
 		filePath := path.Join(file.Path, file.Name)
 
 		if file.ExecTmpl {
-			if file.ExecTmpl {
-				data, err := p.executor.Exec(filePath, file.Data)
-				if err != nil {
-					return fmt.Errorf("process file: %w", err)
-				}
-				file.Data = data
+			data, err := p.executor.Exec(filePath, file.Data)
+			if err != nil {
+				return fmt.Errorf("process file: %w", err)
 			}
+			file.Data = data
 		}
 
 		err = os.WriteFile(filePath, file.Data, p.fileMode)

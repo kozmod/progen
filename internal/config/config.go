@@ -3,7 +3,6 @@ package config
 import (
 	"fmt"
 	"net/url"
-	"reflect"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -159,26 +158,14 @@ func UnmarshalYamlFiles(rawConfig []byte) (map[string][]File, error) {
 }
 
 func ValidateFile(file File) error {
-	notNil := notNilValues(file.Get, file.Data, file.Local)
+	notNil := entity.NotNilValues(file.Get, file.Data, file.Local)
 	switch {
 	case notNil == 0:
-		return fmt.Errorf("files: `get`, `data`, `local` tags - only one can be present")
-	case notNil > 1:
 		return fmt.Errorf("files: `get`, `data`, `local` - all are empty")
+	case notNil > 1:
+		return fmt.Errorf("files: sections `get`, `data`, `local` tags - only one can be present")
 	case strings.TrimSpace(file.Path) == entity.Empty:
 		return fmt.Errorf("files: save `path` are empty")
 	}
 	return nil
-}
-
-func notNilValues(values ...any) int {
-	counter := 0
-	for _, value := range values {
-		val := reflect.ValueOf(value)
-		if val.Kind() == reflect.Ptr && val.IsNil() {
-			continue
-		}
-		counter++
-	}
-	return counter
 }

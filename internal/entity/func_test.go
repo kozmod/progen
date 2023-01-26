@@ -136,3 +136,31 @@ func Test_MergeKeys(t *testing.T) {
 		})
 	}
 }
+
+func Test_NotNilValues(t *testing.T) {
+	var (
+		nilStr     *string
+		defaultStr string
+
+		nilInt     *int
+		defaultInt int
+
+		nilStrict     *struct{}
+		defaultStruct struct{}
+	)
+
+	test := []struct {
+		in  []any
+		exp int
+	}{
+		{in: []any{nilStr, nilInt, nilStrict}, exp: 0},
+		{in: []any{defaultStr, defaultInt, defaultStruct}, exp: 3},
+		{in: []any{nilStr, nilInt, nilStrict, defaultStr, defaultInt, defaultStruct}, exp: 3},
+		{in: []any{nilInt, defaultInt}, exp: 1},
+		{in: []any{}, exp: 0},
+	}
+	for i, tc := range test {
+		res := NotNilValues(tc.in...)
+		assert.Equalf(t, tc.exp, res, "case_%d", i)
+	}
+}

@@ -34,15 +34,19 @@ func NewRunCommandProc(cmds []string, logger entity.Logger, dryRun bool) (proc.P
 }
 
 func commandFromString(cmd string) entity.Command {
-	splitCmd := make([]string, 0, len(cmd))
-	for _, val := range strings.Split(cmd, entity.Space) {
+	var (
+		splitCmd = strings.Split(cmd, entity.Space)
+		res      = make([]string, 0, len(splitCmd))
+	)
+
+	for _, val := range splitCmd {
 		if trimmed := strings.TrimSpace(val); val != entity.Empty {
-			splitCmd = append(splitCmd, trimmed)
+			res = append(res, trimmed)
 		}
 	}
 
 	return entity.Command{
-		Cmd:  splitCmd[0],
-		Args: splitCmd[1:],
+		Cmd:  res[0],
+		Args: res[1:],
 	}
 }

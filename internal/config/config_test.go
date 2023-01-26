@@ -108,34 +108,6 @@ func Test_ValidateFile(t *testing.T) {
 	})
 }
 
-func Test_(t *testing.T) {
-	var (
-		nilStr     *string
-		defaultStr string
-
-		nilInt     *int
-		defaultInt int
-
-		nilStrict     *struct{}
-		defaultStruct struct{}
-	)
-
-	test := []struct {
-		in  []any
-		exp int
-	}{
-		{in: []any{nilStr, nilInt, nilStrict}, exp: 0},
-		{in: []any{defaultStr, defaultInt, defaultStruct}, exp: 3},
-		{in: []any{nilStr, nilInt, nilStrict, defaultStr, defaultInt, defaultStruct}, exp: 3},
-		{in: []any{nilInt, defaultInt}, exp: 1},
-		{in: []any{}, exp: 0},
-	}
-	for i, tc := range test {
-		res := notNilValues(tc.in...)
-		assert.Equalf(t, tc.exp, res, "case_%d", i)
-	}
-}
-
 func Test_UnmarshalYamlConfig(t *testing.T) {
 	t.Run("success_unmarshal", func(t *testing.T) {
 		const (
