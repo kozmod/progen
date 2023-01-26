@@ -1,4 +1,4 @@
-# ProGen
+# ProGen <img align="right" src=".github/assets/PG1-4-3-1.png" alt="drawing"  width="60" />
 
 ![test](https://github.com/kozmod/progen/actions/workflows/test.yml/badge.svg)
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/kozmod/progen)
