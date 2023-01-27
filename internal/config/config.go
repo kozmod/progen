@@ -11,17 +11,21 @@ import (
 )
 
 const (
-	TagDirs  = "dirs"
-	TagFiles = "files"
-	TagCmd   = "cmd"
-	TagHTTP  = "http"
+	TagDirs      = "dirs"
+	TagFiles     = "files"
+	TagCmd       = "cmd"
+	SettingsHTTP = "settings"
 )
 
 type Config struct {
-	HTTP  *HTTPClient         `yaml:"http"`
-	Dirs  []Section[[]string] `yaml:"dirs,flow"`
-	Files []Section[[]File]   `yaml:"files,flow"`
-	Cmd   []Section[[]string] `yaml:"cmd,flow"`
+	Settings Settings            `yaml:"settings"`
+	Dirs     []Section[[]string] `yaml:"dirs,flow"`
+	Files    []Section[[]File]   `yaml:"files,flow"`
+	Cmd      []Section[[]string] `yaml:"cmd,flow"`
+}
+
+type Settings struct {
+	HTTP *HTTPClient `yaml:"http"`
 }
 
 type HTTPClient struct {
@@ -85,10 +89,10 @@ func UnmarshalYamlConfig(rawConfig []byte) (Config, error) {
 		var err error
 
 		switch {
-		case tag == TagHTTP:
-			var client HTTPClient
-			err = node.Decode(&client)
-			conf.HTTP = &client
+		case tag == SettingsHTTP:
+			var settings Settings
+			err = node.Decode(&settings)
+			conf.Settings = settings
 		case strings.Index(tag, TagDirs) == 0:
 			dir := Section[[]string]{Line: int32(node.Line), Tag: tag}
 			err = node.Decode(&dir.Val)

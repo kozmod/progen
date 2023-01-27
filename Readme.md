@@ -48,11 +48,13 @@ ___
 | Key                               |       Type        | Optional        | Description                                                     |
 |:----------------------------------|:-----------------:|:----------------|:----------------------------------------------------------------|
 |                                   |                   |                 |                                                                 |
-| http                              |                   | ✅               | http client configuration                                       |
-| http.debug                        |       bool        | ✅               | http client `DEBUG` mode                                        |
-| http.base_url                     |      string       | ✅               | http client base `URL`                                          |
-| http.headers                      | map[string]string | ✅               | http client base request `Headers`                              |
-| http.query_params                 | map[string]string | ✅               | http client base request `Query Parameters`                     |
+| settings                          |                   | ✅               | `progen` settings section                                       |
+|                                   |                   |                 |
+| settings.http                     |                   | ✅               | http client configuration                                       |
+| settings.http.debug               |       bool        | ✅               | http client `DEBUG` mode                                        |
+| settings.http.base_url            |      string       | ✅               | http client base `URL`                                          |
+| settings.http.headers             | map[string]string | ✅               | http client base request `Headers`                              |
+| settings.http.query_params        | map[string]string | ✅               | http client base request `Query Parameters`                     |
 |                                   |                   |                 |                                                                 |
 | dirs`<unique_suffix>`<sup>1</sup> |     []string      | ✅               | list of directories to create                                   |
 |                                   |                   |                 |                                                                 |
@@ -268,14 +270,15 @@ HTTP client configuration
 
 ```yaml
 ## progen.yml
-
-http:
-  debug: false
-  base_url: https://gitlab.repo_2.com/api/v4/projects/5/repository/files/
-  headers:
-    PRIVATE-TOKEN: glpat-SOME_TOKEN
-  query_params:
-    PARAM_1: Val_1
+   
+settings:
+  http:
+    debug: false
+    base_url: https://gitlab.repo_2.com/api/v4/projects/5/repository/files/
+    headers:
+      PRIVATE-TOKEN: glpat-SOME_TOKEN
+    query_params:
+      PARAM_1: Val_1
 ```
 
 ### Files
@@ -288,12 +291,14 @@ and configuration's `yaml` tag tree applies as template variables.
 ```yaml
 ## progen.yml
 
-# common http client configuration  
-http:
-  debug: false
-  base_url: https://gitlab.repo_2.com/api/v4/projects/5/repository/files/
-  headers:
-    PRIVATE-TOKEN: glpat-SOME_TOKEN
+# settings of the cli
+settings:
+  # common http client configuration  
+  http:
+    debug: false
+    base_url: https://gitlab.repo_2.com/api/v4/projects/5/repository/files/
+    headers:
+      PRIVATE-TOKEN: glpat-SOME_TOKEN
 
 # {{$project_name := "SOME_PROJECT"}}
 # {{$gitlab_suffix := "/raw?ref=some_branch"}}

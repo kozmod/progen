@@ -41,7 +41,7 @@ func NewProcChain(
 			ProcGenerator{
 				line: f.Line,
 				procFn: func() (proc.Proc, error) {
-					return NewFileProc(f.Val, conf.HTTP, templateData, logger, dryRun)
+					return NewFileProc(f.Val, conf.Settings.HTTP, templateData, logger, dryRun)
 				},
 			})
 	}
