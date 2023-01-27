@@ -10,6 +10,7 @@ import (
 
 	"github.com/kozmod/progen/internal"
 	"github.com/kozmod/progen/internal/config"
+	"github.com/kozmod/progen/internal/entity"
 	"github.com/kozmod/progen/internal/factory"
 	"github.com/kozmod/progen/internal/flag"
 )
@@ -53,10 +54,8 @@ func main() {
 		logger.Fatalf("read config: %v", err)
 	}
 
-	rawConfig, templateData, err := config.PreprocessRawConfigData(
-		flags.ConfigPath,
-		data,
-		flags.TemplateVars.Vars)
+	rawConfig, templateData, err := config.NewRawPreprocessor(flags.ConfigPath, flags.TemplateVars.Vars).
+		Process(data)
 	if err != nil {
 		logger.Fatalf("preprocess raw config: %v", err)
 	}
@@ -66,10 +65,12 @@ func main() {
 
 		conf  config.Config
 		files map[string][]config.File
+
+		tagFilter = entity.NewRegexpChain(flags.Skip...)
 	)
 
 	eg.Go(func() error {
-		c, err := config.UnmarshalYamlConfig(rawConfig)
+		c, err := config.NewYamlConfigUnmarshaler(tagFilter, logger).Unmarshal(rawConfig)
 		if err != nil {
 			return fmt.Errorf("unmarshal config: %w", err)
 		}
