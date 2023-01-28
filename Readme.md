@@ -1,13 +1,14 @@
 # ProGen <img align="right" src=".github/assets/PG1-4-3-1.png" alt="drawing"  width="60" />
 
 ![test](https://github.com/kozmod/progen/actions/workflows/test.yml/badge.svg)
+[![Go Report Card](https://goreportcard.com/badge/github.com/kozmod/progen)](https://goreportcard.com/report/github.com/kozmod/progen)
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/kozmod/progen)
 ![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/kozmod/progen)
 ![GitHub release date](https://img.shields.io/github/release-date/kozmod/progen)
 ![GitHub last commit](https://img.shields.io/github/last-commit/kozmod/progen)
 ![GitHub MIT license](https://img.shields.io/github/license/kozmod/progen)
 
-Simple projects generator.
+A flexible, language and framework agnostic tool that allows you to generate projects structure from templates based on `yaml` configuration.
 ___
 
 ### Installation
@@ -26,7 +27,7 @@ ___
 
 ### About
 
-`progen` use `yml` config file to generate directories, files and execute commands ([actions](#Actions))
+`progen` use `yml` configuration file to execute `actions` (generate directories, files and execute commands) 
 ___
 
 ### Args
