@@ -40,7 +40,7 @@ func main() {
 		if err != nil {
 			logger.Fatalf("get the application working directory: %v", err)
 		}
-		logger.Infof("current working direcotry: %s", awd)
+		logger.Infof("current working directory: %s", awd)
 	}
 
 	defer func(start time.Time) {
