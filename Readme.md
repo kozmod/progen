@@ -31,49 +31,48 @@ ___
 
 ### Args
 
-| Name       |  Type  | Description                                                                                  |
-|:-----------|:------:|:---------------------------------------------------------------------------------------------|
-| `-f`       | string | path to config file                                                                          |
-| `-v`       |  bool  | verbose output                                                                               |
-| `-dr`      |  bool  | `dry run` mode <br/>(to verbose output should be combine with`-v`)                           |
-| `-awd`     |  bool  | application working directory                                                                |
-| `-tvar`    |  bool  | [text/template](https://pkg.go.dev/text/template) variables (override config variables tree) |
-| `-version` |  bool  | print version                                                                                |
-| `-help`    |  bool  | show flags                                                                                   |
+| Name                                      |  Type  | Description                                                                                  |
+|:------------------------------------------|:------:|:---------------------------------------------------------------------------------------------|
+| `-f`                                      | string | path to config file                                                                          |
+| `-v`                                      |  bool  | verbose output                                                                               |
+| `-dr`[<sup> **i**</sup>](#dry_run)        |  bool  | `dry run` mode <br/>(to verbose output should be combine with`-v`)                           |
+| `-awd`                                    |  bool  | application working directory                                                                |
+| `-tvar`                                   |  bool  | [text/template](https://pkg.go.dev/text/template) variables (override config variables tree) |
+| `-skip`[<sup> **i**</sup>](#skip_actions) |  bool  | skip any `action` tag (regular expression)                                                   |
+| `-version`                                |  bool  | print version                                                                                |
+| `-help`                                   |  bool  | show flags                                                                                   |
 
 ___
 
-### Actions
+### Actions and tags
 
-| Key                               |       Type        | Optional        | Description                                                     |
-|:----------------------------------|:-----------------:|:----------------|:----------------------------------------------------------------|
-|                                   |                   |                 |                                                                 |
-| settings                          |                   | ✅               | `progen` settings section                                       |
-|                                   |                   |                 |
-| settings.http                     |                   | ✅               | http client configuration                                       |
-| settings.http.debug               |       bool        | ✅               | http client `DEBUG` mode                                        |
-| settings.http.base_url            |      string       | ✅               | http client base `URL`                                          |
-| settings.http.headers             | map[string]string | ✅               | http client base request `Headers`                              |
-| settings.http.query_params        | map[string]string | ✅               | http client base request `Query Parameters`                     |
-|                                   |                   |                 |                                                                 |
-| dirs`<unique_suffix>`<sup>1</sup> |     []string      | ✅               | list of directories to create                                   |
-|                                   |                   |                 |                                                                 |
-| files`<unique_suffix>`            |                   | ✅               | list file's `path` and `data`                                   |
-| files.path                        |      string       | ❌               | save file `path`                                                |
-| files.tmpl_skip                   |       bool        | ✅               | flag to skip processing file data as template(except of `data`) |
-| files.local                       |      string       | `❕`<sup>2</sup> | local file path to copy                                         |
-| files.data                        |      string       | `❕`             | save file `data`                                                |
-|                                   |                   |                 |                                                                 |
-| files.get                         |                   | `❕`             | struct describe `GET` request for getting file's data           |
-| files.get.url                     |      string       | ❌               | request `URL`                                                   |
-| files.get.headers                 | map[string]string | ✅               | request `Headers`                                               |
-| files.query_params                | map[string]string | ✅               | request `Query Parameters`                                      |
-|                                   |                   |                 |                                                                 |
-| cmd`<unique_suffix>`              |      []slice      | ✅               | list of command to execute                                      |
+| Key                                               |       Type        | Optional | Description                                                     |
+|:--------------------------------------------------|:-----------------:|:---------|:----------------------------------------------------------------|
+|                                                   |                   |          |                                                                 |
+| settings                                          |                   | ✅        | `progen` settings section                                       |
+|                                                   |                   |          |
+| settings.http[<sup> **i**</sup>](#http_client)    |                   | ✅        | http client configuration                                       |
+| settings.http.debug                               |       bool        | ✅        | http client `DEBUG` mode                                        |
+| settings.http.base_url                            |      string       | ✅        | http client base `URL`                                          |
+| settings.http.headers                             | map[string]string | ✅        | http client base request `Headers`                              |
+| settings.http.query_params                        | map[string]string | ✅        | http client base request `Query Parameters`                     |
+|                                                   |                   |          |                                                                 |
+| dirs`<unique_suffix>`                             |     []string      | ✅        | list of directories to create                                   |
+|                                                   |                   |          |                                                                 |
+| files`<unique_suffix>`[<sup> **i**</sup>](#Files) |                   | ✅        | list file's `path` and `data`                                   |
+| files.path                                        |      string       | ❌        | save file `path`                                                |
+| files.tmpl_skip                                   |       bool        | ✅        | flag to skip processing file data as template(except of `data`) |
+| files.local                                       |      string       | `❕`      | local file path to copy                                         |
+| files.data                                        |      string       | `❕`      | save file `data`                                                |
+|                                                   |                   |          |                                                                 |
+| files.get                                         |                   | `❕`      | struct describe `GET` request for getting file's data           |
+| files.get.url                                     |      string       | ❌        | request `URL`                                                   |
+| files.get.headers                                 | map[string]string | ✅        | request `Headers`                                               |
+| files.query_params                                | map[string]string | ✅        | request `Query Parameters`                                      |
+|                                                   |                   |          |                                                                 |
+| cmd`<unique_suffix>`                              |      []slice      | ✅        | list of command to execute                                      |
 
-1. all action execute on declaration order. Base actions (`dir`, `files`,`cmd`) could be configured
-   with `<unique_suffix>` to separate action execution.
-2. `❕` only one must be specified in parent section
+`❕` only one must be specified in parent section
 
 ___
 
@@ -117,7 +116,7 @@ out:
     └── y
 ```
 
-### Execution order
+### Execution
 
 All actions execute in declared order. Base actions (`dir`, `files`,`cmd`) could be configured
 with `<unique_suffix>` to separate action execution.
@@ -141,6 +140,95 @@ cmd2:
 2023-01-22 13:38:52	INFO	execute: chmod -R 777 api
 2023-01-22 13:38:52	INFO	dir created: api/some_project_2/v1
 2023-01-22 13:38:52	INFO	execute: chmod -R 777 api
+```
+
+### <a name="dry_run"><a/>Dry Run mode
+
+flag `-dr` use to execute configuration in dry run mod. All `action` will be executed without applying.
+
+```yaml
+## progen.yml
+
+# {{$project_name := "SOME_PROJECT"}}
+dirs:
+  - api/{{ $project_name }}/v1
+cmd:
+  - chmod -R 777 api/v1
+
+files:
+  - path: api/v1/some_file.txt
+    tmpl_skip: false
+    data: |
+      some file data data fot project: {{ $project_name }}
+```
+
+```console
+% progen -v -dr -f progen.yml
+2023-01-28 14:47:19	INFO	current working direcotry: /Users/user_1/GoProjects/service
+2023-01-28 14:47:19	INFO	configuration read: progen.yml
+2023-01-28 14:47:19	INFO	dir created: api/SOME_PROJECT/v1
+2023-01-28 14:47:19	INFO	execute cmd: chmod -R 777 api/v1
+2023-01-28 14:47:19	INFO	process file: create dir [api/SOME_PROJECT/v1] to store file [some_file.txt]
+2023-01-28 14:47:19	INFO	file created [template: true, path: api/SOME_PROJECT/v1/some_file.txt]:
+some file data data fot project: SOME_PROJECT
+```
+
+### <a name="skip_actions"><a/>Skip `actions`
+
+Set `-skip` flag to skip any `action` (only root actions: `cmd`, `files`, `dirs`). Value of the flag is a regular
+expression.
+
+```yaml
+## progen.yml
+
+dirs:
+  - api/v1
+cmd:
+  - chmod -R 777 api/v1
+dirs1:
+  - api/v2
+cmd1:
+  - chmod -R 777  api/v2
+dirs2:
+  - api/v3
+cmd2:
+  - chmod -R 777 api/v3
+```
+
+```console
+% progen -v -dr -f progen.yml -skip=^dirs$$ -skip=cmd.+ 
+2023-01-28 14:29:46	INFO	current working direcotry: /Users/user_1/GoProjects/service
+2023-01-28 14:29:46	INFO	configuration read: progen.yml
+2023-01-28 14:29:46	INFO	action tag will be skipped: dirs
+2023-01-28 14:29:46	INFO	action tag will be skipped: cmd1
+2023-01-28 14:29:46	INFO	action tag will be skipped: cmd2
+2023-01-28 14:29:46	INFO	execute cmd: chmod -R 777 api/v1
+2023-01-28 14:29:46	INFO	dir created: api/v2
+2023-01-28 14:29:46	INFO	dir created: api/v3
+```
+
+### Text files
+
+Instead of specifying a config file, you can pass a single `progen.yml` in the pipe the file in via `STDIN`.
+To pipe a `progen.yml` from `STDIN`:
+
+```console
+progen - < progen.yml
+```
+
+or
+
+```console
+cat progen.yml | progen -
+```
+
+If you use `STDIN`  the system ignores any `-f` option.
+
+**Example** (get `progen.yml` from gitlab repository with replacing [text/template](https://pkg.go.dev/text/template)
+variables using `-tvar` flag):
+
+```console
+curl -H PRIVATE-TOKEN:token https://gitlab.some.com/api/v4/projects/13/repository/files/shared%2Fteplates%2Fsimple%2Fprogen.yml/raw\?ref\=feature/templates | progen -v -dr -tvar=.vars.GOPROXY=some_proxy -
 ```
 
 ### Templates
@@ -240,37 +328,13 @@ dirs:
 2023-01-22 22:25:47	INFO	dir created: internal/overrided_path
 ```
 
-### Text files
-
-Instead of specifying a config file, you can pass a single `progen.yml` in the pipe the file in via `STDIN`.
-To pipe a `progen.yml` from `STDIN`:
-
-```console
-progen - < progen.yml
-```
-
-or
-
-```console
-cat progen.yml | progen -
-```
-
-If you use `STDIN`  the system ignores any `-f` option.
-
-**Example** (get `progen.yml` from gitlab repository with replacing [text/template](https://pkg.go.dev/text/template)
-variables using `-tvar` flag):
-
-```console
-curl -H PRIVATE-TOKEN:token https://gitlab.some.com/api/v4/projects/13/repository/files/shared%2Fteplates%2Fsimple%2Fprogen.yml/raw\?ref\=feature/templates | progen -v -dr -tvar=.vars.GOPROXY=some_proxy -
-```
-
-### Http Client
+### <a name="http_client"></a>Http Client
 
 HTTP client configuration
 
 ```yaml
 ## progen.yml
-   
+
 settings:
   http:
     debug: false

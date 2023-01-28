@@ -131,3 +131,59 @@ func Test_TemplateVarsFlag(t *testing.T) {
 			vars.Vars))
 	})
 }
+
+func Test_SkipFlag(t *testing.T) {
+	const (
+		usage    = "skip_flag_test_usage"
+		setName  = "skip_fs"
+		flagName = setName
+	)
+
+	var (
+		flagKey = fmt.Sprintf("-%s", flagName)
+	)
+
+	t.Run("success_when_flag_not_set", func(t *testing.T) {
+		var (
+			fs   = flag.NewFlagSet(setName, flag.ContinueOnError)
+			skip SkipFlag
+		)
+		fs.Var(&skip, flagName, usage)
+
+		err := fs.Parse([]string{
+			flagKey, "",
+			flagKey, "",
+		})
+		assert.NoError(t, err)
+		assert.Len(t, skip, 0)
+	})
+	t.Run("success_when_flag_not_set_v2", func(t *testing.T) {
+		var (
+			fs   = flag.NewFlagSet(setName, flag.ContinueOnError)
+			skip SkipFlag
+		)
+		fs.Var(&skip, flagName, usage)
+
+		err := fs.Parse(nil)
+		assert.NoError(t, err)
+		assert.Len(t, skip, 0)
+	})
+	t.Run("success_when_flag_set", func(t *testing.T) {
+		var (
+			fs   = flag.NewFlagSet(setName, flag.ContinueOnError)
+			skip SkipFlag
+
+			flagA = "cmd"
+			flagB = "dirs"
+		)
+		fs.Var(&skip, flagName, usage)
+
+		err := fs.Parse([]string{
+			flagKey, flagA,
+			flagKey, flagB,
+		})
+		assert.NoError(t, err)
+		assert.Len(t, skip, 2)
+		assert.ElementsMatch(t, []string{flagA, flagB}, skip)
+	})
+}

@@ -21,7 +21,8 @@ type Flags struct {
 	ReadStdin    bool
 	TemplateVars TemplateVarsFlag
 	// AWD application working directory
-	AWD string
+	AWD  string
+	Skip SkipFlag
 }
 
 func (f *Flags) FileLocationMessage() string {
@@ -69,6 +70,10 @@ func ParseFlags() Flags {
 		"awd",
 		entity.Dot,
 		"application working directory")
+	flag.Var(
+		&f.Skip,
+		"skip",
+		"list of skipping yaml tags")
 	flag.Parse()
 
 	for _, arg := range flag.Args() {

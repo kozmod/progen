@@ -1,3 +1,7 @@
+.PHONT: deps
+deps: ## Install required dependencies and tools
+	go install golang.org/x/tools/cmd/goimports@latest
+
 .PHONT: tools
 tools: ## Run tools (vet, gofmt, goimports, tidy, etc.)
 	@go version

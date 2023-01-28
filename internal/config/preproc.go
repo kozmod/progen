@@ -10,14 +10,30 @@ import (
 	"github.com/kozmod/progen/internal/entity"
 )
 
-func PreprocessRawConfigData(name string, data []byte, templateVars map[string]any) ([]byte, map[string]any, error) {
-	var conf map[string]any
+type RawPreprocessor struct {
+	templateName string
+	templateVars map[string]any
+}
+
+func NewRawPreprocessor(templateName string, templateVars map[string]any) *RawPreprocessor {
+	return &RawPreprocessor{
+		templateName: templateName,
+		templateVars: templateVars,
+	}
+}
+
+func (p *RawPreprocessor) Process(data []byte) ([]byte, map[string]any, error) {
+	var (
+		conf map[string]any
+		name = p.templateName
+	)
+
 	err := yaml.Unmarshal(data, &conf)
 	if err != nil {
 		return nil, nil, fmt.Errorf("parse config to map: %w", err)
 	}
 
-	conf = entity.MergeKeys(conf, templateVars)
+	conf = entity.MergeKeys(conf, p.templateVars)
 
 	temp, err := template.New(name).Parse(string(data))
 	if err != nil {

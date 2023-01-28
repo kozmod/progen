@@ -1,5 +1,7 @@
 package entity
 
+import "regexp"
+
 const (
 	Space      = " "
 	Empty      = ""
@@ -52,4 +54,30 @@ type HTTPClientParams struct {
 type Command struct {
 	Cmd  string
 	Args []string
+}
+
+type RegexpChain struct {
+	matchers []*regexp.Regexp
+}
+
+func NewRegexpChain(regexps ...string) *RegexpChain {
+	matchers := make([]*regexp.Regexp, 0, len(regexps))
+	for _, regex := range regexps {
+		matcher := regexp.MustCompile(regex)
+		if matcher != nil {
+			matchers = append(matchers, matcher)
+		}
+	}
+	return &RegexpChain{
+		matchers: matchers,
+	}
+}
+
+func (c *RegexpChain) MatchString(s string) bool {
+	for _, matcher := range c.matchers {
+		if matcher.MatchString(s) {
+			return true
+		}
+	}
+	return false
 }
