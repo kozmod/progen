@@ -17,7 +17,7 @@ import (
 
 func main() {
 
-	flags := flag.ParseFlags()
+	flags := flag.Parse()
 
 	if flags.Version {
 		fmt.Println(internal.GetVersion())

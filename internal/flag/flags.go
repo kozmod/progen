@@ -3,6 +3,8 @@ package flag
 import (
 	"flag"
 	"fmt"
+	"log"
+	"os"
 	"strings"
 
 	"github.com/kozmod/progen/internal/entity"
@@ -13,6 +15,10 @@ const (
 	defaultConfigFilePath = "progen.yml"
 )
 
+var (
+	ErrDashFlagNotLast = fmt.Errorf(`'-' must be the last argument`)
+)
+
 type Flags struct {
 	ConfigPath   string
 	Verbose      bool
@@ -20,9 +26,8 @@ type Flags struct {
 	Version      bool
 	ReadStdin    bool
 	TemplateVars TemplateVarsFlag
-	// AWD application working directory
-	AWD  string
-	Skip SkipFlag
+	AWD          string // AWD application working directory
+	Skip         SkipFlag
 }
 
 func (f *Flags) FileLocationMessage() string {
@@ -38,50 +43,69 @@ func (f *Flags) FileLocationMessage() string {
 	}
 }
 
-func ParseFlags() Flags {
-	var f Flags
-	flag.StringVar(
+func Parse() Flags {
+	args := os.Args
+	flags, err := parseFlags(args[0], args[1:], flag.ExitOnError)
+	if err != nil {
+		log.Fatalf("parse flags: %v", err)
+	}
+	return flags
+}
+
+func parseFlags(name string, args []string, handling flag.ErrorHandling) (Flags, error) {
+	var (
+		f  Flags
+		fs = flag.NewFlagSet(name, handling)
+	)
+	flag.Parse()
+	fs.StringVar(
 		&f.ConfigPath,
 		"f",
 		defaultConfigFilePath,
 		fmt.Sprintf("configuration file path (default file: %s)", defaultConfigFilePath))
-	flag.BoolVar(
+	fs.BoolVar(
 		&f.Verbose,
 		"v",
 		false,
 		"verbose output")
-	flag.BoolVar(
+	fs.BoolVar(
 		&f.DryRun,
 		"dr",
 		false,
 		"dry run mode (can be combine with `-v`)")
-	flag.BoolVar(
+	fs.BoolVar(
 		&f.Version,
 		"version",
 		false,
 		"output version")
 	//goland:noinspection SpellCheckingInspection
-	flag.Var(
+	fs.Var(
 		&f.TemplateVars,
 		"tvar",
 		"template variables (override config variables tree)")
-	flag.StringVar(
+	fs.StringVar(
 		&f.AWD,
 		"awd",
 		entity.Dot,
 		"application working directory")
-	flag.Var(
+	fs.Var(
 		&f.Skip,
 		"skip",
-		"list of skipping yaml tags")
-	flag.Parse()
+		"list of skipping 'yaml' tags")
+	err := fs.Parse(args)
+	if err != nil {
+		return f, err
+	}
 
-	for _, arg := range flag.Args() {
+	for i, arg := range args {
 		if strings.TrimSpace(arg) == entity.Dash {
-			f.ReadStdin = true
-			break
+			if i == len(args)-1 || (i < len(args)-1 && args[i+1] == entity.LessThan) {
+				f.ReadStdin = true
+				break
+			}
+			return f, ErrDashFlagNotLast
 		}
 	}
 
-	return f
+	return f, nil
 }
