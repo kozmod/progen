@@ -9,7 +9,7 @@
 ![GitHub MIT license](https://img.shields.io/github/license/kozmod/progen)
 
 A flexible, language and framework agnostic tool that allows you to generate projects structure from templates based
-on `yaml` configuration.
+on `yaml` configuration (generate directories, files and execute commands).
 ___
 
 ### Installation
@@ -23,56 +23,50 @@ go install github.com/kozmod/progen@latest
 ```shell
 make build
 ```
-
-___
-
-### About
-
-`progen` use `yml` configuration file to execute `actions` (generate directories, files and execute commands)
 ___
 
 ### Args
 
-| Name                                      |   Type   | Description                                                                                  |
-|:------------------------------------------|:--------:|:---------------------------------------------------------------------------------------------|
-| `-f`                                      |  string  | path to config file                                                                          |
-| `-v`                                      |   bool   | verbose output                                                                               |
-| `-dr`[<sup> **i**</sup>](#dry_run)        |   bool   | `dry run` mode <br/>(to verbose output should be combine with`-v`)                           |
-| `-awd`                                    |   bool   | application working directory                                                                |
-| `-tvar`                                   | []string | [text/template](https://pkg.go.dev/text/template) variables (override config variables tree) |
-| `-skip`[<sup> **i**</sup>](#skip_actions) | []string | skip any `action` tag (regular expression)                                                   |
-| `-version`                                |   bool   | print version                                                                                |
-| `-help`                                   |   bool   | show flags                                                                                   |
+| Name                                     |   Type   | Description                                                                                  |
+|:-----------------------------------------|:--------:|:---------------------------------------------------------------------------------------------|
+| `-f`[<sup>**ⓘ**</sup>](#config_file)     |  string  | specify configuration file path                                                              |
+| `-v`                                     |   bool   | verbose output                                                                               |
+| `-dr`[<sup>**ⓘ**</sup>](#dry_run)        |   bool   | `dry run` mode <br/>(to verbose output should be combine with`-v`)                           |
+| `-awd`                                   |  string  | application working directory                                                                |
+| `-tvar`[<sup>**ⓘ**</sup>](#tvar)         | []string | [text/template](https://pkg.go.dev/text/template) variables (override config variables tree) |
+| `-skip`[<sup>**ⓘ**</sup>](#skip_actions) | []string | skip any `action` tag (regular expression)                                                   |
+| `-version`                               |   bool   | print version                                                                                |
+| `-help`                                  |   bool   | show flags                                                                                   |
 
 ___
 
 ### Actions and tags
 
-| Key                                               |       Type        | Optional | Description                                                     |
-|:--------------------------------------------------|:-----------------:|:---------|:----------------------------------------------------------------|
-|                                                   |                   |          |                                                                 |
-| settings                                          |                   | ✅        | `progen` settings section                                       |
-|                                                   |                   |          |
-| settings.http[<sup> **i**</sup>](#http_client)    |                   | ✅        | http client configuration                                       |
-| settings.http.debug                               |       bool        | ✅        | http client `DEBUG` mode                                        |
-| settings.http.base_url                            |      string       | ✅        | http client base `URL`                                          |
-| settings.http.headers                             | map[string]string | ✅        | http client base request `Headers`                              |
-| settings.http.query_params                        | map[string]string | ✅        | http client base request `Query Parameters`                     |
-|                                                   |                   |          |                                                                 |
-| dirs`<unique_suffix>`                             |     []string      | ✅        | list of directories to create                                   |
-|                                                   |                   |          |                                                                 |
-| files`<unique_suffix>`[<sup> **i**</sup>](#Files) |                   | ✅        | list file's `path` and `data`                                   |
-| files.path                                        |      string       | ❌        | save file `path`                                                |
-| files.tmpl_skip                                   |       bool        | ✅        | flag to skip processing file data as template(except of `data`) |
-| files.local                                       |      string       | `❕`      | local file path to copy                                         |
-| files.data                                        |      string       | `❕`      | save file `data`                                                |
-|                                                   |                   |          |                                                                 |
-| files.get                                         |                   | `❕`      | struct describe `GET` request for getting file's data           |
-| files.get.url                                     |      string       | ❌        | request `URL`                                                   |
-| files.get.headers                                 | map[string]string | ✅        | request `Headers`                                               |
-| files.query_params                                | map[string]string | ✅        | request `Query Parameters`                                      |
-|                                                   |                   |          |                                                                 |
-| cmd`<unique_suffix>`                              |      []slice      | ✅        | list of command to execute                                      |
+| Key                                                |       Type        | Optional | Description                                                     |
+|:---------------------------------------------------|:-----------------:|:---------|:----------------------------------------------------------------|
+|                                                    |                   |          |                                                                 |
+| settings                                           |                   | ✅        | `progen` settings section                                       |
+|                                                    |                   |          |
+| settings.http[<sup>**ⓘ**</sup>](#http_client)      |                   | ✅        | http client configuration                                       |
+| settings.http.debug                                |       bool        | ✅        | http client `DEBUG` mode                                        |
+| settings.http.base_url                             |      string       | ✅        | http client base `URL`                                          |
+| settings.http.headers                              | map[string]string | ✅        | http client base request `Headers`                              |
+| settings.http.query_params                         | map[string]string | ✅        | http client base request `Query Parameters`                     |
+|                                                    |                   |          |                                                                 |
+| dirs`<unique_suffix>`[<sup>**ⓘ**</sup>](#Generate) |     []string      | ✅        | list of directories to create                                   |
+|                                                    |                   |          |                                                                 |
+| files`<unique_suffix>`[<sup>**ⓘ**</sup>](#Files)   |                   | ✅        | list file's `path` and `data`                                   |
+| files.path                                         |      string       | ❌        | save file `path`                                                |
+| files.tmpl_skip                                    |       bool        | ✅        | flag to skip processing file data as template(except of `data`) |
+| files.local                                        |      string       | `❕`      | local file path to copy                                         |
+| files.data                                         |      string       | `❕`      | save file `data`                                                |
+|                                                    |                   |          |                                                                 |
+| files.get                                          |                   | `❕`      | struct describe `GET` request for getting file's data           |
+| files.get.url                                      |      string       | ❌        | request `URL`                                                   |
+| files.get.headers                                  | map[string]string | ✅        | request `Headers`                                               |
+| files.query_params                                 | map[string]string | ✅        | request `Query Parameters`                                      |
+|                                                    |                   |          |                                                                 |
+| cmd`<unique_suffix>`[<sup>**ⓘ**</sup>](#Generate)  |      []slice      | ✅        | list of command to execute                                      |
 
 `❕` only one must be specified in parent section
 
@@ -105,6 +99,7 @@ cmd:
 
 ```console
 % progen -v
+2023-01-22 12:44:55	INFO	current working direcotry: /Users/user_1/GoProjects/service
 2023-01-22 12:44:55	INFO	dir created: x/y
 2023-01-22 12:44:55	INFO	file created [template: false]: x/some_file.txt
 2023-01-22 12:44:55	INFO	execute: touch second_file.txt
@@ -138,6 +133,7 @@ cmd2:
 
 ```console
 % progen -v
+2023-01-22 13:38:52	INFO	current working direcotry: /Users/user_1/GoProjects/service
 2023-01-22 13:38:52	INFO	dir created: api/some_project/v1
 2023-01-22 13:38:52	INFO	execute: chmod -R 777 api
 2023-01-22 13:38:52	INFO	dir created: api/some_project_2/v1
@@ -209,9 +205,15 @@ cmd2:
 2023-01-28 14:29:46	INFO	dir created: api/v3
 ```
 
-### Text files
+### <a name="config_file"><a/>Configuration file
 
-Instead of specifying a config file, you can pass a single `progen.yml` in the pipe the file in via `STDIN`.
+By default `progen` try to find `progen.yml` file for execution. `-f` flag specify custom configuration file location:
+
+```console
+progen -f custom_conf.yaml
+```
+
+Instead of specifying a config file, you can pass a single configuration file in the pipe the file in via `STDIN`.
 To pipe a `progen.yml` from `STDIN`:
 
 ```console
@@ -275,6 +277,7 @@ cmd:
 
 ```console
 % progen -v
+2023-01-22 13:03:58	INFO	current working direcotry: /Users/user_1/GoProjects/service
 2023-01-22 13:03:58	INFO	dir created: api/SOME_PROJECT/v1
 2023-01-22 13:03:58	INFO	dir created: internal/some/file/path
 2023-01-22 13:03:58	INFO	dir created: pkg/SOME_PROJECT-data
@@ -305,7 +308,7 @@ out:
 └── progen.yml
 ```
 
-any part of template variable tree can be override using `-tvar` flag
+<a name="tvar"><a/>any part of template variable tree can be override using `-tvar` flag
 
 ```yaml
 ## `text/template` variables declaration 👇
@@ -324,6 +327,7 @@ dirs:
 
 ```console
 % progen -v -dr -tvar=.vars.file_path_2=overrided_path
+2023-01-22 22:25:47	INFO	current working direcotry: /Users/user_1/GoProjects/service
 2023-01-22 22:25:47	INFO	configuration file: progen_test_vars.yml
 2023-01-22 22:25:47	INFO	dir created: api/SOME_PROJECT/v1
 2023-01-22 22:25:47	INFO	dir created: internal/some/file/path
@@ -406,6 +410,7 @@ files:
 
 ```console
 % progen -v
+2023-01-22 15:47:45	INFO	current working direcotry: /Users/user_1/GoProjects/service
 2023-01-22 15:47:45	INFO	file created [template: false]: files/Readme.md
 2023-01-22 15:47:45	INFO	file created [template: true]: files/.gitignore
 2023-01-22 15:47:45	INFO	file created [template: true]: files/.editorconfig
