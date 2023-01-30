@@ -130,6 +130,22 @@ func Test_TemplateVarsFlag(t *testing.T) {
 			map[string]any{"var": map[string]any{"X": "SOME"}},
 			vars.Vars))
 	})
+	t.Run("success_parse_with_equal_sign", func(t *testing.T) {
+		var (
+			fs   = flag.NewFlagSet(setName, flag.ExitOnError)
+			vars TemplateVarsFlag
+		)
+		fs.Var(&vars, flagName, usage)
+
+		err := fs.Parse([]string{
+			flagKey, ".var.X=SOME=x=y",
+		})
+		assert.NoError(t, err)
+		assert.Len(t, vars.Vars, 1)
+		assert.True(t, reflect.DeepEqual(
+			map[string]any{"var": map[string]any{"X": "SOME=x=y"}},
+			vars.Vars))
+	})
 }
 
 func Test_SkipFlag(t *testing.T) {

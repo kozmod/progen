@@ -47,7 +47,7 @@ func (v *TemplateVarsFlag) Set(s string) error {
 				}
 			}
 
-			keyVal := strings.Split(key, entity.EqualsSign)
+			keyVal := strings.SplitN(key, entity.EqualsSign, 2)
 			if len(keyVal) < 2 {
 				return ErrVariableNotSet
 			}
