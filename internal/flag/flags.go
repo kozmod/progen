@@ -57,7 +57,6 @@ func parseFlags(name string, args []string, handling flag.ErrorHandling) (Flags,
 		f  Flags
 		fs = flag.NewFlagSet(name, handling)
 	)
-	flag.Parse()
 	fs.StringVar(
 		&f.ConfigPath,
 		"f",

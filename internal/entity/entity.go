@@ -14,7 +14,7 @@ const (
 )
 
 type FileProducer interface {
-	Get() (*DataFile, error)
+	Get() (DataFile, error)
 }
 
 //goland:noinspection SpellCheckingInspection

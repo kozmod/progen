@@ -104,16 +104,16 @@ func (p *DryRunFileProc) Exec() error {
 }
 
 type StoredProducer struct {
-	file *entity.DataFile
+	file entity.DataFile
 }
 
 func NewStoredProducer(file entity.DataFile) *StoredProducer {
 	return &StoredProducer{
-		file: &file,
+		file: file,
 	}
 }
 
-func (p *StoredProducer) Get() (*entity.DataFile, error) {
+func (p *StoredProducer) Get() (entity.DataFile, error) {
 	return p.file, nil
 }
 
@@ -127,12 +127,12 @@ func NewLocalProducer(file entity.LocalFile) *LocalProducer {
 	}
 }
 
-func (p *LocalProducer) Get() (*entity.DataFile, error) {
+func (p *LocalProducer) Get() (entity.DataFile, error) {
 	data, err := os.ReadFile(p.file.LocalPath)
 	if err != nil {
-		return nil, fmt.Errorf("read local: %w", err)
+		return entity.DataFile{}, fmt.Errorf("read local: %w", err)
 	}
-	return &entity.DataFile{
+	return entity.DataFile{
 		Template: p.file.Template,
 		Data:     data,
 	}, nil
@@ -140,17 +140,17 @@ func (p *LocalProducer) Get() (*entity.DataFile, error) {
 
 type RemoteProducer struct {
 	client *resty.Client
-	file   *entity.RemoteFile
+	file   entity.RemoteFile
 }
 
 func NewRemoteProducer(file entity.RemoteFile, client *resty.Client) *RemoteProducer {
 	return &RemoteProducer{
-		file:   &file,
+		file:   file,
 		client: client,
 	}
 }
 
-func (p *RemoteProducer) Get() (*entity.DataFile, error) {
+func (p *RemoteProducer) Get() (entity.DataFile, error) {
 	var (
 		url = p.file.URL
 	)
@@ -161,16 +161,16 @@ func (p *RemoteProducer) Get() (*entity.DataFile, error) {
 
 	rs, err := rq.Get(url)
 	if err != nil {
-		return nil, fmt.Errorf("get [%s]: %w", url, err)
+		return entity.DataFile{}, fmt.Errorf("get [%s]: %w", url, err)
 	}
 
 	statusCode := rs.StatusCode()
 	if statusCode >= http.StatusOK && statusCode < http.StatusMultipleChoices {
-		return &entity.DataFile{
+		return entity.DataFile{
 			Template: p.file.Template,
 			Data:     rs.Body(),
 		}, nil
 
 	}
-	return nil, fmt.Errorf("get [%s]: ststus [%d]: response status is not in the 2xx range", url, statusCode)
+	return entity.DataFile{}, fmt.Errorf("get [%s]: ststus [%d]: response status is not in the 2xx range", url, statusCode)
 }
