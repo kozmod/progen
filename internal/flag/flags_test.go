@@ -1,12 +1,15 @@
 package flag
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/kozmod/progen/internal/entity"
 )
 
 func Test_TemplateVarsFlag(t *testing.T) {
@@ -201,5 +204,49 @@ func Test_SkipFlag(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, skip, 2)
 		assert.ElementsMatch(t, []string{flagA, flagB}, skip)
+	})
+}
+
+func Test_parseFlags(t *testing.T) {
+	const (
+		fsName = "testFlagSet"
+		v      = "-v"
+		dr     = "-dr"
+		f      = "-f"
+
+		configPath = "progen.yml"
+		dot        = entity.Dot
+		dash       = entity.Dash
+		lessThan   = entity.LessThan
+	)
+	t.Run("success", func(t *testing.T) {
+		flags, err := parseFlags(fsName, []string{v, dr, f, configPath}, flag.ContinueOnError)
+		assert.NoError(t, err)
+		assert.Equal(t,
+			Flags{Verbose: true, DryRun: true, ConfigPath: configPath, AWD: dot},
+			flags)
+	})
+	t.Run("success_when_dash_last", func(t *testing.T) {
+		flags, err := parseFlags(fsName, []string{v, dr, dash}, flag.ContinueOnError)
+		assert.NoError(t, err)
+		assert.Equal(t,
+			Flags{Verbose: true, DryRun: true, ConfigPath: configPath, AWD: dot, ReadStdin: true},
+			flags)
+	})
+	t.Run("success_when_dash_last_and_before_less_than", func(t *testing.T) {
+		flags, err := parseFlags(fsName, []string{v, dr, dash, lessThan, configPath}, flag.ContinueOnError)
+		assert.NoError(t, err)
+		assert.Equal(t,
+			Flags{Verbose: true, DryRun: true, ConfigPath: configPath, AWD: dot, ReadStdin: true},
+			flags)
+	})
+	t.Run("error_when_flag_not_specified", func(t *testing.T) {
+		_, err := parseFlags(fsName, []string{v, dr, f}, flag.ContinueOnError)
+		assert.Error(t, err)
+	})
+	t.Run("error_when_dash_flag_not_last", func(t *testing.T) {
+		_, err := parseFlags(fsName, []string{v, dash, dr, f, configPath}, flag.ContinueOnError)
+		assert.Error(t, err)
+		assert.True(t, errors.Is(err, ErrDashFlagNotLast))
 	})
 }

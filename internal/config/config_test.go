@@ -2,8 +2,9 @@ package config
 
 import (
 	"bytes"
-	"github.com/kozmod/progen/internal/entity"
 	"testing"
+
+	"github.com/kozmod/progen/internal/entity"
 
 	"github.com/stretchr/testify/assert"
 )

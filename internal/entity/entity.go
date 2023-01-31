@@ -8,6 +8,7 @@ const (
 	Dash       = "-"
 	Dot        = "."
 	EqualsSign = "="
+	LessThan   = "<"
 
 	NewLine = '\n'
 )
