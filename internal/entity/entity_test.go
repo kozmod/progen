@@ -29,7 +29,7 @@ func Test_RegexpChain(t *testing.T) {
 	t.Run("multiple_check", func(t *testing.T) {
 		var (
 			a  = assert.New(t)
-			rc = NewRegexpChain(`cmd.?`, "^dirs$")
+			rc = NewRegexpChain(regex1, regex2)
 		)
 
 		a.Len(rc.matchers, 2)

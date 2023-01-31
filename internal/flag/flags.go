@@ -45,17 +45,16 @@ func (f *Flags) FileLocationMessage() string {
 
 func Parse() Flags {
 	args := os.Args
-	flags, err := parseFlags(args[0], args[1:], flag.ExitOnError)
+	flags, err := parseFlags(flag.NewFlagSet(args[0], flag.ExitOnError), args[1:])
 	if err != nil {
 		log.Fatalf("parse flags: %v", err)
 	}
 	return flags
 }
 
-func parseFlags(name string, args []string, handling flag.ErrorHandling) (Flags, error) {
+func parseFlags(fs *flag.FlagSet, args []string) (Flags, error) {
 	var (
-		f  Flags
-		fs = flag.NewFlagSet(name, handling)
+		f Flags
 	)
 	fs.StringVar(
 		&f.ConfigPath,

@@ -219,34 +219,54 @@ func Test_parseFlags(t *testing.T) {
 		dash       = entity.Dash
 		lessThan   = entity.LessThan
 	)
+
 	t.Run("success", func(t *testing.T) {
-		flags, err := parseFlags(fsName, []string{v, dr, f, configPath}, flag.ContinueOnError)
+		testFs := flag.NewFlagSet(fsName, flag.ContinueOnError)
+		flags, err := parseFlags(testFs, []string{v, dr, f, configPath})
 		assert.NoError(t, err)
 		assert.Equal(t,
 			Flags{Verbose: true, DryRun: true, ConfigPath: configPath, AWD: dot},
 			flags)
 	})
 	t.Run("success_when_dash_last", func(t *testing.T) {
-		flags, err := parseFlags(fsName, []string{v, dr, dash}, flag.ContinueOnError)
+		testFs := flag.NewFlagSet(fsName, flag.ContinueOnError)
+		flags, err := parseFlags(testFs, []string{v, dr, dash})
 		assert.NoError(t, err)
 		assert.Equal(t,
 			Flags{Verbose: true, DryRun: true, ConfigPath: configPath, AWD: dot, ReadStdin: true},
 			flags)
 	})
 	t.Run("success_when_dash_last_and_before_less_than", func(t *testing.T) {
-		flags, err := parseFlags(fsName, []string{v, dr, dash, lessThan, configPath}, flag.ContinueOnError)
+		testFs := flag.NewFlagSet(fsName, flag.ContinueOnError)
+		flags, err := parseFlags(testFs, []string{v, dr, dash, lessThan, configPath})
 		assert.NoError(t, err)
 		assert.Equal(t,
 			Flags{Verbose: true, DryRun: true, ConfigPath: configPath, AWD: dot, ReadStdin: true},
 			flags)
 	})
 	t.Run("error_when_flag_not_specified", func(t *testing.T) {
-		_, err := parseFlags(fsName, []string{v, dr, f}, flag.ContinueOnError)
+		testFs := flag.NewFlagSet(fsName, flag.ContinueOnError)
+		testFs.SetOutput(MockWriter{
+			assertWriteFn: func(p []byte) {
+				assert.NotEmpty(t, p)
+			},
+		})
+		_, err := parseFlags(testFs, []string{v, dr, f})
 		assert.Error(t, err)
 	})
 	t.Run("error_when_dash_flag_not_last", func(t *testing.T) {
-		_, err := parseFlags(fsName, []string{v, dash, dr, f, configPath}, flag.ContinueOnError)
+		testFs := flag.NewFlagSet(fsName, flag.ContinueOnError)
+		_, err := parseFlags(testFs, []string{v, dash, dr, f, configPath})
 		assert.Error(t, err)
 		assert.True(t, errors.Is(err, ErrDashFlagNotLast))
 	})
+}
+
+type MockWriter struct {
+	assertWriteFn func(p []byte)
+}
+
+func (m MockWriter) Write(p []byte) (n int, err error) {
+	m.assertWriteFn(p)
+	return 0, nil
 }
