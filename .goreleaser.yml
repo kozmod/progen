@@ -10,6 +10,7 @@ builds:
       - -s -w -X github.com/kozmod/progen/internal.Version=v{{.Version}}
     env:
       - CGO_ENABLED=0
+      - GO111MODULE=on
     goarch:
       - amd64
       - arm64
