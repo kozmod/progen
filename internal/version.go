@@ -15,8 +15,10 @@ const (
 	_debugRevisionKey = "vcs.revision"
 	_debugTimeKey     = "vcs.time"
 	_debugTimeLayout  = "20060102150405"
+	_develVersion     = "(devel)"
 
 	_versionSeparator = entity.Dash
+	_empty            = entity.Empty
 )
 
 var (
@@ -28,10 +30,14 @@ func GetVersion() string {
 		return v
 	}
 
+	version, ok := debug.ReadBuildInfo()
+	if ok && version.Main.Version != _develVersion && version.Main.Version != _empty {
+		return version.Main.Version
+	}
+
 	var sb strings.Builder
 	sb.WriteString(_defaultVersion)
 
-	version, ok := debug.ReadBuildInfo()
 	if ok {
 		values := make(map[int]string, 2)
 		for _, setting := range version.Settings {
