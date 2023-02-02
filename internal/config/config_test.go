@@ -36,7 +36,7 @@ steps:
 		assert.NotEmpty(t, mapConf)
 	})
 
-	t.Run("success_preprocess_raw_config_data", func(t *testing.T) {
+	t.Run("error_preprocess_raw_config_data_when_template_key_not_set", func(t *testing.T) {
 		const (
 			in = `
 steps:
@@ -48,10 +48,8 @@ steps:
 `
 		)
 
-		rawConf, mapConf, err := NewRawPreprocessor(name, nil).Process([]byte(in))
-		assert.NoError(t, err)
-		assert.Equal(t, expected, string(rawConf))
-		assert.NotEmpty(t, mapConf)
+		_, _, err := NewRawPreprocessor(name, nil).Process([]byte(in))
+		assert.Error(t, err)
 	})
 }
 

@@ -18,6 +18,10 @@ test: ## Run all tests in project with coverage
 build: ## Build binaries from source
 	@go build -o progen .
 
+.PHONT: install
+install: ## Install binaries from source
+	@go install .
+
 .PHONY: list
 list: ## List all make targets
 	@${MAKE} -pRrn : -f $(MAKEFILE_LIST) 2>/dev/null | awk -v RS= -F: '/^# File/,/^# Finished Make data base/ {if ($$1 !~ "^[#.]") {print $$1}}' | egrep -v -e '^[^[:alnum:]]' -e '^$@$$' | sort
