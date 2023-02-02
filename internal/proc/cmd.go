@@ -26,13 +26,14 @@ func (p *CommandProc) Exec() error {
 		cmd := exec.Command(command.Cmd, command.Args...)
 		var out bytes.Buffer
 		cmd.Stdout = &out
+		cmd.Dir = command.Dir
 
 		err := cmd.Run()
 		if err != nil {
-			return fmt.Errorf("run command: [%s] : %w", p.prepareMessage(command, &out), err)
+			return fmt.Errorf("run command: [exec: %s, dir: %s] : %w", p.prepareMessage(command, &out), command.Dir, err)
 		}
 
-		p.logger.Infof("execute: %s", p.prepareMessage(command, &out))
+		p.logger.Infof("execute [dir: %s]: %s", command.Dir, p.prepareMessage(command, &out))
 	}
 	return nil
 }

@@ -55,6 +55,7 @@ type HTTPClientParams struct {
 type Command struct {
 	Cmd  string
 	Args []string
+	Dir  string
 }
 
 type RegexpChain struct {

@@ -23,6 +23,7 @@ go install github.com/kozmod/progen@latest
 ```shell
 make build
 ```
+
 ___
 
 ### Args
@@ -66,7 +67,9 @@ ___
 | files.get.headers                                  | map[string]string | ✅        | request `Headers`                                               |
 | files.query_params                                 | map[string]string | ✅        | request `Query Parameters`                                      |
 |                                                    |                   |          |                                                                 |
-| cmd`<unique_suffix>`[<sup>**ⓘ**</sup>](#Generate)  |      []slice      | ✅        | list of command to execute                                      |
+| cmd`<unique_suffix>`[<sup>**ⓘ**</sup>](#Commands)  |                   |          | configuration command list                                      |
+| cmd.exec                                           |      []slice      | ❌        | list of command to execute                                      |
+| cmd.dir                                            |      string       | ✅        | execution commands (`cmd.exec`) directory                       |
 
 `❕` only one must be specified in parent section
 
@@ -93,8 +96,8 @@ files:
 
 # list commands to execution 
 cmd:
-  - touch second_file.txt
-  - tree
+  - exec: [ touch second_file.txt ]
+  - exec: [ tree ]
 ```
 
 ```console
@@ -102,8 +105,8 @@ cmd:
 2023-01-22 12:44:55	INFO	current working direcotry: /Users/user_1/GoProjects/service
 2023-01-22 12:44:55	INFO	dir created: x/y
 2023-01-22 12:44:55	INFO	file created [template: false]: x/some_file.txt
-2023-01-22 12:44:55	INFO	execute: touch second_file.txt
-2023-01-22 12:44:55	INFO	execute: tree
+2023-01-22 12:44:55	INFO	execute [dir: .]: touch second_file.txt
+2023-01-22 12:44:55	INFO	execute [dir: .]: tree
 out:
 .
 ├── progen.yml
@@ -124,20 +127,20 @@ with `<unique_suffix>` to separate action execution.
 dirs1:
   - api/some_project/v1
 cmd1:
-  - chmod -R 777 api
+  - exec: [ chmod -R 777 api ]
 dirs2:
   - api/some_project_2/v1
 cmd2:
-  - chmod -R 777 api
+  - exec: [ chmod -R 777 api ] 
 ```
 
 ```console
 % progen -v
 2023-01-22 13:38:52	INFO	current working direcotry: /Users/user_1/GoProjects/service
 2023-01-22 13:38:52	INFO	dir created: api/some_project/v1
-2023-01-22 13:38:52	INFO	execute: chmod -R 777 api
+2023-01-22 13:38:52	INFO	execute [dir: .]: chmod -R 777 api
 2023-01-22 13:38:52	INFO	dir created: api/some_project_2/v1
-2023-01-22 13:38:52	INFO	execute: chmod -R 777 api
+2023-01-22 13:38:52	INFO	execute [dir: .]: chmod -R 777 api
 ```
 
 ### <a name="dry_run"><a/>Dry Run mode
@@ -151,7 +154,7 @@ flag `-dr` use to execute configuration in dry run mod. All `action` will be exe
 dirs:
   - api/{{ $project_name }}/v1
 cmd:
-  - chmod -R 777 api/v1
+  - exec: [ chmod -R 777 api/v1 ]
 
 files:
   - path: api/v1/some_file.txt
@@ -165,7 +168,7 @@ files:
 2023-01-28 14:47:19	INFO	current working direcotry: /Users/user_1/GoProjects/service
 2023-01-28 14:47:19	INFO	configuration read: progen.yml
 2023-01-28 14:47:19	INFO	dir created: api/SOME_PROJECT/v1
-2023-01-28 14:47:19	INFO	execute cmd: chmod -R 777 api/v1
+2023-01-28 14:47:19	INFO	execute [dir: .]: chmod -R 777 api/v1
 2023-01-28 14:47:19	INFO	process file: create dir [api/SOME_PROJECT/v1] to store file [some_file.txt]
 2023-01-28 14:47:19	INFO	file created [template: true, path: api/SOME_PROJECT/v1/some_file.txt]:
 some file data data fot project: SOME_PROJECT
@@ -182,15 +185,15 @@ expression.
 dirs:
   - api/v1
 cmd:
-  - chmod -R 777 api/v1
+  - exec: [ chmod -R 777 api/v1 ]
 dirs1:
   - api/v2
 cmd1:
-  - chmod -R 777  api/v2
+  - exec: [ chmod -R 777 api/v2 ]
 dirs2:
   - api/v3
 cmd2:
-  - chmod -R 777 api/v3
+  - exec: [ chmod -R 777 api/v3 ]
 ```
 
 ```console
@@ -200,7 +203,7 @@ cmd2:
 2023-01-28 14:29:46	INFO	action tag will be skipped: dirs
 2023-01-28 14:29:46	INFO	action tag will be skipped: cmd1
 2023-01-28 14:29:46	INFO	action tag will be skipped: cmd2
-2023-01-28 14:29:46	INFO	execute cmd: chmod -R 777 api/v1
+2023-01-28 14:29:46	INFO	execute [dir: .]: chmod -R 777 api/v1
 2023-01-28 14:29:46	INFO	dir created: api/v2
 2023-01-28 14:29:46	INFO	dir created: api/v3
 ```
@@ -270,9 +273,8 @@ files:
       {{$project_name}}
 
 cmd:
-  - cat internal/{{$project_name}}.txt
-  - cat pkg/{{printf `%s-%s` $project_name `data`}}/some_file.txt
-  - tree
+  - exec: [ cat internal/{{$project_name}}.txt, ls -l, tree ]
+    dir: .
 ```
 
 ```console
@@ -416,4 +418,42 @@ files:
 2023-01-22 15:47:45	INFO	file created [template: true]: files/.editorconfig
 2023-01-22 15:47:45	INFO	file created [template: true]: files/.gitlab-ci.yml
 2023-01-22 15:47:45	INFO	file created [template: true]: files/Dockerfile
+```
+
+### Commands
+
+Execution commands process configured by specifying __commands working directory__ and commands definition.
+Default value of __commands working directory__ (`dir` tag) is `.`.
+__Commands working directory__ calculate from the __application working directory__.
+```yaml
+## progen.yml
+
+cmd:
+  - exec: [ls -l]
+    dir: .github/workflows
+  - exec: [tree -L 1]
+```
+```console
+% progen -v 
+2023-02-02 22:18:20	INFO	application working directory: /Users/user_1/GoProjects/progen
+2023-02-02 22:18:20	INFO	configuration read: progen.yml
+2023-02-02 22:18:20	INFO	execute [dir: .github/workflows]: ls -l
+out:
+total 16
+-rw-r--r--  1 19798572  646495703  762 Feb  1 09:15 release.yml
+-rw-r--r--  1 19798572  646495703  377 Jan 24 20:06 test.yml
+
+2023-02-02 22:18:20	INFO	execute [dir: .]: tree -L 1
+out:
+.
+├── LICENSE
+├── Makefile
+├── Readme.md
+├── go.mod
+├── go.sum
+├── internal
+├── main.go
+└── tmp
+
+2 directories, 6 files
 ```

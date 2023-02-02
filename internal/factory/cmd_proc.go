@@ -4,26 +4,35 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kozmod/progen/internal/config"
+
 	"github.com/kozmod/progen/internal/entity"
 	"github.com/kozmod/progen/internal/proc"
 )
 
 //goland:noinspection SpellCheckingInspection
-func NewRunCommandProc(cmds []string, logger entity.Logger, dryRun bool) (proc.Proc, error) {
+func NewRunCommandProc(cmds []config.Command, logger entity.Logger, dryRun bool) (proc.Proc, error) {
 	if len(cmds) == 0 {
 		logger.Infof("`cmd` section is empty")
 		return nil, nil
 	}
 
 	commands := make([]entity.Command, 0, len(cmds))
-	for _, cmd := range cmds {
-		cmd = strings.TrimSpace(cmd)
-		if len(cmd) == 0 {
-			return nil, fmt.Errorf("command is empty")
+	for i, cmd := range cmds {
+
+		dir := strings.TrimSpace(cmd.Dir)
+		if dir == entity.Empty {
+			dir = entity.Dot
 		}
 
-		command := commandFromString(cmd)
-		commands = append(commands, command)
+		for j, exec := range cmd.Exec {
+			exec = strings.TrimSpace(exec)
+			if len(exec) == 0 {
+				return nil, fmt.Errorf("command is empty [section: %d, exec: %d, dir: %s]", i, j, dir)
+			}
+			command := commandFromString(exec, dir)
+			commands = append(commands, command)
+		}
 	}
 
 	if dryRun {
@@ -33,7 +42,7 @@ func NewRunCommandProc(cmds []string, logger entity.Logger, dryRun bool) (proc.P
 	return proc.NewCommandProc(commands, logger), nil
 }
 
-func commandFromString(cmd string) entity.Command {
+func commandFromString(cmd, dir string) entity.Command {
 	var (
 		splitCmd = strings.Split(cmd, entity.Space)
 		res      = make([]string, 0, len(splitCmd))
@@ -48,5 +57,6 @@ func commandFromString(cmd string) entity.Command {
 	return entity.Command{
 		Cmd:  res[0],
 		Args: res[1:],
+		Dir:  dir,
 	}
 }

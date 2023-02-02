@@ -51,7 +51,7 @@ func (u *YamlUnmarshaler) Unmarshal(rawConfig []byte) (Config, error) {
 			err = node.Decode(&files.Val)
 			conf.Files = append(conf.Files, files)
 		case strings.Index(tag, TagCmd) == 0:
-			cmd := Section[[]string]{Line: int32(node.Line), Tag: tag}
+			cmd := Section[[]Command]{Line: int32(node.Line), Tag: tag}
 			err = node.Decode(&cmd.Val)
 			conf.Cmd = append(conf.Cmd, cmd)
 		}
