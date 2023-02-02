@@ -18,10 +18,10 @@ const (
 )
 
 type Config struct {
-	Settings Settings            `yaml:"settings"`
-	Dirs     []Section[[]string] `yaml:"dirs,flow"`
-	Files    []Section[[]File]   `yaml:"files,flow"`
-	Cmd      []Section[[]string] `yaml:"cmd,flow"`
+	Settings Settings             `yaml:"settings"`
+	Dirs     []Section[[]string]  `yaml:"dirs,flow"`
+	Files    []Section[[]File]    `yaml:"files,flow"`
+	Cmd      []Section[[]Command] `yaml:"cmd,flow"`
 }
 
 type Settings struct {
@@ -46,6 +46,11 @@ type File struct {
 	Get          *Get    `yaml:"get"`
 	Local        *string `yaml:"local"`
 	ExecTmplSkip bool    `yaml:"tmpl_skip"`
+}
+
+type Command struct {
+	Dir  string   `yaml:"dir"`
+	Exec []string `yaml:"exec,flow"`
 }
 
 type Get struct {

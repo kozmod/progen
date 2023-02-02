@@ -150,7 +150,8 @@ func Test_YamlUnmarshaler_Unmarshal(t *testing.T) {
 		const (
 			in = `
 cmd:
-  - pwd
+  - exec: [pwd, ls -l]
+    dir: ..
 
 dirs:
   - x/api/{{.vars.service_name}}/v1
@@ -160,7 +161,8 @@ dirs2:
   - y/api
 
 cmd1:
-  - ls -a
+  - exec: [ls -a]
+    dir: .
 
 files:
   - path: x/DDDDDD
@@ -169,8 +171,9 @@ files:
       ENV GOPROXY "{{.vars.GOPROXY}} ,proxy.golang.org,direct"
 
 cmd2:
-  - ls -lS
-  - whoami
+  - exec: [ls -lS]
+    dir: /
+  - exec: [whoami]
 `
 		)
 
@@ -181,15 +184,15 @@ cmd2:
 		a.Len(conf.Dirs, 2)
 		a.Len(conf.Cmd, 3)
 
-		assertSection(a, conf.Cmd, "cmd", 3, "pwd")
-		assertSection(a, conf.Cmd, "cmd1", 13, "ls -a")
-		assertSection(a, conf.Cmd, "cmd2", 22, "ls -lS", "whoami")
+		assertSection(a, conf.Cmd, "cmd", 3, Command{Dir: "..", Exec: []string{"pwd", "ls -l"}})
+		assertSection(a, conf.Cmd, "cmd1", 14, Command{Dir: ".", Exec: []string{"ls -a"}})
+		assertSection(a, conf.Cmd, "cmd2", 24, Command{Dir: "/", Exec: []string{"ls -lS"}}, Command{Exec: []string{"whoami"}})
 
-		assertSection(a, conf.Dirs, "dirs", 6, "x/api/{{.vars.service_name}}/v1", "s")
-		assertSection(a, conf.Dirs, "dirs2", 10, "y/api")
+		assertSection(a, conf.Dirs, "dirs", 7, "x/api/{{.vars.service_name}}/v1", "s")
+		assertSection(a, conf.Dirs, "dirs2", 11, "y/api")
 
 		files := conf.Files[0]
-		a.Equal(int32(16), files.Line)
+		a.Equal(int32(18), files.Line)
 		a.Equal(TagFiles, files.Tag)
 		a.Len(files.Val, 1)
 
