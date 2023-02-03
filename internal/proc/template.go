@@ -8,6 +8,7 @@ import (
 
 type templateExecutor struct {
 	templateData map[string]any
+	templateFns  map[string]any
 }
 
 func (e *templateExecutor) Exec(name string, data []byte) ([]byte, error) {

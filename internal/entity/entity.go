@@ -1,6 +1,8 @@
 package entity
 
-import "regexp"
+import (
+	"regexp"
+)
 
 const (
 	Space      = " "

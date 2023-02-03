@@ -54,7 +54,10 @@ func main() {
 		logger.Fatalf("read config: %v", err)
 	}
 
-	rawConfig, templateData, err := config.NewRawPreprocessor(flags.ConfigPath, flags.TemplateVars.Vars).
+	rawConfig, templateData, err := config.NewRawPreprocessor(
+		flags.ConfigPath,
+		flags.TemplateVars.Vars,
+		entity.TemplateFnsMap).
 		Process(data)
 	if err != nil {
 		logger.Fatalf("preprocess raw config: %v", err)
