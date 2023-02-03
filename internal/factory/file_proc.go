@@ -76,5 +76,5 @@ func NewFileProc(
 		return proc.NewDryRunFileProc(producers, templateData, logger), nil
 	}
 
-	return proc.NewFileProc(producers, templateData, logger), nil
+	return proc.NewFileProc(producers, templateData, entity.TemplateFnsMap, logger), nil
 }

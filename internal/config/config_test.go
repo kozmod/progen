@@ -2,11 +2,12 @@ package config
 
 import (
 	"bytes"
+	"regexp"
 	"testing"
 
-	"github.com/kozmod/progen/internal/entity"
-
 	"github.com/stretchr/testify/assert"
+
+	"github.com/kozmod/progen/internal/entity"
 )
 
 func Test_NewRawPreprocessor_Process(t *testing.T) {
@@ -30,12 +31,47 @@ steps:
 `
 		)
 
-		rawConf, mapConf, err := NewRawPreprocessor(name, nil).Process([]byte(in))
+		rawConf, mapConf, err := NewRawPreprocessor(name, nil, nil).Process([]byte(in))
 		assert.NoError(t, err)
 		assert.Equal(t, expected, string(rawConf))
 		assert.NotEmpty(t, mapConf)
 	})
+	t.Run("success_process_with_custom_fn", func(t *testing.T) {
+		const (
+			in = `
+steps:
+ name:{{ random.Alpha 8 }}
+`
+			exp = `
+steps:
+ name:[a-z, A-z]{8}
+`
+		)
 
+		res, _, err := NewRawPreprocessor(name, nil, entity.TemplateFnsMap).Process([]byte(in))
+		assert.NoError(t, err)
+		assert.Regexp(t, regexp.MustCompile(exp), string(res))
+	})
+	t.Run("success_process_with_custom_vars_map", func(t *testing.T) {
+		const (
+			in = `
+steps:
+ name:"{{.vars.service_name}}"
+`
+			exp = `
+steps:
+ name:"SOME"
+`
+		)
+
+		res, _, err := NewRawPreprocessor(
+			name,
+			map[string]any{"vars": map[string]any{"service_name": "SOME"}},
+			nil).
+			Process([]byte(in))
+		assert.NoError(t, err)
+		assert.Equal(t, exp, string(res))
+	})
 	t.Run("error_preprocess_raw_config_data_when_template_key_not_set", func(t *testing.T) {
 		const (
 			in = `
@@ -48,7 +84,7 @@ steps:
 `
 		)
 
-		_, _, err := NewRawPreprocessor(name, nil).Process([]byte(in))
+		_, _, err := NewRawPreprocessor(name, nil, nil).Process([]byte(in))
 		assert.Error(t, err)
 	})
 }

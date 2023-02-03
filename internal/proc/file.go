@@ -18,12 +18,15 @@ type FileProc struct {
 	executor  templateExecutor
 }
 
-func NewFileProc(producers []entity.FileProducer, templateData map[string]any, logger entity.Logger) *FileProc {
+func NewFileProc(producers []entity.FileProducer, templateData, templateFns map[string]any, logger entity.Logger) *FileProc {
 	return &FileProc{
 		fileMode:  os.ModePerm,
 		producers: producers,
-		executor:  templateExecutor{templateData: templateData},
-		logger:    logger,
+		executor: templateExecutor{
+			templateData: templateData,
+			templateFns:  templateFns,
+		},
+		logger: logger,
 	}
 }
 

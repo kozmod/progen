@@ -11,6 +11,11 @@ func Test_RegexpChain(t *testing.T) {
 		regex1 = `cmd.?`
 		regex2 = "^dirs$"
 	)
+
+	if testing.Short() {
+		t.Skip("skipping slow test")
+	}
+
 	t.Run("single_check", func(t *testing.T) {
 		var (
 			a  = assert.New(t)
@@ -41,5 +46,38 @@ func Test_RegexpChain(t *testing.T) {
 		a.False(rc.MatchString("dirs__"))
 		a.False(rc.MatchString("c"))
 	})
+}
 
+func Test_RandomFn(t *testing.T) {
+	var (
+		f = RandomFn{}
+	)
+
+	if testing.Short() {
+		t.Skip("skipping slow test")
+	}
+
+	t.Run("AlphaNum", func(t *testing.T) {
+		t.Run("generate_zero", func(t *testing.T) {
+
+			s := f.AlphaNum(0)
+			assert.Empty(t, s)
+		})
+		t.Run("generate_50", func(t *testing.T) {
+			s := f.AlphaNum(50)
+			assert.Len(t, s, 50)
+			assert.Regexp(t, "^[[:alnum:]]*$", s)
+		})
+	})
+	t.Run("Alpha", func(t *testing.T) {
+		t.Run("generate_zero", func(t *testing.T) {
+			s := f.Alpha(0)
+			assert.Empty(t, s)
+		})
+		t.Run("generate_50", func(t *testing.T) {
+			s := f.Alpha(50)
+			assert.Len(t, s, 50)
+			assert.Regexp(t, "^[[:alnum:]]*$", s)
+		})
+	})
 }

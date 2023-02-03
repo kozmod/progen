@@ -17,12 +17,14 @@ const (
 type RawPreprocessor struct {
 	templateName string
 	templateVars map[string]any
+	templateFns  map[string]any
 }
 
-func NewRawPreprocessor(templateName string, templateVars map[string]any) *RawPreprocessor {
+func NewRawPreprocessor(templateName string, templateVars, templateFns map[string]any) *RawPreprocessor {
 	return &RawPreprocessor{
 		templateName: templateName,
 		templateVars: templateVars,
+		templateFns:  templateFns,
 	}
 }
 
@@ -39,7 +41,10 @@ func (p *RawPreprocessor) Process(data []byte) ([]byte, map[string]any, error) {
 
 	conf = entity.MergeKeys(conf, p.templateVars)
 
-	temp, err := template.New(name).Option(templateOptionMissingKeyError).Parse(string(data))
+	temp, err := template.New(name).
+		Option(templateOptionMissingKeyError).
+		Funcs(p.templateFns).
+		Parse(string(data))
 	if err != nil {
 		return nil, nil, fmt.Errorf("new template [%s]: %w", name, err)
 	}

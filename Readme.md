@@ -336,6 +336,14 @@ dirs:
 2023-01-22 22:25:47	INFO	dir created: internal/overrided_path
 ```
 
+#### Custom template functions
+| Function          |     args     | Description                                                                   |
+|:------------------|:------------:|:------------------------------------------------------------------------------|
+| `random.Alpha`    | length `int` | Generates a random alphabetical `(A-Z, a-z)` string of a desired length.      | 
+| `random.AlphaNum` | length `int`  | Generates a random alphanumeric `(0-9, A-Z, a-z)` string of a desired length. |
+
+Custom template functions adds the elements of the argument map to the template's [function map]](https://pkg.go.dev/text/template#hdr-Functions).
+
 ### <a name="http_client"></a>Http Client
 
 HTTP client configuration
@@ -425,14 +433,16 @@ files:
 Execution commands process configured by specifying __commands working directory__ and commands definition.
 Default value of __commands working directory__ (`dir` tag) is `.`.
 __Commands working directory__ calculate from the __application working directory__.
+
 ```yaml
 ## progen.yml
 
 cmd:
-  - exec: [ls -l]
+  - exec: [ ls -l ]
     dir: .github/workflows
-  - exec: [tree -L 1]
+  - exec: [ tree -L 1 ]
 ```
+
 ```console
 % progen -v 
 2023-02-02 22:18:20	INFO	application working directory: /Users/user_1/GoProjects/progen
