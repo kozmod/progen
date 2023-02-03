@@ -84,8 +84,9 @@ steps:
 `
 		)
 
-		_, _, err := NewRawPreprocessor(name, nil, nil).Process([]byte(in))
-		assert.Error(t, err)
+		res, _, err := NewRawPreprocessor(name, nil, nil).Process([]byte(in))
+		assert.NoError(t, err)
+		assert.Equal(t, expected, string(res))
 	})
 }
 

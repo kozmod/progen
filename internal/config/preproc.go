@@ -10,10 +10,6 @@ import (
 	"github.com/kozmod/progen/internal/entity"
 )
 
-const (
-	templateOptionMissingKeyError = "missingkey=error"
-)
-
 type RawPreprocessor struct {
 	templateName string
 	templateVars map[string]any
@@ -42,7 +38,6 @@ func (p *RawPreprocessor) Process(data []byte) ([]byte, map[string]any, error) {
 	conf = entity.MergeKeys(conf, p.templateVars)
 
 	temp, err := template.New(name).
-		Option(templateOptionMissingKeyError).
 		Funcs(p.templateFns).
 		Parse(string(data))
 	if err != nil {
