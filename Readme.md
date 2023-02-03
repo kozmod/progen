@@ -43,33 +43,33 @@ ___
 
 ### Actions and tags
 
-| Key                                                |       Type        | Optional | Description                                                     |
-|:---------------------------------------------------|:-----------------:|:---------|:----------------------------------------------------------------|
-|                                                    |                   |          |                                                                 |
-| settings                                           |                   | ✅        | `progen` settings section                                       |
+| Key                                                |       Type        | Optional | Description                                           |
+|:---------------------------------------------------|:-----------------:|:---------|:------------------------------------------------------|
+|                                                    |                   |          |                                                       |
+| settings                                           |                   | ✅        | `progen` settings section                             |
 |                                                    |                   |          |
-| settings.http[<sup>**ⓘ**</sup>](#http_client)      |                   | ✅        | http client configuration                                       |
-| settings.http.debug                                |       bool        | ✅        | http client `DEBUG` mode                                        |
-| settings.http.base_url                             |      string       | ✅        | http client base `URL`                                          |
-| settings.http.headers                              | map[string]string | ✅        | http client base request `Headers`                              |
-| settings.http.query_params                         | map[string]string | ✅        | http client base request `Query Parameters`                     |
-|                                                    |                   |          |                                                                 |
-| dirs`<unique_suffix>`[<sup>**ⓘ**</sup>](#Generate) |     []string      | ✅        | list of directories to create                                   |
-|                                                    |                   |          |                                                                 |
-| files`<unique_suffix>`[<sup>**ⓘ**</sup>](#Files)   |                   | ✅        | list file's `path` and `data`                                   |
-| files.path                                         |      string       | ❌        | save file `path`                                                |
-| files.tmpl_skip                                    |       bool        | ✅        | flag to skip processing file data as template(except of `data`) |
-| files.local                                        |      string       | `❕`      | local file path to copy                                         |
-| files.data                                         |      string       | `❕`      | save file `data`                                                |
-|                                                    |                   |          |                                                                 |
-| files.get                                          |                   | `❕`      | struct describe `GET` request for getting file's data           |
-| files.get.url                                      |      string       | ❌        | request `URL`                                                   |
-| files.get.headers                                  | map[string]string | ✅        | request `Headers`                                               |
-| files.query_params                                 | map[string]string | ✅        | request `Query Parameters`                                      |
-|                                                    |                   |          |                                                                 |
-| cmd`<unique_suffix>`[<sup>**ⓘ**</sup>](#Commands)  |                   |          | configuration command list                                      |
-| cmd.exec                                           |      []slice      | ❌        | list of command to execute                                      |
-| cmd.dir                                            |      string       | ✅        | execution commands (`cmd.exec`) directory                       |
+| settings.http[<sup>**ⓘ**</sup>](#http_client)      |                   | ✅        | http client configuration                             |
+| settings.http.debug                                |       bool        | ✅        | http client `DEBUG` mode                              |
+| settings.http.base_url                             |      string       | ✅        | http client base `URL`                                |
+| settings.http.headers                              | map[string]string | ✅        | http client base request `Headers`                    |
+| settings.http.query_params                         | map[string]string | ✅        | http client base request `Query Parameters`           |
+|                                                    |                   |          |                                                       |
+| dirs`<unique_suffix>`[<sup>**ⓘ**</sup>](#Generate) |     []string      | ✅        | list of directories to create                         |
+|                                                    |                   |          |                                                       |
+| files`<unique_suffix>`[<sup>**ⓘ**</sup>](#Files)   |                   | ✅        | list file's `path` and `data`                         |
+| files.path                                         |      string       | ❌        | save file `path`                                      |
+| files.tmpl_skip                                    |       bool        | ✅        | flag to skip processing file data as template         |
+| files.local                                        |      string       | `❕`      | local file path to copy                               |
+| files.data                                         |      string       | `❕`      | save file `data`                                      |
+|                                                    |                   |          |                                                       |
+| files.get                                          |                   | `❕`      | struct describe `GET` request for getting file's data |
+| files.get.url                                      |      string       | ❌        | request `URL`                                         |
+| files.get.headers                                  | map[string]string | ✅        | request `Headers`                                     |
+| files.query_params                                 | map[string]string | ✅        | request `Query Parameters`                            |
+|                                                    |                   |          |                                                       |
+| cmd`<unique_suffix>`[<sup>**ⓘ**</sup>](#Commands)  |                   |          | configuration command list                            |
+| cmd.exec                                           |      []slice      | ❌        | list of command to execute                            |
+| cmd.dir                                            |      string       | ✅        | execution commands (`cmd.exec`) directory             |
 
 `❕` only one must be specified in parent section
 
@@ -337,12 +337,14 @@ dirs:
 ```
 
 #### Custom template functions
+
 | Function          |     args     | Description                                                                   |
 |:------------------|:------------:|:------------------------------------------------------------------------------|
 | `random.Alpha`    | length `int` | Generates a random alphabetical `(A-Z, a-z)` string of a desired length.      | 
-| `random.AlphaNum` | length `int`  | Generates a random alphanumeric `(0-9, A-Z, a-z)` string of a desired length. |
+| `random.AlphaNum` | length `int` | Generates a random alphanumeric `(0-9, A-Z, a-z)` string of a desired length. |
 
-Custom template functions adds the elements of the argument map to the template's [function map]](https://pkg.go.dev/text/template#hdr-Functions).
+Custom template functions adds the elements of the argument map to the
+template's [function map]](https://pkg.go.dev/text/template#hdr-Functions).
 
 ### <a name="http_client"></a>Http Client
 
