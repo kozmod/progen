@@ -5,74 +5,62 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"sync"
 
 	"github.com/go-resty/resty/v2"
 
 	"github.com/kozmod/progen/internal/entity"
 )
 
-type FileProc struct {
+type SaveFilesProc struct {
 	fileMode  os.FileMode
 	producers []entity.FileProducer
 	logger    entity.Logger
-	executor  templateExecutor
 }
 
-func NewFileProc(producers []entity.FileProducer, templateData, templateFns map[string]any, logger entity.Logger) *FileProc {
-	return &FileProc{
+func NewSaveFilesProc(producers []entity.FileProducer, logger entity.Logger) *SaveFilesProc {
+	return &SaveFilesProc{
 		fileMode:  os.ModePerm,
 		producers: producers,
-		executor: templateExecutor{
-			templateData: templateData,
-			templateFns:  templateFns,
-		},
+
 		logger: logger,
 	}
 }
 
-func (p *FileProc) Exec() error {
+func (p *SaveFilesProc) Exec() error {
 	for _, producer := range p.producers {
 		file, err := producer.Get()
 		if err != nil {
-			return fmt.Errorf("process file: get file to write: %w", err)
+			return fmt.Errorf("save file: get file to write: %w", err)
 		}
 
 		fileDir := file.Path
 		if _, err := os.Stat(fileDir); os.IsNotExist(err) {
 			err = os.MkdirAll(fileDir, p.fileMode)
 			if err != nil {
-				return fmt.Errorf("process file: create file dir [%s]: %w", fileDir, err)
+				return fmt.Errorf("save file: create file dir [%s]: %w", fileDir, err)
 			}
 		}
 
 		filePath := path.Join(file.Path, file.Name)
-
-		if file.ExecTmpl {
-			data, err := p.executor.Exec(filePath, file.Data)
-			if err != nil {
-				return fmt.Errorf("process file: %w", err)
-			}
-			file.Data = data
-		}
-
 		err = os.WriteFile(filePath, file.Data, p.fileMode)
 		if err != nil {
-			return fmt.Errorf("process file: create file [%s]: %w", file.Name, err)
+			return fmt.Errorf("save file: create file [%s]: %w", file.Name, err)
 		}
-		p.logger.Infof("file created [template: %v]: %s", file.ExecTmpl, filePath)
+		p.logger.Infof("file saved [template: %v]: %s", file.ExecTmpl, filePath)
 	}
 	return nil
 }
 
-type DryRunFileProc struct {
+type DryRunFilesProc struct {
 	fileMode  os.FileMode
 	producers []entity.FileProducer
 	logger    entity.Logger
 	executor  templateExecutor
 }
 
-func NewDryRunFileProc(producers []entity.FileProducer, templateData map[string]any, logger entity.Logger) *DryRunFileProc {
-	return &DryRunFileProc{
+func NewDryRunFilesProc(producers []entity.FileProducer, templateData map[string]any, logger entity.Logger) *DryRunFilesProc {
+	return &DryRunFilesProc{
 		fileMode:  os.ModePerm,
 		producers: producers,
 		executor:  templateExecutor{templateData: templateData},
@@ -80,7 +68,7 @@ func NewDryRunFileProc(producers []entity.FileProducer, templateData map[string]
 	}
 }
 
-func (p *DryRunFileProc) Exec() error {
+func (p *DryRunFilesProc) Exec() error {
 	for _, producer := range p.producers {
 		file, err := producer.Get()
 		if err != nil {
@@ -93,17 +81,80 @@ func (p *DryRunFileProc) Exec() error {
 		}
 
 		filePath := path.Join(file.Path, file.Name)
-
-		if file.ExecTmpl {
-			data, err := p.executor.Exec(filePath, file.Data)
-			if err != nil {
-				return fmt.Errorf("process file: %w", err)
-			}
-			file.Data = data
-		}
 		p.logger.Infof("file created [template: %v, path: %s]:\n%s", file.ExecTmpl, filePath, string(file.Data))
 	}
 	return nil
+}
+
+type FilesPreProc struct {
+	mx        sync.Mutex
+	producers []entity.FileProducer
+}
+
+func NewFilesPreProc(producers []entity.FileProducer) *FilesPreProc {
+	return &FilesPreProc{
+		producers: producers,
+	}
+}
+
+func (p *FilesPreProc) Exec() error {
+	p.mx.Lock()
+	defer p.mx.Unlock()
+
+	processed := make([]entity.FileProducer, 0, len(p.producers))
+	for i, producer := range p.producers {
+		file, err := producer.Get()
+		if err != nil {
+			return fmt.Errorf("pre process file [%d]: %w", i, err)
+		}
+		processed = append(processed, &StoredProducer{file: file})
+	}
+	p.producers = processed
+	return nil
+}
+
+func (p *FilesPreProc) Get() (entity.DataFile, error) {
+	p.mx.Lock()
+	defer p.mx.Unlock()
+	if len(p.producers) == 0 {
+		return entity.DataFile{}, fmt.Errorf("get preprocessed: empty")
+	}
+	producer := p.producers[0]
+	p.producers = p.producers[1:]
+
+	return producer.Get()
+}
+
+type TemplateExecProducerDecorator struct {
+	producer entity.FileProducer
+	executor templateExecutor
+}
+
+func NewTemplateExecProducer(producer entity.FileProducer, templateData, templateFns map[string]any) *TemplateExecProducerDecorator {
+	return &TemplateExecProducerDecorator{
+		producer: producer,
+		executor: templateExecutor{
+			templateData: templateData,
+			templateFns:  templateFns,
+		},
+	}
+}
+
+func (p *TemplateExecProducerDecorator) Get() (entity.DataFile, error) {
+	file, err := p.producer.Get()
+	if err != nil {
+		return file, fmt.Errorf("process file: get file to write: %w", err)
+	}
+
+	filePath := path.Join(file.Path, file.Name)
+	if file.ExecTmpl {
+		data, err := p.executor.Exec(filePath, file.Data)
+		if err != nil {
+			return file, fmt.Errorf("process process: %w", err)
+		}
+		file.Data = data
+	}
+	return file, nil
 }
 
 type StoredProducer struct {

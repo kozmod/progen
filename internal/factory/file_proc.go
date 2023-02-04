@@ -11,13 +11,12 @@ import (
 	"github.com/kozmod/progen/internal/proc"
 )
 
-func NewFileProc(
+func NewFileProducers(
 	files []config.File,
 	http *config.HTTPClient,
 	templateData map[string]any,
 	logger entity.Logger,
-	dryRun bool,
-) (proc.Proc, error) {
+) ([]entity.FileProducer, error) {
 	if len(files) == 0 {
 		logger.Infof("`files` section is empty")
 		return nil, nil
@@ -69,12 +68,13 @@ func NewFileProc(
 			return nil, fmt.Errorf("create file processor: one of `data`, `get`, `local` must not be empty")
 		}
 
-		producers = append(producers, producer)
+		producers = append(producers, proc.NewTemplateExecProducer(producer, templateData, entity.TemplateFnsMap))
 	}
+	return producers, nil
 
-	if dryRun {
-		return proc.NewDryRunFileProc(producers, templateData, logger), nil
-	}
-
-	return proc.NewFileProc(producers, templateData, entity.TemplateFnsMap, logger), nil
+	//if dryRun {
+	//	return proc.NewDryRunFilesProc(producers, templateData, logger), nil
+	//}
+	//
+	//return proc.NewSaveFilesProc(producers, logger), nil
 }

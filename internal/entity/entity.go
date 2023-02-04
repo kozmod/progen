@@ -19,6 +19,10 @@ type FileProducer interface {
 	Get() (DataFile, error)
 }
 
+type Processor interface {
+	Exec() error
+}
+
 //goland:noinspection SpellCheckingInspection
 type Logger interface {
 	Infof(format string, args ...any)

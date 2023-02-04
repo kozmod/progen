@@ -14,7 +14,7 @@ func NewProcChain(
 	templateData map[string]any,
 	logger entity.Logger,
 	dryRun bool,
-) (*proc.Chain, error) {
+) (entity.Processor, error) {
 
 	type (
 		ProcGenerator struct {
@@ -23,7 +23,10 @@ func NewProcChain(
 		}
 	)
 
-	var generators []ProcGenerator
+	var (
+		generators    []ProcGenerator
+		fileProducers []entity.FileProducer
+	)
 	for _, dirs := range conf.Dirs {
 		d := dirs
 		generators = append(generators,
@@ -41,7 +44,16 @@ func NewProcChain(
 			ProcGenerator{
 				line: f.Line,
 				procFn: func() (proc.Proc, error) {
-					return NewFileProc(f.Val, conf.Settings.HTTP, templateData, logger, dryRun)
+					producers, err := NewFileProducers(f.Val, conf.Settings.HTTP, templateData, logger)
+					if err != nil {
+						return nil, err
+					}
+					fileProducers = producers
+
+					if dryRun {
+						return proc.NewDryRunFilesProc(producers, templateData, logger), nil
+					}
+					return proc.NewSaveFilesProc(producers, logger), nil
 				},
 			})
 	}
@@ -74,5 +86,8 @@ func NewProcChain(
 		procs = append(procs, p)
 	}
 
-	return proc.NewProcChain(procs), nil
+	chain := proc.NewPreProcessChain(proc.NewProcChain(procs), proc.NewFilesPreProc(fileProducers))
+
+	//return proc.NewProcChain(procs), nil
+	return chain, nil
 }

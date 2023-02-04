@@ -10,6 +10,10 @@ import (
 	"github.com/kozmod/progen/internal/entity"
 )
 
+const (
+	templateOptionMissingKeyError = "missingkey=error"
+)
+
 type RawPreprocessor struct {
 	templateName string
 	templateVars map[string]any
@@ -39,6 +43,7 @@ func (p *RawPreprocessor) Process(data []byte) ([]byte, map[string]any, error) {
 
 	temp, err := template.New(name).
 		Funcs(p.templateFns).
+		Option(templateOptionMissingKeyError).
 		Parse(string(data))
 	if err != nil {
 		return nil, nil, fmt.Errorf("new template [%s]: %w", name, err)
