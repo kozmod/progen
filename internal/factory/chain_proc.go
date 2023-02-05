@@ -15,6 +15,7 @@ func NewExecutorChain(
 	logger entity.Logger,
 	preload,
 	dryRun bool,
+	templateOptions []string,
 ) (entity.Executor, error) {
 
 	type (
@@ -43,8 +44,8 @@ func NewExecutorChain(
 			ProcGenerator{
 				line: f.Line,
 				procFn: func() (entity.Executor, error) {
-					executor, ldrs, err := NewFileExecutor(f.Val, conf.Settings.HTTP, templateData, logger, preload, dryRun)
-					loaders = append(loaders, ldrs...)
+					executor, l, err := NewFileExecutor(f.Val, conf.Settings.HTTP, templateData, logger, preload, dryRun, templateOptions)
+					loaders = append(loaders, l...)
 					return executor, err
 				},
 			})
@@ -65,8 +66,7 @@ func NewExecutorChain(
 		return generators[i].line < generators[j].line
 	})
 
-	//goland:noinspection SpellCheckingInspection
-	procs := make([]entity.Executor, 0, len(generators))
+	processors := make([]entity.Executor, 0, len(generators))
 	for i, generator := range generators {
 		p, err := generator.procFn()
 		if err != nil {
@@ -75,12 +75,12 @@ func NewExecutorChain(
 		if p == nil {
 			continue
 		}
-		procs = append(procs, p)
+		processors = append(processors, p)
 	}
 
 	if len(loaders) != 0 {
-		return proc.NewPreloadChain(loaders, procs), nil
+		return proc.NewPreloadChain(loaders, processors), nil
 	}
 
-	return proc.NewProcChain(procs), nil
+	return proc.NewProcChain(processors), nil
 }

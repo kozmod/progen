@@ -29,6 +29,7 @@ type Flags struct {
 	AWD          string // AWD application working directory
 	Skip         SkipFlag
 	Preload      bool
+	MissingKey   MissingKeyFlag
 }
 
 func (f *Flags) FileLocationMessage() string {
@@ -96,6 +97,17 @@ func parseFlags(fs *flag.FlagSet, args []string) (Flags, error) {
 		"fpp",
 		true,
 		"preprocessing all files before saving")
+	fs.Var(
+		&f.MissingKey,
+		"missingkey",
+		fmt.Sprintf(
+			"`missingkey` template option: %v, %v, %v, %v",
+			entity.MissingKeyDefault,
+			entity.MissingKeyInvalid,
+			entity.MissingKeyZero,
+			entity.MissingKeyError,
+		),
+	)
 	err := fs.Parse(args)
 	if err != nil {
 		return f, err

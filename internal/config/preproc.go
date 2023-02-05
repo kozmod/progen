@@ -11,16 +11,18 @@ import (
 )
 
 type RawPreprocessor struct {
-	templateName string
-	templateVars map[string]any
-	templateFns  map[string]any
+	templateName    string
+	templateVars    map[string]any
+	templateFns     map[string]any
+	templateOptions []string
 }
 
-func NewRawPreprocessor(templateName string, templateVars, templateFns map[string]any) *RawPreprocessor {
+func NewRawPreprocessor(templateName string, templateVars, templateFns map[string]any, templateOptions []string) *RawPreprocessor {
 	return &RawPreprocessor{
-		templateName: templateName,
-		templateVars: templateVars,
-		templateFns:  templateFns,
+		templateName:    templateName,
+		templateVars:    templateVars,
+		templateFns:     templateFns,
+		templateOptions: templateOptions,
 	}
 }
 
@@ -39,6 +41,7 @@ func (p *RawPreprocessor) Process(data []byte) ([]byte, map[string]any, error) {
 
 	temp, err := template.New(name).
 		Funcs(p.templateFns).
+		Option(p.templateOptions...).
 		Parse(string(data))
 	if err != nil {
 		return nil, nil, fmt.Errorf("new template [%s]: %w", name, err)

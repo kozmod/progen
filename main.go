@@ -57,7 +57,9 @@ func main() {
 	rawConfig, templateData, err := config.NewRawPreprocessor(
 		flags.ConfigPath,
 		flags.TemplateVars.Vars,
-		entity.TemplateFnsMap).
+		entity.TemplateFnsMap,
+		[]string{flags.MissingKey.String()},
+	).
 		Process(data)
 	if err != nil {
 		logger.Fatalf("preprocess raw config: %v", err)
@@ -83,7 +85,13 @@ func main() {
 		logger.Fatalf("prepare config: %v", err)
 	}
 
-	procChain, err := factory.NewExecutorChain(conf, templateData, logger, flags.Preload, flags.DryRun)
+	procChain, err := factory.NewExecutorChain(
+		conf,
+		templateData,
+		logger,
+		flags.Preload,
+		flags.DryRun,
+		[]string{flags.MissingKey.String()})
 	if err != nil {
 		logger.Fatalf("create processors chain: %v", err)
 	}

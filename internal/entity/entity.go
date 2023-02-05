@@ -1,11 +1,37 @@
 package entity
 
 import (
+	"fmt"
 	"path/filepath"
 	"regexp"
 )
 
+type (
+	TemplateOptionsKey string
+	MissingKeyValue    string
+)
+
+func (v MissingKeyValue) Valid() error {
+	switch v {
+	case MissingKeyDefault,
+		MissingKeyInvalid,
+		MissingKeyZero,
+		MissingKeyError:
+		return nil
+	default:
+		return fmt.Errorf("templte option [%v] is not valid: %v", TemplateOptionsMissingKey, v)
+	}
+}
+
+//goland:noinspection SpellCheckingInspection
 const (
+	TemplateOptionsMissingKey TemplateOptionsKey = "missingkey"
+
+	MissingKeyDefault MissingKeyValue = "default"
+	MissingKeyInvalid MissingKeyValue = "invalid"
+	MissingKeyZero    MissingKeyValue = "zero"
+	MissingKeyError   MissingKeyValue = "error"
+
 	Space      = " "
 	Empty      = ""
 	Dash       = "-"
