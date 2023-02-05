@@ -7,8 +7,8 @@ tools: ## Run tools (vet, gofmt, goimports, tidy, etc.)
 	@go version
 	gofmt -w .
 	goimports -w .
+	go mod tidy
 	go vet ./...
-	@go mod tidy
 
 .PHONT: test
 test: ## Run all tests in project with coverage

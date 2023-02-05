@@ -51,22 +51,3 @@ func (p *RawPreprocessor) Process(data []byte) ([]byte, map[string]any, error) {
 	}
 	return buf.Bytes(), conf, nil
 }
-
-func PrepareFiles(conf Config, files map[string][]File) (Config, error) {
-	for i, fs := range conf.Files {
-		f := files[fs.Tag]
-		if cl, fl := len(conf.Files), len(files); cl != fl {
-			return conf, fmt.Errorf("len of files is not match [%d:%d]: %s", cl, fl, fs.Tag)
-		}
-		for j, file := range fs.Val {
-			if file.ExecTmplSkip {
-				if file.Data == nil {
-					continue
-				}
-				f := f[j]
-				conf.Files[i].Val[j].Data = f.Data
-			}
-		}
-	}
-	return conf, nil
-}

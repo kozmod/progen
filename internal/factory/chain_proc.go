@@ -9,17 +9,18 @@ import (
 	"github.com/kozmod/progen/internal/proc"
 )
 
-func NewProcChain(
+func NewExecutorChain(
 	conf config.Config,
 	templateData map[string]any,
 	logger entity.Logger,
+	preload,
 	dryRun bool,
-) (*proc.Chain, error) {
+) (entity.Executor, error) {
 
 	type (
 		ProcGenerator struct {
 			line   int32
-			procFn func() (proc.Proc, error)
+			procFn func() (entity.Executor, error)
 		}
 	)
 
@@ -29,19 +30,22 @@ func NewProcChain(
 		generators = append(generators,
 			ProcGenerator{
 				line: d.Line,
-				procFn: func() (proc.Proc, error) {
-					return NewMkdirProc(d.Val, logger, dryRun)
+				procFn: func() (entity.Executor, error) {
+					return NewMkdirExecutor(d.Val, logger, dryRun)
 				},
 			})
 	}
 
+	var loaders []entity.Preprocessor
 	for _, files := range conf.Files {
 		f := files
 		generators = append(generators,
 			ProcGenerator{
 				line: f.Line,
-				procFn: func() (proc.Proc, error) {
-					return NewFileProc(f.Val, conf.Settings.HTTP, templateData, logger, dryRun)
+				procFn: func() (entity.Executor, error) {
+					executor, ldrs, err := NewFileExecutor(f.Val, conf.Settings.HTTP, templateData, logger, preload, dryRun)
+					loaders = append(loaders, ldrs...)
+					return executor, err
 				},
 			})
 	}
@@ -51,8 +55,8 @@ func NewProcChain(
 		generators = append(generators,
 			ProcGenerator{
 				line: cmd.Line,
-				procFn: func() (proc.Proc, error) {
-					return NewRunCommandProc(cmd.Val, logger, dryRun)
+				procFn: func() (entity.Executor, error) {
+					return NewRunCommandExecutor(cmd.Val, logger, dryRun)
 				},
 			})
 	}
@@ -62,7 +66,7 @@ func NewProcChain(
 	})
 
 	//goland:noinspection SpellCheckingInspection
-	procs := make([]proc.Proc, 0, len(generators))
+	procs := make([]entity.Executor, 0, len(generators))
 	for i, generator := range generators {
 		p, err := generator.procFn()
 		if err != nil {
@@ -72,6 +76,10 @@ func NewProcChain(
 			continue
 		}
 		procs = append(procs, p)
+	}
+
+	if len(loaders) != 0 {
+		return proc.NewPreloadChain(loaders, procs), nil
 	}
 
 	return proc.NewProcChain(procs), nil
