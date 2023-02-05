@@ -10,8 +10,7 @@ import (
 	"github.com/kozmod/progen/internal/proc"
 )
 
-//goland:noinspection SpellCheckingInspection
-func NewRunCommandProc(cmds []config.Command, logger entity.Logger, dryRun bool) (proc.Proc, error) {
+func NewRunCommandExecutor(cmds []config.Command, logger entity.Logger, dryRun bool) (entity.Executor, error) {
 	if len(cmds) == 0 {
 		logger.Infof("`cmd` section is empty")
 		return nil, nil

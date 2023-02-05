@@ -28,6 +28,7 @@ type Flags struct {
 	TemplateVars TemplateVarsFlag
 	AWD          string // AWD application working directory
 	Skip         SkipFlag
+	Preload      bool
 }
 
 func (f *Flags) FileLocationMessage() string {
@@ -90,6 +91,11 @@ func parseFlags(fs *flag.FlagSet, args []string) (Flags, error) {
 		&f.Skip,
 		"skip",
 		"list of skipping 'yaml' tags")
+	fs.BoolVar(
+		&f.Preload,
+		"fpp",
+		true,
+		"preprocessing all files before saving")
 	err := fs.Parse(args)
 	if err != nil {
 		return f, err

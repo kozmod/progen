@@ -1,6 +1,7 @@
 package entity
 
 import (
+	"path/filepath"
 	"regexp"
 )
 
@@ -19,6 +20,18 @@ type FileProducer interface {
 	Get() (DataFile, error)
 }
 
+type FileProc interface {
+	Process(file DataFile) (DataFile, error)
+}
+
+type Executor interface {
+	Exec() error
+}
+
+type Preprocessor interface {
+	Process() error
+}
+
 //goland:noinspection SpellCheckingInspection
 type Logger interface {
 	Infof(format string, args ...any)
@@ -28,24 +41,32 @@ type Logger interface {
 }
 
 type DataFile struct {
-	Template
+	FileInfo
 	Data []byte
 }
 
 type LocalFile struct {
-	Template
+	FileInfo
 	LocalPath string
 }
 
 type RemoteFile struct {
-	Template
+	FileInfo
 	HTTPClientParams
 }
 
-type Template struct {
-	Path     string
-	Name     string
-	ExecTmpl bool
+type FileInfo struct {
+	Dir  string
+	Name string
+	path *string
+}
+
+func (f *FileInfo) Path() string {
+	if f.path == nil {
+		path := filepath.Join(f.Dir, f.Name)
+		f.path = &path
+	}
+	return *f.path
 }
 
 type HTTPClientParams struct {

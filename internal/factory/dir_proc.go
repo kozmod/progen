@@ -5,7 +5,7 @@ import (
 	"github.com/kozmod/progen/internal/proc"
 )
 
-func NewMkdirProc(dirs []string, logger entity.Logger, dryRun bool) (proc.Proc, error) {
+func NewMkdirExecutor(dirs []string, logger entity.Logger, dryRun bool) (entity.Executor, error) {
 	if len(dirs) == 0 {
 		logger.Infof("`dir` section is empty")
 		return nil, nil
