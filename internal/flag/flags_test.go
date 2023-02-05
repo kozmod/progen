@@ -225,7 +225,7 @@ func Test_parseFlags(t *testing.T) {
 		flags, err := parseFlags(testFs, []string{v, dr, f, configPath})
 		assert.NoError(t, err)
 		assert.Equal(t,
-			Flags{Verbose: true, DryRun: true, ConfigPath: configPath, AWD: dot},
+			Flags{Verbose: true, Preload: true, DryRun: true, ConfigPath: configPath, AWD: dot},
 			flags)
 	})
 	t.Run("success_when_dash_last", func(t *testing.T) {
@@ -233,7 +233,7 @@ func Test_parseFlags(t *testing.T) {
 		flags, err := parseFlags(testFs, []string{v, dr, dash})
 		assert.NoError(t, err)
 		assert.Equal(t,
-			Flags{Verbose: true, DryRun: true, ConfigPath: configPath, AWD: dot, ReadStdin: true},
+			Flags{Verbose: true, Preload: true, DryRun: true, ConfigPath: configPath, AWD: dot, ReadStdin: true},
 			flags)
 	})
 	t.Run("success_when_dash_last_and_before_less_than", func(t *testing.T) {
@@ -241,7 +241,7 @@ func Test_parseFlags(t *testing.T) {
 		flags, err := parseFlags(testFs, []string{v, dr, dash, lessThan, configPath})
 		assert.NoError(t, err)
 		assert.Equal(t,
-			Flags{Verbose: true, DryRun: true, ConfigPath: configPath, AWD: dot, ReadStdin: true},
+			Flags{Verbose: true, Preload: true, DryRun: true, ConfigPath: configPath, AWD: dot, ReadStdin: true},
 			flags)
 	})
 	t.Run("error_when_flag_not_specified", func(t *testing.T) {

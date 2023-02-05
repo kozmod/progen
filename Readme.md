@@ -8,7 +8,7 @@
 ![GitHub last commit](https://img.shields.io/github/last-commit/kozmod/progen)
 ![GitHub MIT license](https://img.shields.io/github/license/kozmod/progen)
 
-A flexible, language and framework agnostic tool that allows you to generate projects structure from templates based
+A flexible, language and frameworks agnostic tool that allows you to generate projects structure from templates based
 on `yaml` configuration (generate directories, files and execute commands).
 ___
 
@@ -28,16 +28,17 @@ ___
 
 ### Args
 
-| Name                                     |   Type   | Description                                                                                  |
-|:-----------------------------------------|:--------:|:---------------------------------------------------------------------------------------------|
-| `-f`[<sup>**ⓘ**</sup>](#config_file)     |  string  | specify configuration file path                                                              |
-| `-v`                                     |   bool   | verbose output                                                                               |
-| `-dr`[<sup>**ⓘ**</sup>](#dry_run)        |   bool   | `dry run` mode <br/>(to verbose output should be combine with`-v`)                           |
-| `-awd`                                   |  string  | application working directory                                                                |
-| `-tvar`[<sup>**ⓘ**</sup>](#tvar)         | []string | [text/template](https://pkg.go.dev/text/template) variables (override config variables tree) |
-| `-skip`[<sup>**ⓘ**</sup>](#skip_actions) | []string | skip any `action` tag (regular expression)                                                   |
-| `-version`                               |   bool   | print version                                                                                |
-| `-help`                                  |   bool   | show flags                                                                                   |
+| Name                                           |   Type   |   Default    | Description                                                                                                         |
+|:-----------------------------------------------|:--------:|:------------:|---------------------------------------------------------------------------------------------------------------------|
+| `-f`[<sup>**ⓘ**</sup>](#config_file)           |  string  | `progen.yml` | specify configuration file path                                                                                     |
+| `-v`                                           |   bool   |   `false`    | verbose output                                                                                                      |
+| `-fpp`[<sup>**ⓘ**</sup>](#files_preprocessing) |   bool   |    `true`    | `files preprocessing`: load and process filess as [text/template](https://pkg.go.dev/text/template) before creating |
+| `-dr`[<sup>**ⓘ**</sup>](#dry_run)              |   bool   |   `false`    | `dry run` mode <br/>(to verbose output should be combine with`-v`)                                                  |
+| `-awd`                                         |  string  |     `.`      | application working directory                                                                                       |
+| `-tvar`[<sup>**ⓘ**</sup>](#tvar)               | []string |    `[ ]`     | [text/template](https://pkg.go.dev/text/template) variables (override config variables tree)                        |
+| `-skip`[<sup>**ⓘ**</sup>](#skip_actions)       | []string |    `[ ]`     | skip any `action` tag (regular expression)                                                                          |
+| `-version`                                     |   bool   |   `false`    | print version                                                                                                       |
+| `-help`                                        |   bool   |   `false`    | show flags                                                                                                          |
 
 ___
 
@@ -58,7 +59,6 @@ ___
 |                                                    |                   |          |                                                       |
 | files`<unique_suffix>`[<sup>**ⓘ**</sup>](#Files)   |                   | ✅        | list file's `path` and `data`                         |
 | files.path                                         |      string       | ❌        | save file `path`                                      |
-| files.tmpl_skip                                    |       bool        | ✅        | flag to skip processing file data as template         |
 | files.local                                        |      string       | `❕`      | local file path to copy                               |
 | files.data                                         |      string       | `❕`      | save file `data`                                      |
 |                                                    |                   |          |                                                       |
@@ -102,18 +102,21 @@ cmd:
 
 ```console
 % progen -v
-2023-01-22 12:44:55	INFO	current working direcotry: /Users/user_1/GoProjects/service
-2023-01-22 12:44:55	INFO	dir created: x/y
-2023-01-22 12:44:55	INFO	file created [template: false]: x/some_file.txt
-2023-01-22 12:44:55	INFO	execute [dir: .]: touch second_file.txt
-2023-01-22 12:44:55	INFO	execute [dir: .]: tree
+2023-02-05 14:11:47	INFO	application working directory: /Users/user_1/GoProjects/service
+2023-02-05 14:11:47	INFO	configuration file: progen.yml
+2023-02-05 14:11:47	INFO	file process: x/some_file.txt
+2023-02-05 14:11:47	INFO	dir created: x/y
+2023-02-05 14:11:47	INFO	file saved: x/some_file.txt
+2023-02-05 14:11:47	INFO	execute [dir: .]: touch second_file.txt
+2023-02-05 14:11:47	INFO	execute [dir: .]: tree
 out:
 .
-├── progen.yml
 ├── second_file.txt
 └── x
-    ├── some_file.txt
-    └── y
+    ├── some_file.txt
+    └── y
+
+2 directories, 2 files
 ```
 
 ### Execution
@@ -136,7 +139,7 @@ cmd2:
 
 ```console
 % progen -v
-2023-01-22 13:38:52	INFO	current working direcotry: /Users/user_1/GoProjects/service
+2023-01-22 13:38:52	INFO	application working direcotry: /Users/user_1/GoProjects/service
 2023-01-22 13:38:52	INFO	dir created: api/some_project/v1
 2023-01-22 13:38:52	INFO	execute [dir: .]: chmod -R 777 api
 2023-01-22 13:38:52	INFO	dir created: api/some_project_2/v1
@@ -158,19 +161,23 @@ cmd:
 
 files:
   - path: api/v1/some_file.txt
-    tmpl_skip: false
     data: |
       some file data data fot project: {{ $project_name }}
 ```
 
+### <a name="files_preprocessing"><a/>Files preprocessing
+By default, all files loading to the memory and process as [text/template](https://pkg.go.dev/text/template) before saving to a file system.
+To change this behavior, set `-fpp=false`.
+
 ```console
 % progen -v -dr -f progen.yml
-2023-01-28 14:47:19	INFO	current working direcotry: /Users/user_1/GoProjects/service
-2023-01-28 14:47:19	INFO	configuration read: progen.yml
-2023-01-28 14:47:19	INFO	dir created: api/SOME_PROJECT/v1
-2023-01-28 14:47:19	INFO	execute [dir: .]: chmod -R 777 api/v1
-2023-01-28 14:47:19	INFO	process file: create dir [api/SOME_PROJECT/v1] to store file [some_file.txt]
-2023-01-28 14:47:19	INFO	file created [template: true, path: api/SOME_PROJECT/v1/some_file.txt]:
+2023-02-05 14:15:54	INFO	application working directory: /Users/user_1/GoProjects/service
+2023-02-05 14:15:54	INFO	configuration file: progen.yml
+2023-02-05 14:15:54	INFO	file process: api/v1/some_file.txt
+2023-02-05 14:15:54	INFO	dir created: api/SOME_PROJECT/v1
+2023-02-05 14:15:54	INFO	execute cmd: chmod -R 777 api/v1
+2023-02-05 14:15:54	INFO	save file: create dir [api/v1] to store file [some_file.txt]
+2023-02-05 14:15:54	INFO	file saved [path: api/v1/some_file.txt]:
 some file data data fot project: SOME_PROJECT
 ```
 
@@ -198,14 +205,14 @@ cmd2:
 
 ```console
 % progen -v -dr -f progen.yml -skip=^dirs$$ -skip=cmd.+ 
-2023-01-28 14:29:46	INFO	current working direcotry: /Users/user_1/GoProjects/service
-2023-01-28 14:29:46	INFO	configuration read: progen.yml
-2023-01-28 14:29:46	INFO	action tag will be skipped: dirs
-2023-01-28 14:29:46	INFO	action tag will be skipped: cmd1
-2023-01-28 14:29:46	INFO	action tag will be skipped: cmd2
-2023-01-28 14:29:46	INFO	execute [dir: .]: chmod -R 777 api/v1
-2023-01-28 14:29:46	INFO	dir created: api/v2
-2023-01-28 14:29:46	INFO	dir created: api/v3
+2023-02-05 14:18:11	INFO	application working directory: /Users/user_1/GoProjects/service
+2023-02-05 14:18:11	INFO	configuration file: progen.yml
+2023-02-05 14:18:11	INFO	action tag will be skipped: cmd1
+2023-02-05 14:18:11	INFO	action tag will be skipped: cmd2
+2023-02-05 14:18:11	INFO	action tag will be skipped: dirs
+2023-02-05 14:18:11	INFO	execute cmd: chmod -R 777 api/v1
+2023-02-05 14:18:11	INFO	dir created: api/v2
+2023-02-05 14:18:11	INFO	dir created: api/v3
 ```
 
 ### <a name="config_file"><a/>Configuration file
@@ -240,13 +247,12 @@ curl -H PRIVATE-TOKEN:token https://gitlab.some.com/api/v4/projects/13/repositor
 
 ### Templates
 
-Configuration preprocessing uses [text/template](https://pkg.go.dev/text/template) of golang's stdlib.
+Configuration preprocessing uses [text/template](https://pkg.go.dev/text/template) of golang's `stdlib`.
 Using templates could be useful to avoiding duplication in configuration file.
 All `text/template` variables must be declared as comments and can be used only to configure data of configuration
 file (all ones skipping for `file.data` section).
 Configuration's `yaml` tag tree also use as `text/template` variables dictionary and can be use for avoiding duplication
-in configuration file
-and files contents (`files` section).
+in configuration file and files contents (`files` section).
 
 ```yaml
 ## progen.yml
@@ -268,32 +274,38 @@ files:
     data: |
       Project name:{{$project_name}}
   - path: pkg/{{printf `%s-%s` $project_name `data`}}/some_file.txt
-    tmpl_skip: true
     data: |
       {{$project_name}}
 
 cmd:
-  - exec: [ cat internal/{{$project_name}}.txt, ls -l, tree ]
+  - exec: [ "cat internal/{{$project_name}}.txt", ls -l, tree ]
     dir: .
 ```
 
 ```console
 % progen -v
 2023-01-22 13:03:58	INFO	current working direcotry: /Users/user_1/GoProjects/service
-2023-01-22 13:03:58	INFO	dir created: api/SOME_PROJECT/v1
-2023-01-22 13:03:58	INFO	dir created: internal/some/file/path
-2023-01-22 13:03:58	INFO	dir created: pkg/SOME_PROJECT-data
-2023-01-22 13:03:58	INFO	file created [template: true]: internal/SOME_PROJECT.txt
-2023-01-22 13:03:58	INFO	file created [template: false]: pkg/SOME_PROJECT-data/some_file.txt
-2023-01-22 13:03:58	INFO	execute: cat internal/SOME_PROJECT.txt
+2023-02-05 14:47:25	INFO	application working directory: /Users/user_1/GoProjects/service
+2023-02-05 14:47:25	INFO	configuration file: progen.yaml
+2023-02-05 14:47:25	INFO	file process: internal/SOME_PROJECT.txt
+2023-02-05 14:47:25	INFO	file process: pkg/SOME_PROJECT-data/some_file.txt
+2023-02-05 14:47:25	INFO	dir created: api/SOME_PROJECT/v1
+2023-02-05 14:47:25	INFO	dir created: internal/some/file/path
+2023-02-05 14:47:25	INFO	dir created: pkg/SOME_PROJECT-data
+2023-02-05 14:47:25	INFO	file saved: internal/SOME_PROJECT.txt
+2023-02-05 14:47:25	INFO	file saved: pkg/SOME_PROJECT-data/some_file.txt
+2023-02-05 14:47:25	INFO	execute [dir: .]: cat internal/SOME_PROJECT.txt
 out:
 Project name:SOME_PROJECT
 
-2023-01-22 13:03:58	INFO	execute: cat pkg/SOME_PROJECT-data/some_file.txt
+2023-02-05 14:47:25	INFO	execute [dir: .]: ls -l
 out:
-{{$project_name}}
+total 0
+drwxr-xr-x  3 19798572  646495703   96 Feb  5 14:47 api
+drwxr-xr-x  4 19798572  646495703  128 Feb  5 14:47 internal
+drwxr-xr-x  3 19798572  646495703   96 Feb  5 14:47 pkg
 
-2023-01-22 13:03:58	INFO	execute: tree
+2023-02-05 14:47:25	INFO	execute [dir: .]: tree
 out:
 .
 ├── api
@@ -308,11 +320,15 @@ out:
 │   └── SOME_PROJECT-data
 │       └── some_file.txt
 └── progen.yml
+
+9 directories, 2 files
 ```
 
 <a name="tvar"><a/>any part of template variable tree can be override using `-tvar` flag
 
 ```yaml
+## progen.yml
+
 ## `text/template` variables declaration 👇
 # {{$project_name := "SOME_PROJECT"}}
 
@@ -329,11 +345,11 @@ dirs:
 
 ```console
 % progen -v -dr -tvar=.vars.file_path_2=overrided_path
-2023-01-22 22:25:47	INFO	current working direcotry: /Users/user_1/GoProjects/service
-2023-01-22 22:25:47	INFO	configuration file: progen_test_vars.yml
-2023-01-22 22:25:47	INFO	dir created: api/SOME_PROJECT/v1
-2023-01-22 22:25:47	INFO	dir created: internal/some/file/path
-2023-01-22 22:25:47	INFO	dir created: internal/overrided_path
+2023-02-05 14:51:38	INFO	application working directory: /Users/user_1/GoProjects/service
+2023-02-05 14:51:38	INFO	configuration file: progen.yml
+2023-02-05 14:51:38	INFO	dir created: api/SOME_PROJECT/v1
+2023-02-05 14:51:38	INFO	dir created: internal/some/file/path
+2023-02-05 14:51:38	INFO	dir created: internal/overrided_path
 ```
 
 #### Custom template functions
@@ -366,7 +382,7 @@ settings:
 ### Files
 
 File's content can be declared in configuration file (`files.data` tag) or
-can be received from local file  (`files.local`) or remote (`files.get`).
+can be received from local (`files.local`) or remote (`files.get`) storage.
 Any file's content uses as [text/template](https://pkg.go.dev/text/template)
 and configuration's `yaml` tag tree applies as template variables.
 
@@ -387,8 +403,6 @@ settings:
 
 files:
   - path: files/Readme.md
-    # skip file processing as template
-    tmpl_skip: true
     data: |
       Project name: {{$project_name}}
 
@@ -412,8 +426,6 @@ files:
         PARAM_1: Val_1
 
   - path: files/Dockerfile
-    # process file as template (apply tags which declared in this config)
-    tmpl_skip: false
     # GET file from remote storage (using common http client config)
     get:
       # reuse `base` URL of common http client config (http.base_url)
@@ -422,12 +434,20 @@ files:
 
 ```console
 % progen -v
-2023-01-22 15:47:45	INFO	current working direcotry: /Users/user_1/GoProjects/service
-2023-01-22 15:47:45	INFO	file created [template: false]: files/Readme.md
-2023-01-22 15:47:45	INFO	file created [template: true]: files/.gitignore
-2023-01-22 15:47:45	INFO	file created [template: true]: files/.editorconfig
-2023-01-22 15:47:45	INFO	file created [template: true]: files/.gitlab-ci.yml
-2023-01-22 15:47:45	INFO	file created [template: true]: files/Dockerfile
+2023-02-05 14:47:25	INFO	current working direcotry: /Users/user_1/GoProjects/service
+2023-02-05 14:47:25	INFO	configuration file: progen.yaml
+2023-02-05 14:47:25	INFO	file process: files/Readme.md
+2023-02-05 14:47:25	INFO	file process: files/.gitignore
+2023-02-05 14:47:25	INFO	file process: files/.editorconfig
+2023-02-05 14:47:25	INFO	file process: files/.gitlab-ci.yml
+2023-02-05 14:47:25	INFO	file process: files/Dockerfile
+...
+2023-02-05 14:47:25	INFO	file saved: files/Readme.md
+2023-02-05 14:47:25	INFO	file saved: files/.gitignore
+2023-02-05 14:47:25	INFO	file saved: files/.editorconfig
+2023-02-05 14:47:25	INFO	file saved: files/.gitlab-ci.yml
+2023-02-05 14:47:25	INFO	file saved: files/Dockerfile
+...
 ```
 
 ### Commands

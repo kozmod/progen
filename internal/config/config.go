@@ -5,8 +5,6 @@ import (
 	"net/url"
 	"strings"
 
-	"gopkg.in/yaml.v3"
-
 	"github.com/kozmod/progen/internal/entity"
 )
 
@@ -41,11 +39,10 @@ type Section[T any] struct {
 }
 
 type File struct {
-	Path         string  `yaml:"path"`
-	Data         *string `yaml:"data"`
-	Get          *Get    `yaml:"get"`
-	Local        *string `yaml:"local"`
-	ExecTmplSkip bool    `yaml:"tmpl_skip"`
+	Path  string  `yaml:"path"`
+	Data  *string `yaml:"data"`
+	Get   *Get    `yaml:"get"`
+	Local *string `yaml:"local"`
 }
 
 type Command struct {
@@ -78,37 +75,6 @@ func (addr *AddrURL) UnmarshalYAML(unmarshal func(any) error) error {
 	}
 	addr.URL = u
 	return nil
-}
-
-func UnmarshalYamlFiles(rawConfig []byte) (map[string][]File, error) {
-	var (
-		fileByIndex = make(map[string][]File)
-		rootTags    map[string]yaml.Node
-	)
-
-	err := yaml.Unmarshal(rawConfig, &rootTags)
-	if err != nil {
-		return nil, fmt.Errorf("unmarshal url: %w", err)
-	}
-
-	for tag, node := range rootTags {
-		switch {
-		case strings.Index(tag, TagFiles) == 0:
-			var files []File
-			err = node.Decode(&files)
-			if err != nil {
-				return nil, fmt.Errorf("unmarshal files config [%s]: %w", tag, err)
-			}
-			for _, file := range files {
-				err = ValidateFile(file)
-				if err != nil {
-					return nil, fmt.Errorf("validate config: files [tag: %s, path: %s]: %w", tag, file.Path, err)
-				}
-			}
-			fileByIndex[tag] = files
-		}
-	}
-	return fileByIndex, nil
 }
 
 func ValidateFile(file File) error {

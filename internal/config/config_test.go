@@ -84,8 +84,9 @@ steps:
 `
 		)
 
-		_, _, err := NewRawPreprocessor(name, nil, nil).Process([]byte(in))
-		assert.Error(t, err)
+		res, _, err := NewRawPreprocessor(name, nil, nil).Process([]byte(in))
+		assert.NoError(t, err)
+		assert.Equal(t, expected, string(res))
 	})
 }
 
@@ -236,7 +237,6 @@ cmd2:
 		a.Equal("x/DDDDDD", file.Path)
 		a.NotNil(file.Data)
 		a.Equal("ENV GOPROXY \"{{.vars.GOPROXY}} ,proxy.golang.org,direct\"\n", *file.Data)
-		a.True(file.ExecTmplSkip)
 	})
 
 	t.Run("success_unmarshal_skip_all_cmd_and_dirs2_sections", func(t *testing.T) {
@@ -296,7 +296,6 @@ cmd2:
 		a.Equal("x/DDDDDD", file.Path)
 		a.NotNil(file.Data)
 		a.Equal("ENV GOPROXY \"{{.vars.GOPROXY}} ,proxy.golang.org,direct\"\n", *file.Data)
-		a.True(file.ExecTmplSkip)
 	})
 	t.Run("error_when-config_not_contains_executable_actions", func(t *testing.T) {
 		const (
