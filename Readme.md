@@ -28,18 +28,18 @@ ___
 
 ### Args
 
-| Name                                           |   Type   |   Default    | Description                                                                                                         |
-|:-----------------------------------------------|:--------:|:------------:|---------------------------------------------------------------------------------------------------------------------|
-| `-f`[<sup>**ⓘ**</sup>](#config_file)           |  string  | `progen.yml` | specify configuration file path                                                                                     |
-| `-v`                                           |   bool   |   `false`    | verbose output                                                                                                      |
-| `-fpp`[<sup>**ⓘ**</sup>](#files_preprocessing) |   bool   |    `true`    | `files preprocessing`: load and process filess as [text/template](https://pkg.go.dev/text/template) before creating |
-| `-dr`[<sup>**ⓘ**</sup>](#dry_run)              |   bool   |   `false`    | `dry run` mode <br/>(to verbose output should be combine with`-v`)                                                  |
-| `-awd`                                         |  string  |     `.`      | application working directory                                                                                       |
-| `-tvar`[<sup>**ⓘ**</sup>](#tvar)               | []string |    `[ ]`     | [text/template](https://pkg.go.dev/text/template) variables (override config variables tree)                        |
-| `-missingkey`                                  | []string |   `error`    | set [text/template.Option](https://pkg.go.dev/text/template#Template.Option) execution option                       |
-| `-skip`[<sup>**ⓘ**</sup>](#skip_actions)       | []string |    `[ ]`     | skip any `action` tag (regular expression)                                                                          |
-| `-version`                                     |   bool   |   `false`    | print version                                                                                                       |
-| `-help`                                        |   bool   |   `false`    | show flags                                                                                                          |
+| Name                                           |   Type   |   Default    | Description                                                                                                             |
+|:-----------------------------------------------|:--------:|:------------:|-------------------------------------------------------------------------------------------------------------------------|
+| `-f`[<sup>**ⓘ**</sup>](#config_file)           |  string  | `progen.yml` | specify configuration file path                                                                                         |
+| `-v`                                           |   bool   |   `false`    | verbose output                                                                                                          |
+| `-fpp`[<sup>**ⓘ**</sup>](#files_preprocessing) |   bool   |    `true`    | `files preprocessing`: load and process files <br/>as [text/template](https://pkg.go.dev/text/template) before creating |
+| `-dr`[<sup>**ⓘ**</sup>](#dry_run)              |   bool   |   `false`    | `dry run` mode <br/>(to verbose output should be combine with`-v`)                                                      |
+| `-awd`                                         |  string  |     `.`      | application working directory                                                                                           |
+| `-tvar`[<sup>**ⓘ**</sup>](#tvar)               | []string |    `[ ]`     | [text/template](https://pkg.go.dev/text/template) variables <br/>(override config variables tree)                            |
+| `-missingkey`                                  | []string |   `error`    | set [text/template.Option](https://pkg.go.dev/text/template#Template.Option) execution option                           |
+| `-skip`[<sup>**ⓘ**</sup>](#skip_actions)       | []string |    `[ ]`     | skip any `action` tag <br/>(regular expression)                                                                              |
+| `-version`                                     |   bool   |   `false`    | print version                                                                                                           |
+| `-help`                                        |   bool   |   `false`    | show flags                                                                                                              |
 
 ___
 
