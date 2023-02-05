@@ -81,3 +81,14 @@ func Test_RandomFn(t *testing.T) {
 		})
 	})
 }
+
+func Test_MissingKye(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		err := MissingKeyValue("default").Valid()
+		assert.NoError(t, err)
+	})
+	t.Run("error", func(t *testing.T) {
+		err := MissingKeyValue("some").Valid()
+		assert.Error(t, err)
+	})
+}

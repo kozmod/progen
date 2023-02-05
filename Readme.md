@@ -36,6 +36,7 @@ ___
 | `-dr`[<sup>**ⓘ**</sup>](#dry_run)              |   bool   |   `false`    | `dry run` mode <br/>(to verbose output should be combine with`-v`)                                                  |
 | `-awd`                                         |  string  |     `.`      | application working directory                                                                                       |
 | `-tvar`[<sup>**ⓘ**</sup>](#tvar)               | []string |    `[ ]`     | [text/template](https://pkg.go.dev/text/template) variables (override config variables tree)                        |
+| `-missingkey`                                  | []string |   `error`    | set [text/template.Option](https://pkg.go.dev/text/template#Template.Option) execution option                       |
 | `-skip`[<sup>**ⓘ**</sup>](#skip_actions)       | []string |    `[ ]`     | skip any `action` tag (regular expression)                                                                          |
 | `-version`                                     |   bool   |   `false`    | print version                                                                                                       |
 | `-help`                                        |   bool   |   `false`    | show flags                                                                                                          |
@@ -166,7 +167,9 @@ files:
 ```
 
 ### <a name="files_preprocessing"><a/>Files preprocessing
-By default, all files loading to the memory and process as [text/template](https://pkg.go.dev/text/template) before saving to a file system.
+
+By default, all files loading to the memory and process as [text/template](https://pkg.go.dev/text/template) before
+saving to a file system.
 To change this behavior, set `-fpp=false`.
 
 ```console
