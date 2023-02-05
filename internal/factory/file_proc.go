@@ -18,6 +18,7 @@ func NewFileExecutor(
 	logger entity.Logger,
 	preload,
 	dryRun bool,
+	templateOptions []string,
 ) (entity.Executor, []entity.Preprocessor, error) {
 	if len(files) == 0 {
 		logger.Infof("`files` section is empty")
@@ -83,7 +84,7 @@ func NewFileExecutor(
 		preprocessors = append(preprocessors, preloader)
 	}
 
-	processors := []entity.FileProc{proc.NewTemplateFileProc(templateData, entity.TemplateFnsMap)}
+	processors := []entity.FileProc{proc.NewTemplateFileProc(templateData, entity.TemplateFnsMap, templateOptions)}
 
 	switch {
 	case dryRun:

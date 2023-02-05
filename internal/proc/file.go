@@ -43,28 +43,31 @@ func (e *FilesExecutor) Exec() error {
 }
 
 type TemplateFileProc struct {
-	templateData map[string]any
-	templateFns  map[string]any
+	templateData    map[string]any
+	templateFns     map[string]any
+	templateOptions []string
 }
 
-func NewTemplateFileProc(templateData, templateFns map[string]any) *TemplateFileProc {
+func NewTemplateFileProc(templateData, templateFns map[string]any, templateOptions []string) *TemplateFileProc {
 	return &TemplateFileProc{
-		templateData: templateData,
-		templateFns:  templateFns,
+		templateData:    templateData,
+		templateFns:     templateFns,
+		templateOptions: templateOptions,
 	}
 }
 
-func (e *TemplateFileProc) Process(file entity.DataFile) (entity.DataFile, error) {
+func (p *TemplateFileProc) Process(file entity.DataFile) (entity.DataFile, error) {
 	filePath := file.Path()
 	temp, err := template.New(filePath).
-		Funcs(e.templateFns).
+		Funcs(p.templateFns).
+		Option(p.templateOptions...).
 		Parse(string(file.Data))
 	if err != nil {
 		return file, fmt.Errorf("execute template: new template [%s]: %w", filePath, err)
 	}
 
 	var buf bytes.Buffer
-	err = temp.Execute(&buf, e.templateData)
+	err = temp.Execute(&buf, p.templateData)
 	if err != nil {
 		return file, fmt.Errorf("execute template [%s]: %w", filePath, err)
 	}
