@@ -9,6 +9,8 @@ import (
 )
 
 func Test_Unique(t *testing.T) {
+	t.Parallel()
+
 	type useCase[T comparable] struct {
 		in  []T
 		exp []T
@@ -68,6 +70,8 @@ func Test_Unique(t *testing.T) {
 }
 
 func Test_MergeKeys(t *testing.T) {
+	t.Parallel()
+
 	testCases := []struct {
 		src,
 		dst,
@@ -138,6 +142,8 @@ func Test_MergeKeys(t *testing.T) {
 }
 
 func Test_NotNilValues(t *testing.T) {
+	t.Parallel()
+
 	var (
 		nilStr     *string
 		defaultStr string

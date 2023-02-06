@@ -13,6 +13,8 @@ import (
 )
 
 func Test_TemplateVarsFlag(t *testing.T) {
+	t.Parallel()
+
 	const (
 		usage    = "parse vars"
 		setName  = "template vars test flag set"
@@ -152,6 +154,8 @@ func Test_TemplateVarsFlag(t *testing.T) {
 }
 
 func Test_SkipFlag(t *testing.T) {
+	t.Parallel()
+
 	const (
 		usage    = "skip_flag_test_usage"
 		setName  = "skip_fs"
@@ -208,6 +212,8 @@ func Test_SkipFlag(t *testing.T) {
 }
 
 func Test_parseFlags(t *testing.T) {
+	t.Parallel()
+
 	//goland:noinspection SpellCheckingInspection
 	const (
 		fsName     = "testFlagSet"
