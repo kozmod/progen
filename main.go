@@ -89,7 +89,7 @@ func main() {
 		conf,
 		templateData,
 		logger,
-		flags.Preload,
+		flags.PreprocessFiles,
 		flags.DryRun,
 		[]string{flags.MissingKey.String()})
 	if err != nil {

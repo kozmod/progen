@@ -6,19 +6,19 @@ import (
 	"github.com/kozmod/progen/internal/entity"
 )
 
-type PreloadChain struct {
+type PreprocessingChain struct {
 	loaders    []entity.Preprocessor
 	processors []entity.Executor
 }
 
-func NewPreloadChain(loaders []entity.Preprocessor, processors []entity.Executor) *PreloadChain {
-	return &PreloadChain{
+func NewPreprocessingChain(loaders []entity.Preprocessor, processors []entity.Executor) *PreprocessingChain {
+	return &PreprocessingChain{
 		loaders:    loaders,
 		processors: processors,
 	}
 }
 
-func (c *PreloadChain) Exec() error {
+func (c *PreprocessingChain) Exec() error {
 	for i, loader := range c.loaders {
 		err := loader.Process()
 		if err != nil {

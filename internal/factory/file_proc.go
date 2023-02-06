@@ -16,7 +16,7 @@ func NewFileExecutor(
 	http *config.HTTPClient,
 	templateData map[string]any,
 	logger entity.Logger,
-	preload,
+	preprocess,
 	dryRun bool,
 	templateOptions []string,
 ) (entity.Executor, []entity.Preprocessor, error) {
@@ -74,7 +74,7 @@ func NewFileExecutor(
 	}
 
 	var preprocessors []entity.Preprocessor
-	if preload {
+	if preprocess {
 		preloadProducers := make([]entity.FileProducer, 0, len(producers))
 		preloader := proc.NewPreloadProducer(producers, logger)
 		for i := 0; i < len(producers); i++ {

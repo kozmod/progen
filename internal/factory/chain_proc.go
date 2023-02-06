@@ -13,7 +13,7 @@ func NewExecutorChain(
 	conf config.Config,
 	templateData map[string]any,
 	logger entity.Logger,
-	preload,
+	preprocess,
 	dryRun bool,
 	templateOptions []string,
 ) (entity.Executor, error) {
@@ -44,7 +44,7 @@ func NewExecutorChain(
 			ProcGenerator{
 				line: f.Line,
 				procFn: func() (entity.Executor, error) {
-					executor, l, err := NewFileExecutor(f.Val, conf.Settings.HTTP, templateData, logger, preload, dryRun, templateOptions)
+					executor, l, err := NewFileExecutor(f.Val, conf.Settings.HTTP, templateData, logger, preprocess, dryRun, templateOptions)
 					loaders = append(loaders, l...)
 					return executor, err
 				},
@@ -79,7 +79,7 @@ func NewExecutorChain(
 	}
 
 	if len(loaders) != 0 {
-		return proc.NewPreloadChain(loaders, processors), nil
+		return proc.NewPreprocessingChain(loaders, processors), nil
 	}
 
 	return proc.NewProcChain(processors), nil
