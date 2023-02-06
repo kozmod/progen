@@ -66,7 +66,7 @@ ___
 | files.get                                          |                   | `❕`      | struct describe `GET` request for getting file's data |
 | files.get.url                                      |      string       | ❌        | request `URL`                                         |
 | files.get.headers                                  | map[string]string | ✅        | request `Headers`                                     |
-| files.query_params                                 | map[string]string | ✅        | request `Query Parameters`                            |
+| files.get.query_params                             | map[string]string | ✅        | request `Query Parameters`                            |
 |                                                    |                   |          |                                                       |
 | cmd`<unique_suffix>`[<sup>**ⓘ**</sup>](#Commands)  |                   |          | configuration command list                            |
 | cmd.exec                                           |      []slice      | ❌        | list of command to execute                            |
