@@ -169,10 +169,11 @@ func (p *PreloadProducer) Process() error {
 		})
 	}
 
-	if err := eg.Wait(); err != nil {
+	err := eg.Wait()
+	close(fChan)
+	if err != nil {
 		return err
 	}
-	close(fChan)
 
 	for file := range fChan {
 		files = append(files, file)
