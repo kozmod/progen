@@ -9,17 +9,19 @@ import (
 	"github.com/kozmod/progen/internal/proc"
 )
 
-func NewProcChain(
+func NewExecutorChain(
 	conf config.Config,
 	templateData map[string]any,
 	logger entity.Logger,
+	preprocess,
 	dryRun bool,
-) (*proc.Chain, error) {
+	templateOptions []string,
+) (entity.Executor, error) {
 
 	type (
 		ProcGenerator struct {
 			line   int32
-			procFn func() (proc.Proc, error)
+			procFn func() (entity.Executor, error)
 		}
 	)
 
@@ -29,19 +31,22 @@ func NewProcChain(
 		generators = append(generators,
 			ProcGenerator{
 				line: d.Line,
-				procFn: func() (proc.Proc, error) {
-					return NewMkdirProc(d.Val, logger, dryRun)
+				procFn: func() (entity.Executor, error) {
+					return NewMkdirExecutor(d.Val, logger, dryRun)
 				},
 			})
 	}
 
+	var loaders []entity.Preprocessor
 	for _, files := range conf.Files {
 		f := files
 		generators = append(generators,
 			ProcGenerator{
 				line: f.Line,
-				procFn: func() (proc.Proc, error) {
-					return NewFileProc(f.Val, conf.Settings.HTTP, templateData, logger, dryRun)
+				procFn: func() (entity.Executor, error) {
+					executor, l, err := NewFileExecutor(f.Val, conf.Settings.HTTP, templateData, logger, preprocess, dryRun, templateOptions)
+					loaders = append(loaders, l...)
+					return executor, err
 				},
 			})
 	}
@@ -51,8 +56,8 @@ func NewProcChain(
 		generators = append(generators,
 			ProcGenerator{
 				line: cmd.Line,
-				procFn: func() (proc.Proc, error) {
-					return NewRunCommandProc(cmd.Val, logger, dryRun)
+				procFn: func() (entity.Executor, error) {
+					return NewRunCommandExecutor(cmd.Val, logger, dryRun)
 				},
 			})
 	}
@@ -61,8 +66,7 @@ func NewProcChain(
 		return generators[i].line < generators[j].line
 	})
 
-	//goland:noinspection SpellCheckingInspection
-	procs := make([]proc.Proc, 0, len(generators))
+	processors := make([]entity.Executor, 0, len(generators))
 	for i, generator := range generators {
 		p, err := generator.procFn()
 		if err != nil {
@@ -71,8 +75,12 @@ func NewProcChain(
 		if p == nil {
 			continue
 		}
-		procs = append(procs, p)
+		processors = append(processors, p)
 	}
 
-	return proc.NewProcChain(procs), nil
+	if len(loaders) != 0 {
+		return proc.NewPreprocessingChain(loaders, processors), nil
+	}
+
+	return proc.NewProcChain(processors), nil
 }

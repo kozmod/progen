@@ -1,122 +1,227 @@
 package proc
 
 import (
+	"bytes"
 	"fmt"
 	"net/http"
 	"os"
-	"path"
+	"sort"
+	"sync"
+	"text/template"
 
 	"github.com/go-resty/resty/v2"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/kozmod/progen/internal/entity"
 )
 
-type FileProc struct {
-	fileMode  os.FileMode
-	producers []entity.FileProducer
-	logger    entity.Logger
-	executor  templateExecutor
+type FilesExecutor struct {
+	producers  []entity.FileProducer
+	processors []entity.FileProc
 }
 
-func NewFileProc(producers []entity.FileProducer, templateData, templateFns map[string]any, logger entity.Logger) *FileProc {
-	return &FileProc{
-		fileMode:  os.ModePerm,
-		producers: producers,
-		executor: templateExecutor{
-			templateData: templateData,
-			templateFns:  templateFns,
-		},
+func NewFilesExecutor(producers []entity.FileProducer, processors []entity.FileProc) *FilesExecutor {
+	return &FilesExecutor{
+		producers:  producers,
+		processors: processors,
+	}
+}
+
+func (e *FilesExecutor) Exec() error {
+	for _, producer := range e.producers {
+		file, err := producer.Get()
+		if err != nil {
+			return fmt.Errorf("execute file: get file: %w", err)
+		}
+
+		for _, processor := range e.processors {
+			file, err = processor.Process(file)
+			if err != nil {
+				return fmt.Errorf("execute file: process file: %w", err)
+			}
+		}
+	}
+	return nil
+}
+
+type TemplateFileProc struct {
+	templateData    map[string]any
+	templateFns     map[string]any
+	templateOptions []string
+}
+
+func NewTemplateFileProc(templateData, templateFns map[string]any, templateOptions []string) *TemplateFileProc {
+	return &TemplateFileProc{
+		templateData:    templateData,
+		templateFns:     templateFns,
+		templateOptions: templateOptions,
+	}
+}
+
+func (p *TemplateFileProc) Process(file entity.DataFile) (entity.DataFile, error) {
+	filePath := file.Path()
+	temp, err := template.New(filePath).
+		Funcs(p.templateFns).
+		Option(p.templateOptions...).
+		Parse(string(file.Data))
+	if err != nil {
+		return file, fmt.Errorf("execute template: new template [%s]: %w", filePath, err)
+	}
+
+	var buf bytes.Buffer
+	err = temp.Execute(&buf, p.templateData)
+	if err != nil {
+		return file, fmt.Errorf("execute template [%s]: %w", filePath, err)
+	}
+	file.Data = buf.Bytes()
+	return file, nil
+}
+
+type SaveFileProc struct {
+	fileMode os.FileMode
+	logger   entity.Logger
+}
+
+func NewSaveFileProc(logger entity.Logger) *SaveFileProc {
+	return &SaveFileProc{
+		fileMode: os.ModePerm,
+		logger:   logger,
+	}
+}
+
+func (p *SaveFileProc) Process(file entity.DataFile) (entity.DataFile, error) {
+	fileDir := file.Dir
+	if _, err := os.Stat(fileDir); os.IsNotExist(err) {
+		err = os.MkdirAll(fileDir, p.fileMode)
+		if err != nil {
+			return file, fmt.Errorf("save file: create file dir [%s]: %w", fileDir, err)
+		}
+	}
+
+	filePath := file.Path()
+	err := os.WriteFile(filePath, file.Data, p.fileMode)
+	if err != nil {
+		return file, fmt.Errorf("save file: write file [%s]: %w", file.Name, err)
+	}
+	p.logger.Infof("file saved: %s", filePath)
+	return file, nil
+}
+
+type DryRunFileProc struct {
+	logger entity.Logger
+}
+
+func NewDryRunFileProc(logger entity.Logger) *DryRunFileProc {
+	return &DryRunFileProc{
 		logger: logger,
 	}
 }
 
-func (p *FileProc) Exec() error {
-	for _, producer := range p.producers {
-		file, err := producer.Get()
-		if err != nil {
-			return fmt.Errorf("process file: get file to write: %w", err)
-		}
-
-		fileDir := file.Path
-		if _, err := os.Stat(fileDir); os.IsNotExist(err) {
-			err = os.MkdirAll(fileDir, p.fileMode)
-			if err != nil {
-				return fmt.Errorf("process file: create file dir [%s]: %w", fileDir, err)
-			}
-		}
-
-		filePath := path.Join(file.Path, file.Name)
-
-		if file.ExecTmpl {
-			data, err := p.executor.Exec(filePath, file.Data)
-			if err != nil {
-				return fmt.Errorf("process file: %w", err)
-			}
-			file.Data = data
-		}
-
-		err = os.WriteFile(filePath, file.Data, p.fileMode)
-		if err != nil {
-			return fmt.Errorf("process file: create file [%s]: %w", file.Name, err)
-		}
-		p.logger.Infof("file created [template: %v]: %s", file.ExecTmpl, filePath)
+func (p *DryRunFileProc) Process(file entity.DataFile) (entity.DataFile, error) {
+	fileDir := file.Dir
+	if _, err := os.Stat(fileDir); os.IsNotExist(err) {
+		p.logger.Infof("save file: create dir [%s] to store file [%s]", fileDir, file.Name)
 	}
-	return nil
+
+	filePath := file.Path()
+	p.logger.Infof("file saved [path: %s]:\n%s", filePath, string(file.Data))
+	return file, nil
 }
 
-type DryRunFileProc struct {
-	fileMode  os.FileMode
+type PreloadProducer struct {
+	mx        sync.Mutex
 	producers []entity.FileProducer
 	logger    entity.Logger
-	executor  templateExecutor
 }
 
-func NewDryRunFileProc(producers []entity.FileProducer, templateData map[string]any, logger entity.Logger) *DryRunFileProc {
-	return &DryRunFileProc{
-		fileMode:  os.ModePerm,
+func NewPreloadProducer(producers []entity.FileProducer, logger entity.Logger) *PreloadProducer {
+	return &PreloadProducer{
 		producers: producers,
-		executor:  templateExecutor{templateData: templateData},
 		logger:    logger,
 	}
 }
 
-func (p *DryRunFileProc) Exec() error {
-	for _, producer := range p.producers {
-		file, err := producer.Get()
-		if err != nil {
-			return fmt.Errorf("process file: get file to write: %w", err)
-		}
-
-		fileDir := file.Path
-		if _, err := os.Stat(fileDir); os.IsNotExist(err) {
-			p.logger.Infof("process file: create dir [%s] to store file [%s]", fileDir, file.Name)
-		}
-
-		filePath := path.Join(file.Path, file.Name)
-
-		if file.ExecTmpl {
-			data, err := p.executor.Exec(filePath, file.Data)
-			if err != nil {
-				return fmt.Errorf("process file: %w", err)
-			}
-			file.Data = data
-		}
-		p.logger.Infof("file created [template: %v, path: %s]:\n%s", file.ExecTmpl, filePath, string(file.Data))
+func (p *PreloadProducer) Process() error {
+	type OrderedFile struct {
+		index int
+		entity.DataFile
 	}
+
+	p.mx.Lock()
+	defer p.mx.Unlock()
+
+	var (
+		files = make([]OrderedFile, 0, len(p.producers))
+		fChan = make(chan OrderedFile, len(p.producers))
+
+		eg errgroup.Group
+	)
+
+	for i, p := range p.producers {
+		index, producer := i, p
+		eg.Go(func() error {
+			file, err := producer.Get()
+			if err != nil {
+				return fmt.Errorf("preload file [%d]: %w", index, err)
+			}
+			fChan <- OrderedFile{index: index, DataFile: file}
+			return nil
+		})
+	}
+
+	err := eg.Wait()
+	close(fChan)
+	if err != nil {
+		return err
+	}
+
+	for file := range fChan {
+		files = append(files, file)
+	}
+
+	sort.Slice(files, func(i, j int) bool {
+		return files[i].index < files[j].index
+	})
+
+	dummyProducers := make([]entity.FileProducer, 0, len(files))
+	for _, file := range files {
+		dummyProducers = append(dummyProducers, NewDummyProducer(file.DataFile))
+		p.logger.Infof("file process: %s", file.Path())
+	}
+
+	p.producers = dummyProducers
 	return nil
 }
 
-type StoredProducer struct {
+func (p *PreloadProducer) Get() (entity.DataFile, error) {
+	p.mx.Lock()
+
+	if len(p.producers) == 0 {
+		return entity.DataFile{}, fmt.Errorf("process files list is empty")
+	}
+	producer := p.producers[0]
+	p.producers = p.producers[1:]
+	p.mx.Unlock()
+
+	file, err := producer.Get()
+	if err != nil {
+		return entity.DataFile{}, fmt.Errorf("process files: get: %w", err)
+	}
+
+	return file, nil
+}
+
+type DummyProducer struct {
 	file entity.DataFile
 }
 
-func NewStoredProducer(file entity.DataFile) *StoredProducer {
-	return &StoredProducer{
+func NewDummyProducer(file entity.DataFile) *DummyProducer {
+	return &DummyProducer{
 		file: file,
 	}
 }
 
-func (p *StoredProducer) Get() (entity.DataFile, error) {
+func (p *DummyProducer) Get() (entity.DataFile, error) {
 	return p.file, nil
 }
 
@@ -136,7 +241,7 @@ func (p *LocalProducer) Get() (entity.DataFile, error) {
 		return entity.DataFile{}, fmt.Errorf("read local: %w", err)
 	}
 	return entity.DataFile{
-		Template: p.file.Template,
+		FileInfo: p.file.FileInfo,
 		Data:     data,
 	}, nil
 }
@@ -170,7 +275,7 @@ func (p *RemoteProducer) Get() (entity.DataFile, error) {
 	statusCode := rs.StatusCode()
 	if statusCode >= http.StatusOK && statusCode < http.StatusMultipleChoices {
 		return entity.DataFile{
-			Template: p.file.Template,
+			FileInfo: p.file.FileInfo,
 			Data:     rs.Body(),
 		}, nil
 

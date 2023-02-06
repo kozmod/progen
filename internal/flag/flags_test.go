@@ -13,6 +13,8 @@ import (
 )
 
 func Test_TemplateVarsFlag(t *testing.T) {
+	t.Parallel()
+
 	const (
 		usage    = "parse vars"
 		setName  = "template vars test flag set"
@@ -152,6 +154,8 @@ func Test_TemplateVarsFlag(t *testing.T) {
 }
 
 func Test_SkipFlag(t *testing.T) {
+	t.Parallel()
+
 	const (
 		usage    = "skip_flag_test_usage"
 		setName  = "skip_fs"
@@ -208,11 +212,16 @@ func Test_SkipFlag(t *testing.T) {
 }
 
 func Test_parseFlags(t *testing.T) {
+	t.Parallel()
+
+	//goland:noinspection SpellCheckingInspection
 	const (
-		fsName = "testFlagSet"
-		v      = "-v"
-		dr     = "-dr"
-		f      = "-f"
+		fsName     = "testFlagSet"
+		v          = "-v"
+		dr         = "-dr"
+		f          = "-f"
+		pf         = "-pf"
+		missingkey = "-missingkey"
 
 		configPath = "progen.yml"
 		dot        = entity.Dot
@@ -225,7 +234,7 @@ func Test_parseFlags(t *testing.T) {
 		flags, err := parseFlags(testFs, []string{v, dr, f, configPath})
 		assert.NoError(t, err)
 		assert.Equal(t,
-			Flags{Verbose: true, DryRun: true, ConfigPath: configPath, AWD: dot},
+			Flags{Verbose: true, PreprocessFiles: true, DryRun: true, ConfigPath: configPath, AWD: dot},
 			flags)
 	})
 	t.Run("success_when_dash_last", func(t *testing.T) {
@@ -233,7 +242,7 @@ func Test_parseFlags(t *testing.T) {
 		flags, err := parseFlags(testFs, []string{v, dr, dash})
 		assert.NoError(t, err)
 		assert.Equal(t,
-			Flags{Verbose: true, DryRun: true, ConfigPath: configPath, AWD: dot, ReadStdin: true},
+			Flags{Verbose: true, PreprocessFiles: true, DryRun: true, ConfigPath: configPath, AWD: dot, ReadStdin: true},
 			flags)
 	})
 	t.Run("success_when_dash_last_and_before_less_than", func(t *testing.T) {
@@ -241,7 +250,7 @@ func Test_parseFlags(t *testing.T) {
 		flags, err := parseFlags(testFs, []string{v, dr, dash, lessThan, configPath})
 		assert.NoError(t, err)
 		assert.Equal(t,
-			Flags{Verbose: true, DryRun: true, ConfigPath: configPath, AWD: dot, ReadStdin: true},
+			Flags{Verbose: true, PreprocessFiles: true, DryRun: true, ConfigPath: configPath, AWD: dot, ReadStdin: true},
 			flags)
 	})
 	t.Run("error_when_flag_not_specified", func(t *testing.T) {
@@ -259,6 +268,53 @@ func Test_parseFlags(t *testing.T) {
 		_, err := parseFlags(testFs, []string{v, dash, dr, f, configPath})
 		assert.Error(t, err)
 		assert.True(t, errors.Is(err, ErrDashFlagNotLast))
+	})
+	t.Run("success_with_preprocess_flag_false", func(t *testing.T) {
+		testFs := flag.NewFlagSet(fsName, flag.ContinueOnError)
+		flags, err := parseFlags(testFs, []string{fmt.Sprintf("%s=%v", pf, false)})
+		assert.NoError(t, err)
+		assert.Equal(t,
+			Flags{Verbose: false, PreprocessFiles: false, DryRun: false, ConfigPath: configPath, AWD: dot, ReadStdin: false},
+			flags)
+	})
+	t.Run("missingkey", func(t *testing.T) {
+		t.Run("success_with_set_default", func(t *testing.T) {
+			var (
+				missingKeyValueDefault = entity.MissingKeyDefault
+				missingKeyValue        = fmt.Sprintf("%s=%v", missingkey, missingKeyValueDefault)
+				missingKeyValueExp     = missingKeyValue[1:]
+			)
+
+			testFs := flag.NewFlagSet(fsName, flag.ContinueOnError)
+			flags, err := parseFlags(testFs, []string{missingKeyValue})
+			assert.NoError(t, err)
+			assert.Equal(t,
+				Flags{
+					Verbose:         false,
+					PreprocessFiles: true,
+					DryRun:          false,
+					ConfigPath:      configPath,
+					AWD:             dot,
+					ReadStdin:       false,
+					MissingKey:      MissingKeyFlag(missingKeyValueDefault)},
+				flags)
+			assert.Equal(t, missingKeyValueExp, flags.MissingKey.String())
+		})
+		t.Run("error_with_set_unexpected", func(t *testing.T) {
+			var (
+				missingKeyValueDefault = "xxx_unexpected_xxx"
+				missingKeyValue        = fmt.Sprintf("%s=%v", missingkey, missingKeyValueDefault)
+			)
+
+			testFs := flag.NewFlagSet(fsName, flag.ContinueOnError)
+			testFs.SetOutput(MockWriter{
+				assertWriteFn: func(p []byte) {
+					assert.NotEmpty(t, p)
+				},
+			})
+			_, err := parseFlags(testFs, []string{missingKeyValue})
+			assert.Error(t, err)
+		})
 	})
 }
 

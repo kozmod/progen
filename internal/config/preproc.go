@@ -11,16 +11,18 @@ import (
 )
 
 type RawPreprocessor struct {
-	templateName string
-	templateVars map[string]any
-	templateFns  map[string]any
+	templateName    string
+	templateVars    map[string]any
+	templateFns     map[string]any
+	templateOptions []string
 }
 
-func NewRawPreprocessor(templateName string, templateVars, templateFns map[string]any) *RawPreprocessor {
+func NewRawPreprocessor(templateName string, templateVars, templateFns map[string]any, templateOptions []string) *RawPreprocessor {
 	return &RawPreprocessor{
-		templateName: templateName,
-		templateVars: templateVars,
-		templateFns:  templateFns,
+		templateName:    templateName,
+		templateVars:    templateVars,
+		templateFns:     templateFns,
+		templateOptions: templateOptions,
 	}
 }
 
@@ -39,6 +41,7 @@ func (p *RawPreprocessor) Process(data []byte) ([]byte, map[string]any, error) {
 
 	temp, err := template.New(name).
 		Funcs(p.templateFns).
+		Option(p.templateOptions...).
 		Parse(string(data))
 	if err != nil {
 		return nil, nil, fmt.Errorf("new template [%s]: %w", name, err)
@@ -50,23 +53,4 @@ func (p *RawPreprocessor) Process(data []byte) ([]byte, map[string]any, error) {
 		return nil, nil, fmt.Errorf("execute template [%s]: %w", name, err)
 	}
 	return buf.Bytes(), conf, nil
-}
-
-func PrepareFiles(conf Config, files map[string][]File) (Config, error) {
-	for i, fs := range conf.Files {
-		f := files[fs.Tag]
-		if cl, fl := len(conf.Files), len(files); cl != fl {
-			return conf, fmt.Errorf("len of files is not match [%d:%d]: %s", cl, fl, fs.Tag)
-		}
-		for j, file := range fs.Val {
-			if file.ExecTmplSkip {
-				if file.Data == nil {
-					continue
-				}
-				f := f[j]
-				conf.Files[i].Val[j].Data = f.Data
-			}
-		}
-	}
-	return conf, nil
 }

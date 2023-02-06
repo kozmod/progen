@@ -11,16 +11,18 @@ import (
 	"github.com/kozmod/progen/internal/proc"
 )
 
-func NewFileProc(
+func NewFileExecutor(
 	files []config.File,
 	http *config.HTTPClient,
 	templateData map[string]any,
 	logger entity.Logger,
+	preprocess,
 	dryRun bool,
-) (proc.Proc, error) {
+	templateOptions []string,
+) (entity.Executor, []entity.Preprocessor, error) {
 	if len(files) == 0 {
 		logger.Infof("`files` section is empty")
-		return nil, nil
+		return nil, nil, nil
 	}
 
 	producers := make([]entity.FileProducer, 0, len(files))
@@ -28,10 +30,9 @@ func NewFileProc(
 	var client *resty.Client
 	for _, f := range files {
 		var (
-			tmpl = entity.Template{
-				Name:     filepath.Base(f.Path),
-				Path:     filepath.Dir(f.Path),
-				ExecTmpl: !f.ExecTmplSkip,
+			tmpl = entity.FileInfo{
+				Name: filepath.Base(f.Path),
+				Dir:  filepath.Dir(f.Path),
 			}
 		)
 
@@ -39,13 +40,13 @@ func NewFileProc(
 		switch {
 		case f.Data != nil:
 			file := entity.DataFile{
-				Template: tmpl,
+				FileInfo: tmpl,
 				Data:     []byte(*f.Data),
 			}
-			producer = proc.NewStoredProducer(file)
+			producer = proc.NewDummyProducer(file)
 		case f.Get != nil:
 			file := entity.RemoteFile{
-				Template: tmpl,
+				FileInfo: tmpl,
 				HTTPClientParams: entity.HTTPClientParams{
 					URL:         f.Get.URL,
 					Headers:     f.Get.Headers,
@@ -60,21 +61,38 @@ func NewFileProc(
 			producer = proc.NewRemoteProducer(file, client)
 		case f.Local != nil:
 			file := entity.LocalFile{
-				Template:  tmpl,
+				FileInfo:  tmpl,
 				LocalPath: *f.Local,
 			}
 			producer = proc.NewLocalProducer(file)
 
 		default:
-			return nil, fmt.Errorf("create file processor: one of `data`, `get`, `local` must not be empty")
+			return nil, nil, fmt.Errorf("create file processor: one of `data`, `get`, `local` must not be empty")
 		}
 
 		producers = append(producers, producer)
 	}
 
-	if dryRun {
-		return proc.NewDryRunFileProc(producers, templateData, logger), nil
+	var preprocessors []entity.Preprocessor
+	if preprocess {
+		preloadProducers := make([]entity.FileProducer, 0, len(producers))
+		preloader := proc.NewPreloadProducer(producers, logger)
+		for i := 0; i < len(producers); i++ {
+			preloadProducers = append(preloadProducers, preloader)
+		}
+		producers = preloadProducers
+		preprocessors = append(preprocessors, preloader)
 	}
 
-	return proc.NewFileProc(producers, templateData, entity.TemplateFnsMap, logger), nil
+	processors := []entity.FileProc{proc.NewTemplateFileProc(templateData, entity.TemplateFnsMap, templateOptions)}
+
+	switch {
+	case dryRun:
+		processors = append(processors, proc.NewDryRunFileProc(logger))
+	default:
+		processors = append(processors, proc.NewSaveFileProc(logger))
+	}
+	executor := proc.NewFilesExecutor(producers, processors)
+
+	return executor, preprocessors, nil
 }

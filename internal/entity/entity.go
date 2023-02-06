@@ -1,10 +1,37 @@
 package entity
 
 import (
+	"fmt"
+	"path/filepath"
 	"regexp"
 )
 
+type (
+	TemplateOptionsKey string
+	MissingKeyValue    string
+)
+
+func (v MissingKeyValue) Valid() error {
+	switch v {
+	case MissingKeyDefault,
+		MissingKeyInvalid,
+		MissingKeyZero,
+		MissingKeyError:
+		return nil
+	default:
+		return fmt.Errorf("templte option [%v] is not valid: %v", TemplateOptionsMissingKey, v)
+	}
+}
+
+//goland:noinspection SpellCheckingInspection
 const (
+	TemplateOptionsMissingKey TemplateOptionsKey = "missingkey"
+
+	MissingKeyDefault MissingKeyValue = "default"
+	MissingKeyInvalid MissingKeyValue = "invalid"
+	MissingKeyZero    MissingKeyValue = "zero"
+	MissingKeyError   MissingKeyValue = "error"
+
 	Space      = " "
 	Empty      = ""
 	Dash       = "-"
@@ -19,6 +46,18 @@ type FileProducer interface {
 	Get() (DataFile, error)
 }
 
+type FileProc interface {
+	Process(file DataFile) (DataFile, error)
+}
+
+type Executor interface {
+	Exec() error
+}
+
+type Preprocessor interface {
+	Process() error
+}
+
 //goland:noinspection SpellCheckingInspection
 type Logger interface {
 	Infof(format string, args ...any)
@@ -28,24 +67,32 @@ type Logger interface {
 }
 
 type DataFile struct {
-	Template
+	FileInfo
 	Data []byte
 }
 
 type LocalFile struct {
-	Template
+	FileInfo
 	LocalPath string
 }
 
 type RemoteFile struct {
-	Template
+	FileInfo
 	HTTPClientParams
 }
 
-type Template struct {
-	Path     string
-	Name     string
-	ExecTmpl bool
+type FileInfo struct {
+	Dir  string
+	Name string
+	path *string
+}
+
+func (f *FileInfo) Path() string {
+	if f.path == nil {
+		path := filepath.Join(f.Dir, f.Name)
+		f.path = &path
+	}
+	return *f.path
 }
 
 type HTTPClientParams struct {

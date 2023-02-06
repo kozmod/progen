@@ -20,14 +20,16 @@ var (
 )
 
 type Flags struct {
-	ConfigPath   string
-	Verbose      bool
-	DryRun       bool
-	Version      bool
-	ReadStdin    bool
-	TemplateVars TemplateVarsFlag
-	AWD          string // AWD application working directory
-	Skip         SkipFlag
+	ConfigPath      string
+	Verbose         bool
+	DryRun          bool
+	Version         bool
+	ReadStdin       bool
+	TemplateVars    TemplateVarsFlag
+	AWD             string // AWD application working directory
+	Skip            SkipFlag
+	PreprocessFiles bool
+	MissingKey      MissingKeyFlag
 }
 
 func (f *Flags) FileLocationMessage() string {
@@ -60,7 +62,7 @@ func parseFlags(fs *flag.FlagSet, args []string) (Flags, error) {
 		&f.ConfigPath,
 		"f",
 		defaultConfigFilePath,
-		fmt.Sprintf("configuration file path (default file: %s)", defaultConfigFilePath))
+		fmt.Sprintf("configuration file path (default: %s)", defaultConfigFilePath))
 	fs.BoolVar(
 		&f.Verbose,
 		"v",
@@ -85,11 +87,27 @@ func parseFlags(fs *flag.FlagSet, args []string) (Flags, error) {
 		&f.AWD,
 		"awd",
 		entity.Dot,
-		"application working directory")
+		"application working directory (default: '.')")
 	fs.Var(
 		&f.Skip,
 		"skip",
 		"list of skipping 'yaml' tags")
+	fs.BoolVar(
+		&f.PreprocessFiles,
+		"pf",
+		true,
+		"preprocessing all files before saving (default: 'true')")
+	fs.Var(
+		&f.MissingKey,
+		"missingkey",
+		fmt.Sprintf(
+			"`missingkey` template option: %v, %v, %v, %v",
+			entity.MissingKeyDefault,
+			entity.MissingKeyInvalid,
+			entity.MissingKeyZero,
+			entity.MissingKeyError,
+		),
+	)
 	err := fs.Parse(args)
 	if err != nil {
 		return f, err

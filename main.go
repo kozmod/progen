@@ -47,7 +47,7 @@ func main() {
 		logger.Infof("execution time: %v", time.Since(start))
 	}(time.Now())
 
-	logger.Infof("configuration read: %s", flags.FileLocationMessage())
+	logger.Infof("configuration file: %s", flags.FileLocationMessage())
 
 	data, err := config.NewConfigReader(flags).Read()
 	if err != nil {
@@ -57,7 +57,9 @@ func main() {
 	rawConfig, templateData, err := config.NewRawPreprocessor(
 		flags.ConfigPath,
 		flags.TemplateVars.Vars,
-		entity.TemplateFnsMap).
+		entity.TemplateFnsMap,
+		[]string{flags.MissingKey.String()},
+	).
 		Process(data)
 	if err != nil {
 		logger.Fatalf("preprocess raw config: %v", err)
@@ -66,9 +68,7 @@ func main() {
 	var (
 		eg errgroup.Group
 
-		conf  config.Config
-		files map[string][]config.File
-
+		conf      config.Config
 		tagFilter = entity.NewRegexpChain(flags.Skip...)
 	)
 
@@ -81,25 +81,17 @@ func main() {
 		return nil
 	})
 
-	eg.Go(func() error {
-		f, err := config.UnmarshalYamlFiles(data)
-		if err != nil {
-			return fmt.Errorf("unmarshal file config: %w", err)
-		}
-		files = f
-		return nil
-	})
-
 	if err = eg.Wait(); err != nil {
 		logger.Fatalf("prepare config: %v", err)
 	}
 
-	conf, err = config.PrepareFiles(conf, files)
-	if err != nil {
-		logger.Fatalf("prepare config files section: %v", err)
-	}
-
-	procChain, err := factory.NewProcChain(conf, templateData, logger, flags.DryRun)
+	procChain, err := factory.NewExecutorChain(
+		conf,
+		templateData,
+		logger,
+		flags.PreprocessFiles,
+		flags.DryRun,
+		[]string{flags.MissingKey.String()})
 	if err != nil {
 		logger.Fatalf("create processors chain: %v", err)
 	}

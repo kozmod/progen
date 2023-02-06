@@ -2,6 +2,7 @@ package config
 
 import (
 	"bytes"
+	"fmt"
 	"regexp"
 	"testing"
 
@@ -11,6 +12,8 @@ import (
 )
 
 func Test_NewRawPreprocessor_Process(t *testing.T) {
+	t.Parallel()
+
 	const (
 		name = "conf"
 	)
@@ -31,7 +34,7 @@ steps:
 `
 		)
 
-		rawConf, mapConf, err := NewRawPreprocessor(name, nil, nil).Process([]byte(in))
+		rawConf, mapConf, err := NewRawPreprocessor(name, nil, nil, nil).Process([]byte(in))
 		assert.NoError(t, err)
 		assert.Equal(t, expected, string(rawConf))
 		assert.NotEmpty(t, mapConf)
@@ -48,7 +51,7 @@ steps:
 `
 		)
 
-		res, _, err := NewRawPreprocessor(name, nil, entity.TemplateFnsMap).Process([]byte(in))
+		res, _, err := NewRawPreprocessor(name, nil, entity.TemplateFnsMap, nil).Process([]byte(in))
 		assert.NoError(t, err)
 		assert.Regexp(t, regexp.MustCompile(exp), string(res))
 	})
@@ -67,12 +70,13 @@ steps:
 		res, _, err := NewRawPreprocessor(
 			name,
 			map[string]any{"vars": map[string]any{"service_name": "SOME"}},
+			nil,
 			nil).
 			Process([]byte(in))
 		assert.NoError(t, err)
 		assert.Equal(t, exp, string(res))
 	})
-	t.Run("error_preprocess_raw_config_data_when_template_key_not_set", func(t *testing.T) {
+	t.Run("success_preprocess_raw_config_data_when_template_key_not_set", func(t *testing.T) {
 		const (
 			in = `
 steps:
@@ -84,13 +88,27 @@ steps:
 `
 		)
 
-		res, _, err := NewRawPreprocessor(name, nil, nil).Process([]byte(in))
+		res, _, err := NewRawPreprocessor(name, nil, nil, nil).Process([]byte(in))
 		assert.NoError(t, err)
 		assert.Equal(t, expected, string(res))
+	})
+	t.Run("error_preprocess_raw_config_data_when_template_missingkey_option_is_error", func(t *testing.T) {
+		const (
+			in = `
+steps:
+ name: Setup Go {{ .matrix.version }}
+`
+		)
+
+		options := []string{fmt.Sprintf("%v=%v", entity.TemplateOptionsMissingKey, entity.MissingKeyError)}
+		_, _, err := NewRawPreprocessor(name, nil, nil, options).Process([]byte(in))
+		assert.Error(t, err)
 	})
 }
 
 func Test_ValidateFile(t *testing.T) {
+	t.Parallel()
+
 	const (
 		path = "some_path"
 	)
@@ -145,6 +163,8 @@ func Test_ValidateFile(t *testing.T) {
 }
 
 func Test_Read(t *testing.T) {
+	t.Parallel()
+
 	t.Run("success_read_config_data", func(t *testing.T) {
 		const (
 			in = `
@@ -183,6 +203,8 @@ cmd2:
 }
 
 func Test_YamlUnmarshaler_Unmarshal(t *testing.T) {
+	t.Parallel()
+
 	t.Run("success_unmarshal", func(t *testing.T) {
 		const (
 			in = `
@@ -237,7 +259,6 @@ cmd2:
 		a.Equal("x/DDDDDD", file.Path)
 		a.NotNil(file.Data)
 		a.Equal("ENV GOPROXY \"{{.vars.GOPROXY}} ,proxy.golang.org,direct\"\n", *file.Data)
-		a.True(file.ExecTmplSkip)
 	})
 
 	t.Run("success_unmarshal_skip_all_cmd_and_dirs2_sections", func(t *testing.T) {
@@ -297,7 +318,6 @@ cmd2:
 		a.Equal("x/DDDDDD", file.Path)
 		a.NotNil(file.Data)
 		a.Equal("ENV GOPROXY \"{{.vars.GOPROXY}} ,proxy.golang.org,direct\"\n", *file.Data)
-		a.True(file.ExecTmplSkip)
 	})
 	t.Run("error_when-config_not_contains_executable_actions", func(t *testing.T) {
 		const (
