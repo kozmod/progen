@@ -12,6 +12,8 @@ import (
 )
 
 func Test_NewRawPreprocessor_Process(t *testing.T) {
+	t.Parallel()
+
 	const (
 		name = "conf"
 	)
@@ -105,6 +107,8 @@ steps:
 }
 
 func Test_ValidateFile(t *testing.T) {
+	t.Parallel()
+
 	const (
 		path = "some_path"
 	)
@@ -159,6 +163,8 @@ func Test_ValidateFile(t *testing.T) {
 }
 
 func Test_Read(t *testing.T) {
+	t.Parallel()
+
 	t.Run("success_read_config_data", func(t *testing.T) {
 		const (
 			in = `
@@ -197,6 +203,8 @@ cmd2:
 }
 
 func Test_YamlUnmarshaler_Unmarshal(t *testing.T) {
+	t.Parallel()
+
 	t.Run("success_unmarshal", func(t *testing.T) {
 		const (
 			in = `

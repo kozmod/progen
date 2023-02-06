@@ -7,6 +7,8 @@ import (
 )
 
 func Test_RegexpChain(t *testing.T) {
+	t.Parallel()
+
 	const (
 		regex1 = `cmd.?`
 		regex2 = "^dirs$"
@@ -49,6 +51,8 @@ func Test_RegexpChain(t *testing.T) {
 }
 
 func Test_RandomFn(t *testing.T) {
+	t.Parallel()
+
 	var (
 		f = RandomFn{}
 	)
@@ -83,6 +87,8 @@ func Test_RandomFn(t *testing.T) {
 }
 
 func Test_MissingKye(t *testing.T) {
+	t.Parallel()
+
 	t.Run("success", func(t *testing.T) {
 		err := MissingKeyValue("default").Valid()
 		assert.NoError(t, err)

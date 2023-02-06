@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"sort"
 	"sync"
 	"text/template"
 
 	"github.com/go-resty/resty/v2"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/kozmod/progen/internal/entity"
 )
@@ -140,18 +142,52 @@ func NewPreloadProducer(producers []entity.FileProducer, logger entity.Logger) *
 }
 
 func (p *PreloadProducer) Process() error {
+	type OrderedFile struct {
+		index int
+		entity.DataFile
+	}
+
 	p.mx.Lock()
 	defer p.mx.Unlock()
 
-	dummyProducers := make([]entity.FileProducer, 0, len(p.producers))
-	for i, producer := range p.producers {
-		file, err := producer.Get()
-		if err != nil {
-			return fmt.Errorf("preload file [%d]: %w", i, err)
-		}
-		dummyProducers = append(dummyProducers, NewDummyProducer(file))
+	var (
+		files = make([]OrderedFile, 0, len(p.producers))
+		fChan = make(chan OrderedFile, len(p.producers))
+
+		eg errgroup.Group
+	)
+
+	for i, p := range p.producers {
+		index, producer := i, p
+		eg.Go(func() error {
+			file, err := producer.Get()
+			if err != nil {
+				return fmt.Errorf("preload file [%d]: %w", index, err)
+			}
+			fChan <- OrderedFile{index: index, DataFile: file}
+			return nil
+		})
+	}
+
+	if err := eg.Wait(); err != nil {
+		return err
+	}
+	close(fChan)
+
+	for file := range fChan {
+		files = append(files, file)
+	}
+
+	sort.Slice(files, func(i, j int) bool {
+		return files[i].index < files[j].index
+	})
+
+	dummyProducers := make([]entity.FileProducer, 0, len(files))
+	for _, file := range files {
+		dummyProducers = append(dummyProducers, NewDummyProducer(file.DataFile))
 		p.logger.Infof("file process: %s", file.Path())
 	}
+
 	p.producers = dummyProducers
 	return nil
 }
