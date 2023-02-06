@@ -118,6 +118,82 @@ func Test_PreloadProducer(t *testing.T) {
 	})
 }
 
+func Test_TemplateFileProc(t *testing.T) {
+	t.Parallel()
+
+	const (
+		name = "some_file"
+		dir  = "/some/path"
+
+		noValue = "<no value>"
+	)
+
+	var (
+		newDataFileFn = func(data string) entity.DataFile {
+			return entity.DataFile{
+				Data: []byte(data),
+				FileInfo: entity.FileInfo{
+					Name: name,
+					Dir:  dir,
+				},
+			}
+		}
+	)
+
+	t.Run("success_exec_template_value", func(t *testing.T) {
+		var (
+			templateValue = "VAL"
+			file          = newDataFileFn(`{{.some.Value}}`)
+		)
+		proc := TemplateFileProc{templateData: map[string]any{"some": map[string]any{"Value": templateValue}}}
+		res, err := proc.Process(file)
+		assert.NoError(t, err)
+		assert.Equal(t, templateValue, string(res.Data))
+		assert.Equal(t, file.Name, res.Name)
+		assert.Equal(t, file.Dir, res.Dir)
+	})
+
+	t.Run("success_exec_template_functions", func(t *testing.T) {
+		var (
+			templateValue = "VAL"
+			file          = newDataFileFn(`{{ fn }}`)
+		)
+		proc := TemplateFileProc{templateFns: map[string]any{
+			"fn": func() any { return templateValue },
+		}}
+		res, err := proc.Process(file)
+		assert.NoError(t, err)
+		assert.Equal(t, templateValue, string(res.Data))
+		assert.Equal(t, file.Name, res.Name)
+		assert.Equal(t, file.Dir, res.Dir)
+	})
+	t.Run("missingkey", func(t *testing.T) {
+		t.Run("error", func(t *testing.T) {
+			var (
+				file = newDataFileFn(`{{ .vars.Some }}`)
+			)
+			proc := TemplateFileProc{
+				templateOptions: []string{fmt.Sprintf("%v=%v", entity.TemplateOptionsMissingKey, entity.MissingKeyError)},
+			}
+			_, err := proc.Process(file)
+			assert.Error(t, err)
+		})
+		t.Run("default", func(t *testing.T) {
+			var (
+				file = newDataFileFn(`{{ .vars.Some }}`)
+			)
+			proc := TemplateFileProc{
+				templateOptions: []string{fmt.Sprintf("%v=%v", entity.TemplateOptionsMissingKey, entity.MissingKeyDefault)},
+			}
+			res, err := proc.Process(file)
+			assert.NoError(t, err)
+			assert.Equal(t, noValue, string(res.Data))
+			assert.Equal(t, file.Name, res.Name)
+			assert.Equal(t, file.Dir, res.Dir)
+		})
+	})
+}
+
 type MockLogger struct {
 	entity.Logger
 	infof func(format string, args ...any)
