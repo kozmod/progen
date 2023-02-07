@@ -2,6 +2,7 @@ package proc
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"net/http"
 	"os"
@@ -154,12 +155,15 @@ func (p *PreloadProducer) Process() error {
 		files = make([]OrderedFile, 0, len(p.producers))
 		fChan = make(chan OrderedFile, len(p.producers))
 
-		eg errgroup.Group
+		eg, ctx = errgroup.WithContext(context.Background())
 	)
 
 	for i, p := range p.producers {
 		index, producer := i, p
 		eg.Go(func() error {
+			if ctx.Err() != nil {
+				return nil
+			}
 			file, err := producer.Get()
 			if err != nil {
 				return fmt.Errorf("preload file [%d]: %w", index, err)
