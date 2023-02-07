@@ -48,6 +48,7 @@ type File struct {
 type Command struct {
 	Dir  string   `yaml:"dir"`
 	Exec []string `yaml:"exec,flow"`
+	Pipe bool     `yaml:"pipe"`
 }
 
 type Get struct {

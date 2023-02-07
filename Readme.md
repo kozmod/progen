@@ -71,6 +71,7 @@ ___
 | cmd`<unique_suffix>`[<sup>**ⓘ**</sup>](#Commands)  |                   |          | configuration command list                            |
 | cmd.exec                                           |      []slice      | ❌        | list of command to execute                            |
 | cmd.dir                                            |      string       | ✅        | execution commands (`cmd.exec`) directory             |
+| cmd.pipe[<sup>**ⓘ**</sup>](#cmd_pipe)              |       bool        | ✅        | execution commands from `exec` section in 'pipe mode' |
 
 `❕` only one must be specified in parent section
 
@@ -492,3 +493,30 @@ out:
 
 2 directories, 6 files
 ```
+
+#### <a name="cmd_pipe"></a> 'Pipe mode'
+
+The `cmd.pipe` option set "pipe mode" for `cmd.exec` section:
+sequentially redirect an output of first command to an input of the second.
+
+```yaml
+## progen.yml
+
+cmd:
+  - exec:
+      - ls /
+      - sort -r
+      - wc -l
+    pipe: true
+    dir: .
+```
+
+```console
+% progen -v 
+2023-02-07 18:12:38	INFO	application working directory: /Users/user_1/GoProjects/progen
+2023-02-07 18:12:38	INFO	configuration file: progen.yml
+2023-02-07 18:12:38	INFO	execute pipe [dir: .]: ls / | sort -r | wc -l
+out:
+      17
+```
+
