@@ -519,4 +519,6 @@ cmd:
 out:
       17
 ```
-
+___
+### Examples 
+[progen-example](https://github.com/kozmod/progen-examples) repository contains useful examples of usage cli

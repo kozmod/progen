@@ -2,8 +2,9 @@ package flag
 
 import (
 	"fmt"
-	"github.com/kozmod/progen/internal/entity"
 	"strings"
+
+	"github.com/kozmod/progen/internal/entity"
 )
 
 type MissingKeyFlag string

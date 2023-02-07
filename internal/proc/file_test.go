@@ -2,10 +2,11 @@ package proc
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"math/rand"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/kozmod/progen/internal/entity"
 )
