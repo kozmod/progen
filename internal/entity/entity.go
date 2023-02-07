@@ -38,6 +38,7 @@ const (
 	Dot        = "."
 	EqualsSign = "="
 	LessThan   = "<"
+	SpacedPipe = " | "
 
 	NewLine = '\n'
 )
@@ -48,6 +49,10 @@ type FileProducer interface {
 
 type FileProc interface {
 	Process(file DataFile) (DataFile, error)
+}
+
+type CommandProc interface {
+	Process(commands []Command) error
 }
 
 type Executor interface {
@@ -104,7 +109,6 @@ type HTTPClientParams struct {
 type Command struct {
 	Cmd  string
 	Args []string
-	Dir  string
 }
 
 type RegexpChain struct {
