@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/kozmod/progen/internal/config"
-
 	"github.com/kozmod/progen/internal/entity"
 	"github.com/kozmod/progen/internal/proc"
 )

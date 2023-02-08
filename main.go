@@ -33,10 +33,12 @@ func main() {
 	}()
 
 	{
-		if err := os.Chdir(flags.AWD); err != nil {
+		if err = os.Chdir(flags.AWD); err != nil {
 			logger.Fatalf("changes the application working directory: %v", err)
 		}
-		awd, err := os.Getwd()
+
+		var awd string
+		awd, err = os.Getwd()
 		if err != nil {
 			logger.Fatalf("get the application working directory: %v", err)
 		}
@@ -73,11 +75,10 @@ func main() {
 	)
 
 	eg.Go(func() error {
-		c, err := config.NewYamlConfigUnmarshaler(tagFilter, logger).Unmarshal(rawConfig)
+		conf, err = config.NewYamlConfigUnmarshaler(tagFilter, logger).Unmarshal(rawConfig)
 		if err != nil {
 			return fmt.Errorf("unmarshal config: %w", err)
 		}
-		conf = c
 		return nil
 	})
 
