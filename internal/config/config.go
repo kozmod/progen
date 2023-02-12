@@ -12,6 +12,7 @@ const (
 	TagDirs      = "dirs"
 	TagFiles     = "files"
 	TagCmd       = "cmd"
+	TagFS        = "fs"
 	SettingsHTTP = "settings"
 )
 
@@ -20,6 +21,7 @@ type Config struct {
 	Dirs     []Section[[]string]  `yaml:"dirs,flow"`
 	Files    []Section[[]File]    `yaml:"files,flow"`
 	Cmd      []Section[[]Command] `yaml:"cmd,flow"`
+	FS       []Section[[]string]  `yaml:"fs,flow"`
 }
 
 type Settings struct {

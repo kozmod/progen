@@ -2,23 +2,22 @@ package factory
 
 import (
 	"fmt"
-	"path/filepath"
 
 	"github.com/go-resty/resty/v2"
 
 	"github.com/kozmod/progen/internal/config"
 	"github.com/kozmod/progen/internal/entity"
-	"github.com/kozmod/progen/internal/proc"
+	"github.com/kozmod/progen/internal/exec"
 )
 
 func NewFileExecutor(
 	files []config.File,
 	http *config.HTTPClient,
 	templateData map[string]any,
+	templateOptions []string,
 	logger entity.Logger,
 	preprocess,
 	dryRun bool,
-	templateOptions []string,
 ) (entity.Executor, []entity.Preprocessor, error) {
 	if len(files) == 0 {
 		logger.Infof("`files` section is empty")
@@ -30,10 +29,7 @@ func NewFileExecutor(
 	var client *resty.Client
 	for _, f := range files {
 		var (
-			tmpl = entity.FileInfo{
-				Name: filepath.Base(f.Path),
-				Dir:  filepath.Dir(f.Path),
-			}
+			tmpl = entity.NewFileInfo(f.Path)
 		)
 
 		var producer entity.FileProducer
@@ -43,7 +39,7 @@ func NewFileExecutor(
 				FileInfo: tmpl,
 				Data:     []byte(*f.Data),
 			}
-			producer = proc.NewDummyProducer(file)
+			producer = exec.NewDummyProducer(file)
 		case f.Get != nil:
 			file := entity.RemoteFile{
 				FileInfo: tmpl,
@@ -58,13 +54,13 @@ func NewFileExecutor(
 				client = NewHTTPClient(http, logger)
 			}
 
-			producer = proc.NewRemoteProducer(file, client)
+			producer = exec.NewRemoteProducer(file, client)
 		case f.Local != nil:
 			file := entity.LocalFile{
 				FileInfo:  tmpl,
 				LocalPath: *f.Local,
 			}
-			producer = proc.NewLocalProducer(file)
+			producer = exec.NewLocalProducer(file)
 
 		default:
 			return nil, nil, fmt.Errorf("create file processor: one of `data`, `get`, `local` must not be empty")
@@ -76,7 +72,7 @@ func NewFileExecutor(
 	var preprocessors []entity.Preprocessor
 	if preprocess {
 		preloadProducers := make([]entity.FileProducer, 0, len(producers))
-		preloader := proc.NewPreloadProducer(producers, logger)
+		preloader := exec.NewPreloadProducer(producers, logger)
 		for i := 0; i < len(producers); i++ {
 			preloadProducers = append(preloadProducers, preloader)
 		}
@@ -84,15 +80,15 @@ func NewFileExecutor(
 		preprocessors = append(preprocessors, preloader)
 	}
 
-	processors := []entity.FileProc{proc.NewTemplateFileProc(templateData, entity.TemplateFnsMap, templateOptions)}
+	processors := []entity.FileProc{exec.NewTemplateFileProc(templateData, entity.TemplateFnsMap, templateOptions)}
 
 	switch {
 	case dryRun:
-		processors = append(processors, proc.NewDryRunFileProc(logger))
+		processors = append(processors, exec.NewDryRunFileProc(logger))
 	default:
-		processors = append(processors, proc.NewSaveFileProc(logger))
+		processors = append(processors, exec.NewSaveFileProc(logger))
 	}
-	executor := proc.NewFilesExecutor(producers, processors)
+	executor := exec.NewFilesExecutor(producers, processors)
 
 	return executor, preprocessors, nil
 }

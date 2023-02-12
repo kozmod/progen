@@ -6,7 +6,7 @@ import (
 
 	"github.com/kozmod/progen/internal/config"
 	"github.com/kozmod/progen/internal/entity"
-	"github.com/kozmod/progen/internal/proc"
+	"github.com/kozmod/progen/internal/exec"
 )
 
 func NewExecutorChain(
@@ -44,7 +44,14 @@ func NewExecutorChain(
 			ProcGenerator{
 				line: f.Line,
 				procFn: func() (entity.Executor, error) {
-					executor, l, err := NewFileExecutor(f.Val, conf.Settings.HTTP, templateData, logger, preprocess, dryRun, templateOptions)
+					executor, l, err := NewFileExecutor(
+						f.Val,
+						conf.Settings.HTTP,
+						templateData,
+						templateOptions,
+						logger,
+						preprocess,
+						dryRun)
 					loaders = append(loaders, l...)
 					return executor, err
 				},
@@ -58,6 +65,21 @@ func NewExecutorChain(
 				line: cmd.Line,
 				procFn: func() (entity.Executor, error) {
 					return NewRunCommandExecutor(cmd.Val, logger, dryRun)
+				},
+			})
+	}
+	for _, path := range conf.FS {
+		fs := path
+		generators = append(generators,
+			ProcGenerator{
+				line: fs.Line,
+				procFn: func() (entity.Executor, error) {
+					return NewFSExecutor(
+						fs.Val,
+						templateData,
+						templateOptions,
+						logger,
+						dryRun)
 				},
 			})
 	}
@@ -78,9 +100,5 @@ func NewExecutorChain(
 		processors = append(processors, p)
 	}
 
-	if len(loaders) != 0 {
-		return proc.NewPreprocessingChain(loaders, processors), nil
-	}
-
-	return proc.NewProcChain(processors), nil
+	return exec.NewPreprocessingChain(loaders, processors), nil
 }
