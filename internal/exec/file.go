@@ -1,14 +1,12 @@
-package proc
+package exec
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"net/http"
 	"os"
 	"sort"
 	"sync"
-	"text/template"
 
 	"github.com/go-resty/resty/v2"
 	"golang.org/x/sync/errgroup"
@@ -46,35 +44,25 @@ func (e *FilesExecutor) Exec() error {
 }
 
 type TemplateFileProc struct {
-	templateData    map[string]any
-	templateFns     map[string]any
-	templateOptions []string
+	templateProcFn func() entity.TemplateProc
 }
 
 func NewTemplateFileProc(templateData, templateFns map[string]any, templateOptions []string) *TemplateFileProc {
 	return &TemplateFileProc{
-		templateData:    templateData,
-		templateFns:     templateFns,
-		templateOptions: templateOptions,
+		templateProcFn: func() entity.TemplateProc {
+			return entity.NewTemplateProc(templateData, templateFns, templateOptions)
+		},
 	}
 }
 
 func (p *TemplateFileProc) Process(file entity.DataFile) (entity.DataFile, error) {
 	filePath := file.Path()
-	temp, err := template.New(filePath).
-		Funcs(p.templateFns).
-		Option(p.templateOptions...).
-		Parse(string(file.Data))
-	if err != nil {
-		return file, fmt.Errorf("execute template: new template [%s]: %w", filePath, err)
-	}
 
-	var buf bytes.Buffer
-	err = temp.Execute(&buf, p.templateData)
+	data, err := p.templateProcFn().Process(filePath, string(file.Data))
 	if err != nil {
-		return file, fmt.Errorf("execute template [%s]: %w", filePath, err)
+		return file, fmt.Errorf("process file template: %w", err)
 	}
-	file.Data = buf.Bytes()
+	file.Data = []byte(data)
 	return file, nil
 }
 
@@ -91,7 +79,7 @@ func NewSaveFileProc(logger entity.Logger) *SaveFileProc {
 }
 
 func (p *SaveFileProc) Process(file entity.DataFile) (entity.DataFile, error) {
-	fileDir := file.Dir
+	fileDir := file.Dir()
 	if _, err := os.Stat(fileDir); os.IsNotExist(err) {
 		err = os.MkdirAll(fileDir, p.fileMode)
 		if err != nil {
@@ -102,9 +90,28 @@ func (p *SaveFileProc) Process(file entity.DataFile) (entity.DataFile, error) {
 	filePath := file.Path()
 	err := os.WriteFile(filePath, file.Data, p.fileMode)
 	if err != nil {
-		return file, fmt.Errorf("save file: write file [%s]: %w", file.Name, err)
+		return file, fmt.Errorf("save file: write file [%s]: %w", file.Name(), err)
 	}
 	p.logger.Infof("file saved: %s", filePath)
+	return file, nil
+}
+
+type ReplacePathFileProc struct {
+	// paths contains old and new Files path to replace
+	paths map[string]string
+}
+
+func NewReplacePathFileProc(paths map[string]string) *ReplacePathFileProc {
+	return &ReplacePathFileProc{
+		paths: paths,
+	}
+}
+
+func (p *ReplacePathFileProc) Process(file entity.DataFile) (entity.DataFile, error) {
+	newPath, ok := p.paths[file.Path()]
+	if ok {
+		file = entity.DataFile{FileInfo: entity.NewFileInfo(newPath)}
+	}
 	return file, nil
 }
 
@@ -119,7 +126,7 @@ func NewDryRunFileProc(logger entity.Logger) *DryRunFileProc {
 }
 
 func (p *DryRunFileProc) Process(file entity.DataFile) (entity.DataFile, error) {
-	fileDir := file.Dir
+	fileDir := file.Dir()
 	if _, err := os.Stat(fileDir); os.IsNotExist(err) {
 		p.logger.Infof("save file: create dir [%s] to store file [%s]", fileDir, file.Name)
 	}

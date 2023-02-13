@@ -43,33 +43,43 @@ const (
 	NewLine = '\n'
 )
 
-type FileProducer interface {
-	Get() (DataFile, error)
-}
+type (
+	FileProducer interface {
+		Get() (DataFile, error)
+	}
 
-type FileProc interface {
-	Process(file DataFile) (DataFile, error)
-}
+	FileProc interface {
+		Process(file DataFile) (DataFile, error)
+	}
 
-type CommandProc interface {
-	Process(commands []Command) error
-}
+	DirProc interface {
+		Process(path string) (string, error)
+	}
 
-type Executor interface {
-	Exec() error
-}
+	TemplateProc interface {
+		Process(name, text string) (string, error)
+	}
 
-type Preprocessor interface {
-	Process() error
-}
+	CommandProc interface {
+		Process(commands []Command) error
+	}
 
-//goland:noinspection SpellCheckingInspection
-type Logger interface {
-	Infof(format string, args ...any)
-	Errorf(format string, any ...any)
-	Warnf(format string, any ...any)
-	Debugf(format string, any ...any)
-}
+	Executor interface {
+		Exec() error
+	}
+
+	Preprocessor interface {
+		Process() error
+	}
+
+	//goland:noinspection SpellCheckingInspection
+	Logger interface {
+		Infof(format string, args ...any)
+		Errorf(format string, any ...any)
+		Warnf(format string, any ...any)
+		Debugf(format string, any ...any)
+	}
+)
 
 type DataFile struct {
 	FileInfo
@@ -87,14 +97,29 @@ type RemoteFile struct {
 }
 
 type FileInfo struct {
-	Dir  string
-	Name string
+	dir  string
+	name string
 	path *string
+}
+
+func (f *FileInfo) Name() string {
+	return f.name
+}
+
+func (f *FileInfo) Dir() string {
+	return f.dir
+}
+
+func NewFileInfo(path string) FileInfo {
+	return FileInfo{
+		name: filepath.Base(path),
+		dir:  filepath.Dir(path),
+	}
 }
 
 func (f *FileInfo) Path() string {
 	if f.path == nil {
-		path := filepath.Join(f.Dir, f.Name)
+		path := filepath.Join(f.dir, f.name)
 		f.path = &path
 	}
 	return *f.path
