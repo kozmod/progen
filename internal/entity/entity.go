@@ -102,19 +102,19 @@ type FileInfo struct {
 	path *string
 }
 
+func NewFileInfo(path string) FileInfo {
+	return FileInfo{
+		name: filepath.Base(path),
+		dir:  filepath.Dir(path),
+	}
+}
+
 func (f *FileInfo) Name() string {
 	return f.name
 }
 
 func (f *FileInfo) Dir() string {
 	return f.dir
-}
-
-func NewFileInfo(path string) FileInfo {
-	return FileInfo{
-		name: filepath.Base(path),
-		dir:  filepath.Dir(path),
-	}
 }
 
 func (f *FileInfo) Path() string {

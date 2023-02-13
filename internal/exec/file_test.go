@@ -3,6 +3,7 @@ package exec
 import (
 	"fmt"
 	"math/rand"
+	"os"
 	"path/filepath"
 	"testing"
 	"time"
@@ -249,23 +250,42 @@ func Test_ReplacePathFileProc(t *testing.T) {
 	})
 }
 
-type MockLogger struct {
-	entity.Logger
-	infof func(format string, args ...any)
-}
+func Test_SaveFileProc(t *testing.T) {
+	SkipSLowTest(t)
 
-func (m MockLogger) Infof(format string, args ...any) {
-	m.infof(format, args...)
-}
+	const (
+		someDir  = "some_dir"
+		someFile = "some_file.txt"
+	)
 
-type MockProducer struct {
-	file entity.DataFile
-	err  error
-}
+	WithTempDir(t, func(tmpDir string) {
+		var (
+			a       = assert.New(t)
+			expPath = filepath.Join(tmpDir, someDir, someFile)
+			in      = entity.DataFile{
+				FileInfo: entity.NewFileInfo(expPath),
+				Data:     []byte(`some_file_data`),
+			}
 
-func (m *MockProducer) Get() (entity.DataFile, error) {
-	if m.err != nil {
-		return entity.DataFile{}, m.err
-	}
-	return m.file, nil
+			mockLogger = MockLogger{
+				infof: func(format string, args ...any) {
+					a.NotEmpty(format)
+					a.ElementsMatch([]string{expPath}, args)
+				},
+			}
+		)
+
+		res, err := NewSaveFileProc(mockLogger).Process(in)
+		a.NoError(err)
+		a.Equal(in.Dir(), res.Dir())
+		a.Equal(in.Name(), res.Name())
+		a.Equal(in.Path(), res.Path())
+		a.Equal(in.Data, res.Data)
+		a.FileExists(res.Path())
+
+		resData, err := os.ReadFile(res.Path())
+		a.NoError(err)
+		a.Equal(in.Data, resData)
+		a.Equal(res.Data, resData)
+	})
 }
