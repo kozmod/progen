@@ -32,6 +32,17 @@ func WithTempDir(t *testing.T, test func(dir string)) {
 	test(tmpPath)
 }
 
+func CreateFile(t *testing.T, path string, data []byte) {
+	dir := filepath.Dir(path)
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		err = os.MkdirAll(dir, os.ModePerm)
+		assert.NoError(t, err)
+	}
+
+	err := os.WriteFile(path, data, os.ModePerm)
+	assert.NoError(t, err)
+}
+
 func SkipSLowTest(t *testing.T) {
 	if testing.Short() {
 		pc := make([]uintptr, 1)
@@ -60,4 +71,16 @@ func (m *MockProducer) Get() (entity.DataFile, error) {
 		return entity.DataFile{}, m.err
 	}
 	return m.file, nil
+}
+
+type MockExecutor struct{}
+
+func (m MockExecutor) Exec() error {
+	return nil
+}
+
+type MockFileProc struct{}
+
+func (m MockFileProc) Process(_ entity.DataFile) (entity.DataFile, error) {
+	return entity.DataFile{}, nil
 }
