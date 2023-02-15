@@ -495,6 +495,23 @@ out:
 
 2 directories, 6 files
 ```
+`cmd` action maintains "short" declaration syntax
+
+```yaml
+## progen.yml
+
+cmd:
+  - pwd
+  - ls -a
+```
+```console
+% progen -v -dr
+2023-02-15 17:56:58	INFO	application working directory: /Users/user_1/GoProjects/progen
+2023-02-15 17:56:58	INFO	configuration file: short.yml
+2023-02-15 17:56:58	INFO	execute [dir: .]: pwd
+2023-02-15 17:56:58	INFO	execute [dir: .]: ls -a
+```
+
 
 #### <a name="cmd_pipe"></a> 'Pipe mode'
 

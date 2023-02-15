@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"gopkg.in/yaml.v3"
 
 	"github.com/kozmod/progen/internal/entity"
 )
@@ -171,11 +172,13 @@ func Test_Read(t *testing.T) {
 dirs1:
   - api/{{.vars.pn}}/v1
 cmd1:
-  - chmod -R 777 api
+  - exec: [chmod -R 777 api]
+    dir: .
 dirs2:
   - api/{{.vars2.pn}}/v1
 cmd2:
-  - chmod -R 777 api
+  - exec: [chmod -R 777 api]
+    dir: .
 `
 		)
 
@@ -265,7 +268,8 @@ cmd2:
 		const (
 			in = `
 cmd:
-  - pwd
+  - exec: [pwd]
+    dir: /
 
 dirs:
   - x/api/{{.vars.service_name}}/v1
@@ -275,7 +279,8 @@ dirs2:
   - y/api
 
 cmd1:
-  - ls -a
+  - exec: [ls -a]
+    dir: .
 
 files:
   - path: x/DDDDDD
@@ -284,8 +289,8 @@ files:
       ENV GOPROXY "{{.vars.GOPROXY}} ,proxy.golang.org,direct"
 
 cmd2:
-  - ls -lS
-  - whoami
+  - exec: [ls -lS, whoami]
+    dir:
 `
 		)
 
@@ -307,10 +312,10 @@ cmd2:
 		a.Len(conf.Dirs, 1)
 		a.Len(conf.Cmd, 0)
 
-		assertSection(a, conf.Dirs, "dirs", 6, "x/api/{{.vars.service_name}}/v1", "s")
+		assertSection(a, conf.Dirs, "dirs", 7, "x/api/{{.vars.service_name}}/v1", "s")
 
 		files := conf.Files[0]
-		a.Equal(int32(16), files.Line)
+		a.Equal(int32(18), files.Line)
 		a.Equal(TagFiles, files.Tag)
 		a.Len(files.Val, 1)
 
@@ -329,6 +334,85 @@ var:
 		_, err := NewYamlConfigUnmarshaler(nil, nil).Unmarshal([]byte(in))
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "config not contains executable actions")
+	})
+}
+
+func Test_Command_UnmarshalYAML(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		const (
+			in = `
+cmd:
+  - exec: [pwd]
+    dir: /
+  - ls -a
+`
+		)
+		var (
+			a = assert.New(t)
+		)
+		conf, err := NewYamlConfigUnmarshaler(nil, nil).Unmarshal([]byte(in))
+		a.NoError(err)
+		assertSection(a, conf.Cmd, "cmd", 3,
+			Command{Dir: "/", Exec: []string{"pwd"}},
+			Command{Dir: ".", Exec: []string{"ls -a"}})
+	})
+	t.Run("success_v2", func(t *testing.T) {
+		const (
+			in = `
+cmd:
+  - ls -a
+  - dh -f
+  - exec: [pwd]
+    dir: /
+`
+		)
+
+		var (
+			a       = assert.New(t)
+			TestCmd struct {
+				Commands []Command `yaml:"cmd,flow"`
+			}
+		)
+		err := yaml.Unmarshal([]byte(in), &TestCmd)
+		a.NoError(err)
+		a.Equal([]Command{
+			{Dir: ".", Exec: []string{"ls -a"}},
+			{Dir: ".", Exec: []string{"dh -f"}},
+			{Dir: "/", Exec: []string{"pwd"}},
+		}, TestCmd.Commands)
+
+	})
+}
+
+func Test_AddrURL_UnmarshalYAML(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		const (
+			expUrl = "https://gitlab.sberlabs.com/api/v4/projects/5/repository/files/"
+		)
+		var (
+			in         = fmt.Sprintf(`url: %s`, expUrl)
+			a          = assert.New(t)
+			TestAddUrl struct {
+				URL AddrURL `yaml:"url"`
+			}
+		)
+		err := yaml.Unmarshal([]byte(in), &TestAddUrl)
+		a.NoError(err)
+		a.Equal(expUrl, TestAddUrl.URL.String())
+	})
+	t.Run("error_when_url_is_invalid", func(t *testing.T) {
+		const (
+			expUrl = ":::gitlab.sberlabs.com/api/"
+		)
+		var (
+			in         = fmt.Sprintf(`url: %s`, expUrl)
+			a          = assert.New(t)
+			TestAddUrl struct {
+				URL AddrURL `yaml:"url"`
+			}
+		)
+		err := yaml.Unmarshal([]byte(in), &TestAddUrl)
+		a.Error(err)
 	})
 }
 
