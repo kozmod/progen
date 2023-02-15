@@ -53,6 +53,25 @@ type Command struct {
 	Pipe bool     `yaml:"pipe"`
 }
 
+func (c *Command) UnmarshalYAML(unmarshal func(any) error) error {
+	var raw string
+	if err := unmarshal(&raw); err == nil {
+		*c = Command{
+			Dir:  entity.Dot,
+			Exec: []string{raw},
+			Pipe: false,
+		}
+		return nil
+	}
+	type alias Command
+	var cmd alias
+	if err := unmarshal(&cmd); err != nil {
+		return err
+	}
+	*c = (Command)(cmd)
+	return nil
+}
+
 type Get struct {
 	HTTPClientParams `yaml:",inline"`
 	URL              string `yaml:"url"`
