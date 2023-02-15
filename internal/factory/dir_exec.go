@@ -2,7 +2,7 @@ package factory
 
 import (
 	"github.com/kozmod/progen/internal/entity"
-	"github.com/kozmod/progen/internal/proc"
+	"github.com/kozmod/progen/internal/exec"
 )
 
 func NewMkdirExecutor(dirs []string, logger entity.Logger, dryRun bool) (entity.Executor, error) {
@@ -14,8 +14,8 @@ func NewMkdirExecutor(dirs []string, logger entity.Logger, dryRun bool) (entity.
 	dirSet := entity.Unique(dirs)
 
 	if dryRun {
-		return proc.NewDryRunMkdirAllProc(dirSet, logger), nil
+		return exec.NewDirExecutor(dirSet, []entity.DirProc{exec.NewDryRunMkdirAllProc(logger)}), nil
 	}
 
-	return proc.NewMkdirAllProc(dirSet, logger), nil
+	return exec.NewDirExecutor(dirSet, []entity.DirProc{exec.NewMkdirAllProc(logger)}), nil
 }

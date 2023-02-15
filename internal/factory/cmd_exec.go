@@ -5,9 +5,8 @@ import (
 	"strings"
 
 	"github.com/kozmod/progen/internal/config"
-
 	"github.com/kozmod/progen/internal/entity"
-	"github.com/kozmod/progen/internal/proc"
+	"github.com/kozmod/progen/internal/exec"
 )
 
 //goland:noinspection SpellCheckingInspection
@@ -24,26 +23,26 @@ func NewRunCommandExecutor(cmds []config.Command, logger entity.Logger, dryRun b
 			dir = entity.Dot
 		}
 		commands := make([]entity.Command, 0, len(cmd.Exec))
-		for j, exec := range cmd.Exec {
-			exec = strings.TrimSpace(exec)
-			if len(exec) == 0 {
+		for j, e := range cmd.Exec {
+			e = strings.TrimSpace(e)
+			if len(e) == 0 {
 				return nil, fmt.Errorf("command is empty [section: %d, exec: %d, dir: %s]", i, j, dir)
 			}
-			command := commandFromString(exec)
+			command := commandFromString(e)
 			commands = append(commands, command)
 		}
 
 		switch {
 		case dryRun:
-			executors = append(executors, proc.NewDryRunCommandExecutor(commands, dir, logger))
+			executors = append(executors, exec.NewDryRunCommandExecutor(commands, dir, logger))
 		case cmd.Pipe:
-			executors = append(executors, proc.NewPipeCommandExecutor(commands, dir, logger))
+			executors = append(executors, exec.NewPipeCommandExecutor(commands, dir, logger))
 		default:
-			executors = append(executors, proc.NewCommandExecutor(commands, dir, logger))
+			executors = append(executors, exec.NewCommandExecutor(commands, dir, logger))
 		}
 	}
 
-	return proc.NewCommandListExecutor(executors), nil
+	return exec.NewCommandListExecutor(executors), nil
 }
 
 func commandFromString(cmd string) entity.Command {

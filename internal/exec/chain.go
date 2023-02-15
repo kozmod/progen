@@ -1,4 +1,4 @@
-package proc
+package exec
 
 import (
 	"fmt"
@@ -26,26 +26,6 @@ func (c *PreprocessingChain) Exec() error {
 		}
 	}
 
-	for i, processor := range c.processors {
-		err := processor.Exec()
-		if err != nil {
-			return fmt.Errorf("execute proc [%d]: %w", i, err)
-		}
-	}
-	return nil
-}
-
-type Chain struct {
-	processors []entity.Executor
-}
-
-func NewProcChain(processors []entity.Executor) *Chain {
-	return &Chain{
-		processors: processors,
-	}
-}
-
-func (c *Chain) Exec() error {
 	for i, processor := range c.processors {
 		err := processor.Exec()
 		if err != nil {

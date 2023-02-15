@@ -45,33 +45,35 @@ ___
 
 ### Actions and tags
 
-| Key                                                |       Type        | Optional | Description                                           |
-|:---------------------------------------------------|:-----------------:|:---------|:------------------------------------------------------|
-|                                                    |                   |          |                                                       |
-| settings                                           |                   | ✅        | `progen` settings section                             |
+| Key                                                |       Type        | Optional | Description                                                                                                 |
+|:---------------------------------------------------|:-----------------:|:---------|:------------------------------------------------------------------------------------------------------------|
+|                                                    |                   |          |                                                                                                             |
+| settings                                           |                   | ✅        | `progen` settings section                                                                                   |
 |                                                    |                   |          |
-| settings.http[<sup>**ⓘ**</sup>](#http_client)      |                   | ✅        | http client configuration                             |
-| settings.http.debug                                |       bool        | ✅        | http client `DEBUG` mode                              |
-| settings.http.base_url                             |      string       | ✅        | http client base `URL`                                |
-| settings.http.headers                              | map[string]string | ✅        | http client base request `Headers`                    |
-| settings.http.query_params                         | map[string]string | ✅        | http client base request `Query Parameters`           |
-|                                                    |                   |          |                                                       |
-| dirs`<unique_suffix>`[<sup>**ⓘ**</sup>](#Generate) |     []string      | ✅        | list of directories to create                         |
-|                                                    |                   |          |                                                       |
-| files`<unique_suffix>`[<sup>**ⓘ**</sup>](#Files)   |                   | ✅        | list file's `path` and `data`                         |
-| files.path                                         |      string       | ❌        | save file `path`                                      |
-| files.local                                        |      string       | `❕`      | local file path to copy                               |
-| files.data                                         |      string       | `❕`      | save file `data`                                      |
-|                                                    |                   |          |                                                       |
-| files.get                                          |                   | `❕`      | struct describe `GET` request for getting file's data |
-| files.get.url                                      |      string       | ❌        | request `URL`                                         |
-| files.get.headers                                  | map[string]string | ✅        | request `Headers`                                     |
-| files.get.query_params                             | map[string]string | ✅        | request `Query Parameters`                            |
-|                                                    |                   |          |                                                       |
-| cmd`<unique_suffix>`[<sup>**ⓘ**</sup>](#Commands)  |                   |          | configuration command list                            |
-| cmd.exec                                           |      []slice      | ❌        | list of command to execute                            |
-| cmd.dir                                            |      string       | ✅        | execution commands (`cmd.exec`) directory             |
-| cmd.pipe[<sup>**ⓘ**</sup>](#cmd_pipe)              |       bool        | ✅        | execution commands from `exec` section in 'pipe mode' |
+| settings.http[<sup>**ⓘ**</sup>](#http_client)      |                   | ✅        | http client configuration                                                                                   |
+| settings.http.debug                                |       bool        | ✅        | http client `DEBUG` mode                                                                                    |
+| settings.http.base_url                             |      string       | ✅        | http client base `URL`                                                                                      |
+| settings.http.headers                              | map[string]string | ✅        | http client base request `Headers`                                                                          |
+| settings.http.query_params                         | map[string]string | ✅        | http client base request `Query Parameters`                                                                 |
+|                                                    |                   |          |                                                                                                             |
+| dirs`<unique_suffix>`[<sup>**ⓘ**</sup>](#Generate) |     []string      | ✅        | list of directories to create                                                                               |
+|                                                    |                   |          |                                                                                                             |
+| files`<unique_suffix>`[<sup>**ⓘ**</sup>](#Files)   |                   | ✅        | list file's `path` and `data`                                                                               |
+| files.path                                         |      string       | ❌        | save file `path`                                                                                            |
+| files.local                                        |      string       | `❕`      | local file path to copy                                                                                     |
+| files.data                                         |      string       | `❕`      | save file `data`                                                                                            |
+|                                                    |                   |          |                                                                                                             |
+| files.get                                          |                   | `❕`      | struct describe `GET` request for getting file's data                                                       |
+| files.get.url                                      |      string       | ❌        | request `URL`                                                                                               |
+| files.get.headers                                  | map[string]string | ✅        | request `Headers`                                                                                           |
+| files.get.query_params                             | map[string]string | ✅        | request `Query Parameters`                                                                                  |
+|                                                    |                   |          |                                                                                                             |
+| cmd`<unique_suffix>`[<sup>**ⓘ**</sup>](#Commands)  |                   |          | configuration command list                                                                                  |
+| cmd.exec                                           |      []slice      | ❌        | list of command to execute                                                                                  |
+| cmd.dir                                            |      string       | ✅        | execution commands (`cmd.exec`) directory                                                                   |
+| cmd.pipe[<sup>**ⓘ**</sup>](#cmd_pipe)              |       bool        | ✅        | execution commands from `exec` section in 'pipe mode'                                                       |
+|                                                    |                   |          |                                                                                                             |
+| fs[<sup>**ⓘ**</sup>](#fs)                          |     []string      |          | execute [text/template.Option](https://pkg.go.dev/text/template#Template.Option) on the list of directories |
 
 `❕` only one must be specified in parent section
 
@@ -519,6 +521,76 @@ cmd:
 out:
       17
 ```
+
 ___
-### Examples 
+
+### <a name="fs"></a>File System
+`fs` section configure execution [text/template](https://pkg.go.dev/text/template) on a directories tree.
+All files in the `tree` processed as `template`. Files and directories names also could be configured as templates. 
+
+```yaml
+## progen.yml
+
+var_d: VAR_d
+var_f: VAR_f
+
+cmd:
+  - exec:
+      - cp -a ../asserts/. ../out/
+    dir: .
+  - exec:
+      - tree
+    dir: .
+
+fs:
+  - test_dir
+  - test_dir_2
+
+cmd_finish:
+  - exec:
+      - tree
+    dir: .
+```
+```console
+% progen -v -awd=out -f ../progen.yml
+2023-02-12 14:01:45	INFO	application working directory: /Users/user_1/GoProjects/progen
+2023-02-12 14:01:45	INFO	configuration file: ../progen.yml
+2023-02-12 14:01:45	INFO	execute [dir: .]: cp -a ../asserts/. ../out/
+2023-02-12 14:01:45	INFO	execute [dir: .]: tree
+out:
+.
+├── test_dir
+│   ├── file1
+│   └── {{ .var_d }}
+│       └── {{ .var_f }}
+└── test_dir_2
+    ├── file1
+    └── {{ .var_d }}
+        └── {{ .var_f }}
+
+4 directories, 4 files
+
+2023-02-12 14:01:45	INFO	dir created: test_dir/VAR_d
+2023-02-12 14:01:45	INFO	file saved: test_dir/file1
+2023-02-12 14:01:45	INFO	file saved: test_dir/VAR_d/VAR_f
+2023-02-12 14:01:45	INFO	dir created: test_dir_2/VAR_d
+2023-02-12 14:01:45	INFO	file saved: test_dir_2/file1
+2023-02-12 14:01:45	INFO	file saved: test_dir_2/VAR_d/VAR_f
+2023-02-12 14:01:45	INFO	fs: remove: test_dir_2/{{ .var_d }}/{{ .var_f }}
+2023-02-12 14:01:45	INFO	fs: remove: test_dir_2/{{ .var_d }}
+2023-02-12 14:01:45	INFO	execute [dir: .]: tree
+out:
+.
+├── test_dir
+│   ├── VAR_d
+│   │   └── VAR_f
+│   └── file1
+└── test_dir_2
+    ├── VAR_d
+    │   └── VAR_f
+    └── file1
+```
+
+### Examples
+
 [progen-example](https://github.com/kozmod/progen-examples) repository contains useful examples of usage cli

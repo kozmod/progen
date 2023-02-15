@@ -1,9 +1,7 @@
 package config
 
 import (
-	"bytes"
 	"fmt"
-	"text/template"
 
 	"gopkg.in/yaml.v3"
 
@@ -39,18 +37,10 @@ func (p *RawPreprocessor) Process(data []byte) ([]byte, map[string]any, error) {
 
 	conf = entity.MergeKeys(conf, p.templateVars)
 
-	temp, err := template.New(name).
-		Funcs(p.templateFns).
-		Option(p.templateOptions...).
-		Parse(string(data))
+	res, err := entity.NewTemplateProc(conf, p.templateFns, p.templateOptions).Process(name, string(data))
 	if err != nil {
-		return nil, nil, fmt.Errorf("new template [%s]: %w", name, err)
+		return nil, nil, fmt.Errorf("preprocess config: %w", err)
 	}
 
-	var buf bytes.Buffer
-	err = temp.Execute(&buf, conf)
-	if err != nil {
-		return nil, nil, fmt.Errorf("execute template [%s]: %w", name, err)
-	}
-	return buf.Bytes(), conf, nil
+	return []byte(res), conf, nil
 }

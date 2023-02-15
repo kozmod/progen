@@ -1,6 +1,7 @@
 .PHONT: deps
 deps: ## Install required dependencies and tools
 	go install golang.org/x/tools/cmd/goimports@latest
+	@command -v golangci-lint >/dev/null 2>&1 || go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.51.1
 
 .PHONT: tools
 tools: ## Run tools (vet, gofmt, goimports, tidy, etc.)
@@ -9,6 +10,12 @@ tools: ## Run tools (vet, gofmt, goimports, tidy, etc.)
 	goimports -w .
 	go mod tidy
 	go vet ./...
+
+.PHONY: lint
+lint: ## Run `golangci-lint`
+	@go version
+	@golangci-lint --version
+	@golangci-lint run ./...
 
 .PHONT: test
 test: ## Run all tests in project with coverage

@@ -54,6 +54,10 @@ func (u *YamlUnmarshaler) Unmarshal(rawConfig []byte) (Config, error) {
 			cmd := Section[[]Command]{Line: int32(node.Line), Tag: tag}
 			err = node.Decode(&cmd.Val)
 			conf.Cmd = append(conf.Cmd, cmd)
+		case strings.Index(tag, TagFS) == 0:
+			fs := Section[[]string]{Line: int32(node.Line), Tag: tag}
+			err = node.Decode(&fs.Val)
+			conf.FS = append(conf.FS, fs)
 		}
 
 		if err != nil {
@@ -70,7 +74,7 @@ func (u *YamlUnmarshaler) Unmarshal(rawConfig []byte) (Config, error) {
 		}
 	}
 
-	if files, dirs, cmd := len(conf.Files), len(conf.Dirs), len(conf.Cmd); files == 0 && dirs == 0 && cmd == 0 {
+	if files, dirs, cmd, fs := len(conf.Files), len(conf.Dirs), len(conf.Cmd), len(conf.FS); files == 0 && dirs == 0 && cmd == 0 && fs == 0 {
 		return conf, fmt.Errorf(
 			"validate config: config not contains executable actions [dirs: %d, files: %d, cms: %d]",
 			dirs, files, cmd)
