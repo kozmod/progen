@@ -73,7 +73,7 @@ ___
 | cmd.dir                                            |      string       | ✅        | execution commands (`cmd.exec`) directory                                                                   |
 | cmd.pipe[<sup>**ⓘ**</sup>](#cmd_pipe)              |       bool        | ✅        | execution commands from `exec` section in 'pipe mode'                                                       |
 |                                                    |                   |          |                                                                                                             |
-| fs[<sup>**ⓘ**</sup>](#fs)                          |     []string      |          | execute [text/template.Option](https://pkg.go.dev/text/template#Template.Option) on the list of directories |
+| fs[<sup>**ⓘ**</sup>](#fs)                          |     []string      | ✅        | execute [text/template.Option](https://pkg.go.dev/text/template#Template.Option) on the list of directories |
 
 `❕` only one must be specified in parent section
 
@@ -495,6 +495,23 @@ out:
 
 2 directories, 6 files
 ```
+`cmd` action maintains "short" declaration syntax
+
+```yaml
+## progen.yml
+
+cmd:
+  - pwd
+  - ls -a
+```
+```console
+% progen -v -dr
+2023-02-15 17:56:58	INFO	application working directory: /Users/user_1/GoProjects/progen
+2023-02-15 17:56:58	INFO	configuration file: short.yml
+2023-02-15 17:56:58	INFO	execute [dir: .]: pwd
+2023-02-15 17:56:58	INFO	execute [dir: .]: ls -a
+```
+
 
 #### <a name="cmd_pipe"></a> 'Pipe mode'
 
@@ -525,8 +542,9 @@ out:
 ___
 
 ### <a name="fs"></a>File System
+
 `fs` section configure execution [text/template](https://pkg.go.dev/text/template) on a directories tree.
-All files in the `tree` processed as `template`. Files and directories names also could be configured as templates. 
+All files in the `tree` processed as `template`. Files and directories names also could be configured as templates.
 
 ```yaml
 ## progen.yml
@@ -551,6 +569,7 @@ cmd_finish:
       - tree
     dir: .
 ```
+
 ```console
 % progen -v -awd=out -f ../progen.yml
 2023-02-12 14:01:45	INFO	application working directory: /Users/user_1/GoProjects/progen
