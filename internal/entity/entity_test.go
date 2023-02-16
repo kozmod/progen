@@ -84,6 +84,17 @@ func Test_RandomFn(t *testing.T) {
 			assert.Regexp(t, "^[[:alnum:]]*$", s)
 		})
 	})
+	t.Run("ASCII", func(t *testing.T) {
+		t.Run("generate_zero", func(t *testing.T) {
+			s := f.ASCII(0)
+			assert.Empty(t, s)
+		})
+		t.Run("generate_50", func(t *testing.T) {
+			s := f.ASCII(50)
+			assert.Len(t, s, 50)
+			assert.Regexp(t, "^[[:print:]]*$", s)
+		})
+	})
 }
 
 func Test_MissingKye(t *testing.T) {

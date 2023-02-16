@@ -360,10 +360,11 @@ dirs:
 
 #### Custom template functions
 
-| Function          |     args     | Description                                                                   |
-|:------------------|:------------:|:------------------------------------------------------------------------------|
-| `random.Alpha`    | length `int` | Generates a random alphabetical `(A-Z, a-z)` string of a desired length.      | 
-| `random.AlphaNum` | length `int` | Generates a random alphanumeric `(0-9, A-Z, a-z)` string of a desired length. |
+| Function          |     args     | Description                                                                                                                                                                       |
+|:------------------|:------------:|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `random.Alpha`    | length `int` | Generates a random alphabetical `(A-Z, a-z)` string of a desired length.                                                                                                          | 
+| `random.AlphaNum` | length `int` | Generates a random alphanumeric `(0-9, A-Z, a-z)` string of a desired length.                                                                                                     |
+| `random.ASCII`    | length `int` | Generates a random string of a desired length, containing the set of printable characters from the 7-bit ASCII set. This includes space (’ ‘), but no other whitespace character. |
 
 Custom template functions adds the elements of the argument map to the
 template's [function map]](https://pkg.go.dev/text/template#hdr-Functions).
@@ -495,6 +496,7 @@ out:
 
 2 directories, 6 files
 ```
+
 `cmd` action maintains "short" declaration syntax
 
 ```yaml
@@ -504,6 +506,7 @@ cmd:
   - pwd
   - ls -a
 ```
+
 ```console
 % progen -v -dr
 2023-02-15 17:56:58	INFO	application working directory: /Users/user_1/GoProjects/progen
@@ -511,7 +514,6 @@ cmd:
 2023-02-15 17:56:58	INFO	execute [dir: .]: pwd
 2023-02-15 17:56:58	INFO	execute [dir: .]: ls -a
 ```
-
 
 #### <a name="cmd_pipe"></a> 'Pipe mode'
 
