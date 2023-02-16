@@ -39,6 +39,7 @@ const (
 	EqualsSign = "="
 	LessThan   = "<"
 	SpacedPipe = " | "
+	Tilda      = "~"
 
 	NewLine = '\n'
 )

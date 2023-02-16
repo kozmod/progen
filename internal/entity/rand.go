@@ -3,6 +3,7 @@ package entity
 import (
 	"hash/maphash"
 	"math/rand"
+	"unicode"
 )
 
 // Default set, matches "[a-zA-Z0-9_.-]"
@@ -16,12 +17,29 @@ const (
 )
 
 var (
+	_lettersASCII string
+
 	mapHashSrc = rand.New(rand.NewSource(int64(new(maphash.Hash).Sum64())))
 
 	TemplateFnsMap = map[string]any{
 		"random": func() any { return RandomFn{} },
 	}
 )
+
+func init() {
+	var (
+		lower = int32(Space[0])
+		upper = int32(Tilda[0])
+	)
+
+	chars := make([]rune, 0, int(upper)-int(lower))
+	for r := lower; r <= upper; r++ {
+		if unicode.IsGraphic(r) {
+			chars = append(chars, r)
+		}
+	}
+	_lettersASCII = string(chars)
+}
 
 // RandomFn has to generate random string value
 type RandomFn struct{}
@@ -34,6 +52,12 @@ func (RandomFn) Alpha(n int) string {
 // AlphaNum Generates a random alphanumeric (0-9, A-Z, a-z) string of a desired length.
 func (RandomFn) AlphaNum(n int) string {
 	return randomString(n, _lettersAlphaNum)
+}
+
+// ASCII Generates a random string of a desired length, containing the set of printable characters from the 7-bit ASCII set.
+// This includes space (’ ‘), but no other whitespace character
+func (RandomFn) ASCII(n int) string {
+	return randomString(n, _lettersASCII)
 }
 
 func randomString(n int, set string) string {
