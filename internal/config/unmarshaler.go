@@ -43,21 +43,15 @@ func (u *YamlUnmarshaler) Unmarshal(rawConfig []byte) (Config, error) {
 			u.logger.Infof("action tag will be skipped: %s", tag)
 			continue
 		case strings.Index(tag, TagDirs) == 0:
-			dir := Section[[]string]{Line: int32(node.Line), Tag: tag}
-			err = node.Decode(&dir.Val)
-			conf.Dirs = append(conf.Dirs, dir)
+			conf.Dirs, err = decode(conf.Dirs, node, tag)
 		case strings.Index(tag, TagFiles) == 0:
-			files := Section[[]File]{Line: int32(node.Line), Tag: tag}
-			err = node.Decode(&files.Val)
-			conf.Files = append(conf.Files, files)
+			conf.Files, err = decode(conf.Files, node, tag)
 		case strings.Index(tag, TagCmd) == 0:
-			cmd := Section[[]Command]{Line: int32(node.Line), Tag: tag}
-			err = node.Decode(&cmd.Val)
-			conf.Cmd = append(conf.Cmd, cmd)
+			conf.Cmd, err = decode(conf.Cmd, node, tag)
 		case strings.Index(tag, TagFS) == 0:
-			fs := Section[[]string]{Line: int32(node.Line), Tag: tag}
-			err = node.Decode(&fs.Val)
-			conf.FS = append(conf.FS, fs)
+			conf.FS, err = decode(conf.FS, node, tag)
+		case strings.Index(tag, TagScripts) == 0:
+			conf.Scripts, err = decode(conf.Scripts, node, tag)
 		}
 
 		if err != nil {
@@ -74,11 +68,28 @@ func (u *YamlUnmarshaler) Unmarshal(rawConfig []byte) (Config, error) {
 		}
 	}
 
-	if files, dirs, cmd, fs := len(conf.Files), len(conf.Dirs), len(conf.Cmd), len(conf.FS); files == 0 && dirs == 0 && cmd == 0 && fs == 0 {
-		return conf, fmt.Errorf(
-			"validate config: config not contains executable actions [dirs: %d, files: %d, cms: %d]",
-			dirs, files, cmd)
-	}
+	return conf, validateConfigSections(conf)
+}
 
-	return conf, nil
+func decode[T any](target []Section[T], node yaml.Node, tag string) ([]Section[T], error) {
+	section := Section[T]{Line: int32(node.Line), Tag: tag}
+	err := node.Decode(&section.Val)
+	target = append(target, section)
+	return target, err
+}
+
+func validateConfigSections(conf Config) error {
+	var (
+		files   = len(conf.Files)
+		dirs    = len(conf.Dirs)
+		cmd     = len(conf.Cmd)
+		fs      = len(conf.FS)
+		scripts = len(conf.Scripts)
+	)
+	if files == 0 && dirs == 0 && cmd == 0 && fs == 0 && scripts == 0 {
+		return fmt.Errorf(
+			"validate config: config not contains executable actions [dirs: %d, files: %d, cms: %d, scripts: %d]",
+			dirs, files, cmd, scripts)
+	}
+	return nil
 }

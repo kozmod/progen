@@ -13,6 +13,7 @@ const (
 	TagFiles     = "files"
 	TagCmd       = "cmd"
 	TagFS        = "fs"
+	TagScripts   = "scripts"
 	SettingsHTTP = "settings"
 )
 
@@ -22,6 +23,7 @@ type Config struct {
 	Files    []Section[[]File]    `yaml:"files,flow"`
 	Cmd      []Section[[]Command] `yaml:"cmd,flow"`
 	FS       []Section[[]string]  `yaml:"fs,flow"`
+	Scripts  []Section[[]Script]  `yaml:"scripts,flow"`
 }
 
 type Settings struct {
@@ -70,6 +72,13 @@ func (c *Command) UnmarshalYAML(unmarshal func(any) error) error {
 	}
 	*c = (Command)(cmd)
 	return nil
+}
+
+type Script struct {
+	Dir    string   `yaml:"dir"`
+	Exec   string   `yaml:"exec"`
+	Args   []string `yaml:"args,flow"`
+	Script string   `yaml:"script,flow"`
 }
 
 type Get struct {
