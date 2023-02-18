@@ -36,7 +36,7 @@ func (r *Reader) Read() ([]byte, error) {
 	if r.reader == nil {
 		data, err := os.ReadFile(r.path)
 		if err != nil {
-			return nil, fmt.Errorf("read config: file: %w", err)
+			return nil, fmt.Errorf("config file: %w", err)
 		}
 		return data, nil
 	}
@@ -50,7 +50,7 @@ func (r *Reader) Read() ([]byte, error) {
 		case errors.Is(err, io.EOF):
 			return data, nil
 		case err != nil:
-			return nil, fmt.Errorf("read config: stdin: %w", err)
+			return nil, fmt.Errorf("stdin: %w", err)
 		default:
 			data = append(data, line...)
 		}
