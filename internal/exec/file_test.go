@@ -228,6 +228,7 @@ func Test_ReplacePathFileProc(t *testing.T) {
 		oldPathA = "old_1/old_A.go"
 		oldPathB = "old_1/old_B.go"
 		newPathA = "old_1/new_A.go"
+		someData = "DATA_!!!"
 	)
 
 	var (
@@ -238,15 +239,17 @@ func Test_ReplacePathFileProc(t *testing.T) {
 
 	t.Run("success_replace_old_path_to_new_one", func(t *testing.T) {
 		proc := ReplacePathFileProc{paths: paths}
-		res, err := proc.Process(entity.DataFile{Data: nil, FileInfo: entity.NewFileInfo(oldPathA)})
+		res, err := proc.Process(entity.DataFile{Data: []byte(someData), FileInfo: entity.NewFileInfo(oldPathA)})
 		assert.NoError(t, err)
 		assert.Equal(t, newPathA, res.Path())
+		assert.Equal(t, []byte(someData), res.Data)
 	})
 	t.Run("success_nit_replace_old_path_when_new_one_not_present", func(t *testing.T) {
 		proc := ReplacePathFileProc{paths: paths}
-		res, err := proc.Process(entity.DataFile{Data: nil, FileInfo: entity.NewFileInfo(oldPathB)})
+		res, err := proc.Process(entity.DataFile{Data: []byte(someData), FileInfo: entity.NewFileInfo(oldPathB)})
 		assert.NoError(t, err)
 		assert.Equal(t, oldPathB, res.Path())
+		assert.Equal(t, []byte(someData), res.Data)
 	})
 }
 

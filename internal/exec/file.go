@@ -110,7 +110,10 @@ func NewReplacePathFileProc(paths map[string]string) *ReplacePathFileProc {
 func (p *ReplacePathFileProc) Process(file entity.DataFile) (entity.DataFile, error) {
 	newPath, ok := p.paths[file.Path()]
 	if ok {
-		file = entity.DataFile{FileInfo: entity.NewFileInfo(newPath)}
+		file = entity.DataFile{
+			FileInfo: entity.NewFileInfo(newPath),
+			Data:     file.Data,
+		}
 	}
 	return file, nil
 }
