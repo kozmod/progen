@@ -49,17 +49,16 @@ type File struct {
 
 type Command struct {
 	Dir  string   `yaml:"dir"`
-	Exec []string `yaml:"exec,flow"`
-	Pipe bool     `yaml:"pipe"`
+	Exec string   `yaml:"exec"`
+	Args []string `yaml:"args,flow"`
 }
 
 func (c *Command) UnmarshalYAML(unmarshal func(any) error) error {
 	var raw string
 	if err := unmarshal(&raw); err == nil {
-		*c = Command{
-			Dir:  entity.Dot,
-			Exec: []string{raw},
-			Pipe: false,
+		*c, err = commandFromString(raw)
+		if err != nil {
+			return err
 		}
 		return nil
 	}
@@ -70,6 +69,13 @@ func (c *Command) UnmarshalYAML(unmarshal func(any) error) error {
 	}
 	*c = (Command)(cmd)
 	return nil
+}
+
+type Script struct {
+	Dir    string   `yaml:"dir"`
+	Exec   string   `yaml:"exec"`
+	Args   []string `yaml:"args,flow"`
+	Script string   `yaml:"script,flow"`
 }
 
 type Get struct {
