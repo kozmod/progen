@@ -38,10 +38,8 @@ const (
 	Dot        = "."
 	EqualsSign = "="
 	LessThan   = "<"
-	SpacedPipe = " | "
 	Tilda      = "~"
-
-	NewLine = '\n'
+	NewLine    = "\n"
 )
 
 type (
@@ -135,6 +133,7 @@ type HTTPClientParams struct {
 type Command struct {
 	Cmd  string
 	Args []string
+	Dir  string
 }
 
 type RegexpChain struct {

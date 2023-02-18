@@ -68,10 +68,10 @@ ___
 | files.get.headers                                  | map[string]string | ✅        | request `Headers`                                                                                           |
 | files.get.query_params                             | map[string]string | ✅        | request `Query Parameters`                                                                                  |
 |                                                    |                   |          |                                                                                                             |
-| cmd`<unique_suffix>`[<sup>**ⓘ**</sup>](#Commands)  |                   |          | configuration command list                                                                                  |
-| cmd.exec                                           |      []slice      | ❌        | list of command to execute                                                                                  |
+| cmd`<unique_suffix>`[<sup>**ⓘ**</sup>](#Commands)  |                   | ✅        | configuration command list                                                                                  |
+| cmd.exec                                           |      string       | ❌        | command to execution                                                                                        |
+| cmd.args                                           |      []slice      | ✅        | list of command's arguments                                                                                 |
 | cmd.dir                                            |      string       | ✅        | execution commands (`cmd.exec`) directory                                                                   |
-| cmd.pipe[<sup>**ⓘ**</sup>](#cmd_pipe)              |       bool        | ✅        | execution commands from `exec` section in 'pipe mode'                                                       |
 |                                                    |                   |          |                                                                                                             |
 | fs[<sup>**ⓘ**</sup>](#fs)                          |     []string      | ✅        | execute [text/template.Option](https://pkg.go.dev/text/template#Template.Option) on the list of directories |
 
@@ -100,8 +100,8 @@ files:
 
 # list commands to execution 
 cmd:
-  - exec: [ touch second_file.txt ]
-  - exec: [ tree ]
+  - touch second_file.txt
+  - tree
 ```
 
 ```console
@@ -134,11 +134,11 @@ with `<unique_suffix>` to separate action execution.
 dirs1:
   - api/some_project/v1
 cmd1:
-  - exec: [ chmod -R 777 api ]
+  - chmod -R 777 api
 dirs2:
   - api/some_project_2/v1
 cmd2:
-  - exec: [ chmod -R 777 api ] 
+  - chmod -R 777 api
 ```
 
 ```console
@@ -161,7 +161,7 @@ flag `-dr` use to execute configuration in dry run mod. All `action` will be exe
 dirs:
   - api/{{ $project_name }}/v1
 cmd:
-  - exec: [ chmod -R 777 api/v1 ]
+  - chmod -R 777 api/v1
 
 files:
   - path: api/v1/some_file.txt
@@ -198,15 +198,15 @@ expression.
 dirs:
   - api/v1
 cmd:
-  - exec: [ chmod -R 777 api/v1 ]
+  - chmod -R 777 api/v1
 dirs1:
   - api/v2
 cmd1:
-  - exec: [ chmod -R 777 api/v2 ]
+  - chmod -R 777 api/v2
 dirs2:
   - api/v3
 cmd2:
-  - exec: [ chmod -R 777 api/v3 ]
+  - chmod -R 777 api/v3 
 ```
 
 ```console
@@ -284,8 +284,11 @@ files:
       {{$project_name}}
 
 cmd:
-  - exec: [ "cat internal/{{$project_name}}.txt", ls -l, tree ]
+  - "cat internal/{{$project_name}}.txt"
+  - exec: ls
     dir: .
+    args: [ -l ]
+  - exec: tree
 ```
 
 ```console
@@ -467,9 +470,11 @@ __Commands working directory__ calculate from the __application working director
 ## progen.yml
 
 cmd:
-  - exec: [ ls -l ]
+  - exec: ls -l
+    args: [ - l ]
     dir: .github/workflows
-  - exec: [ tree -L 1 ]
+  - exec: tree
+    args: [ -L, 1 ]
 ```
 
 ```console
@@ -515,32 +520,6 @@ cmd:
 2023-02-15 17:56:58	INFO	execute [dir: .]: ls -a
 ```
 
-#### <a name="cmd_pipe"></a> 'Pipe mode'
-
-The `cmd.pipe` option set "pipe mode" for `cmd.exec` section:
-sequentially redirect an output of first command to an input of the second.
-
-```yaml
-## progen.yml
-
-cmd:
-  - exec:
-      - ls /
-      - sort -r
-      - wc -l
-    pipe: true
-    dir: .
-```
-
-```console
-% progen -v 
-2023-02-07 18:12:38	INFO	application working directory: /Users/user_1/GoProjects/progen
-2023-02-07 18:12:38	INFO	configuration file: progen.yml
-2023-02-07 18:12:38	INFO	execute pipe [dir: .]: ls / | sort -r | wc -l
-out:
-      17
-```
-
 ___
 
 ### <a name="fs"></a>File System
@@ -555,11 +534,8 @@ var_d: VAR_d
 var_f: VAR_f
 
 cmd:
-  - exec:
-      - cp -a ../asserts/. ../out/
-    dir: .
-  - exec:
-      - tree
+  - cp -a ../asserts/. ../out/
+  - exec: tree
     dir: .
 
 fs:
@@ -567,8 +543,7 @@ fs:
   - test_dir_2
 
 cmd_finish:
-  - exec:
-      - tree
+  - exec: tree
     dir: .
 ```
 

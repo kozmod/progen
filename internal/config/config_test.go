@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -212,7 +213,10 @@ func Test_YamlUnmarshaler_Unmarshal(t *testing.T) {
 		const (
 			in = `
 cmd:
-  - exec: [pwd, ls -l]
+  - exec: pwd
+    dir: ..
+  - exec: ls
+    args: [-l]
     dir: ..
 
 dirs:
@@ -223,8 +227,7 @@ dirs2:
   - y/api
 
 cmd1:
-  - exec: [ls -a]
-    dir: .
+  - ls -a
 
 files:
   - path: x/DDDDDD
@@ -233,9 +236,10 @@ files:
       ENV GOPROXY "{{.vars.GOPROXY}} ,proxy.golang.org,direct"
 
 cmd2:
-  - exec: [ls -lS]
+  - exec: ls
+    args: [ -lS ]
     dir: /
-  - exec: [whoami]
+  - exec: whoami
 `
 		)
 
@@ -246,15 +250,22 @@ cmd2:
 		a.Len(conf.Dirs, 2)
 		a.Len(conf.Cmd, 3)
 
-		assertSection(a, conf.Cmd, "cmd", 3, Command{Dir: "..", Exec: []string{"pwd", "ls -l"}})
-		assertSection(a, conf.Cmd, "cmd1", 14, Command{Dir: ".", Exec: []string{"ls -a"}})
-		assertSection(a, conf.Cmd, "cmd2", 24, Command{Dir: "/", Exec: []string{"ls -lS"}}, Command{Exec: []string{"whoami"}})
+		assertSection(a, conf.Cmd, "cmd", 3,
+			Command{Dir: "..", Exec: "pwd"},
+			Command{Dir: "..", Exec: "ls", Args: []string{"-l"}},
+		)
+		assertSection(a, conf.Cmd, "cmd1", 17,
+			Command{Dir: entity.Empty, Exec: "ls", Args: []string{"-a"}},
+		)
+		assertSection(a, conf.Cmd, "cmd2", 26,
+			Command{Dir: "/", Exec: "ls", Args: []string{"-lS"}},
+			Command{Exec: "whoami"})
 
-		assertSection(a, conf.Dirs, "dirs", 7, "x/api/{{.vars.service_name}}/v1", "s")
-		assertSection(a, conf.Dirs, "dirs2", 11, "y/api")
+		assertSection(a, conf.Dirs, "dirs", 10, "x/api/{{.vars.service_name}}/v1", "s")
+		assertSection(a, conf.Dirs, "dirs2", 14, "y/api")
 
 		files := conf.Files[0]
-		a.Equal(int32(18), files.Line)
+		a.Equal(int32(20), files.Line)
 		a.Equal(TagFiles, files.Tag)
 		a.Len(files.Val, 1)
 
@@ -342,9 +353,9 @@ func Test_Command_UnmarshalYAML(t *testing.T) {
 		const (
 			in = `
 cmd:
-  - exec: [pwd]
-    dir: /
-  - ls -a
+ - exec: pwd
+   dir: /
+ - ls -a
 `
 		)
 		var (
@@ -353,17 +364,18 @@ cmd:
 		conf, err := NewYamlConfigUnmarshaler(nil, nil).Unmarshal([]byte(in))
 		a.NoError(err)
 		assertSection(a, conf.Cmd, "cmd", 3,
-			Command{Dir: "/", Exec: []string{"pwd"}},
-			Command{Dir: ".", Exec: []string{"ls -a"}})
+			Command{Dir: "/", Exec: "pwd"},
+			Command{Dir: entity.Empty, Exec: "ls", Args: []string{"-a"}},
+		)
 	})
 	t.Run("success_v2", func(t *testing.T) {
 		const (
 			in = `
 cmd:
-  - ls -a
-  - dh -f
-  - exec: [pwd]
-    dir: /
+ - ls -a
+ - dh -f
+ - exec: pwd
+   dir: /
 `
 		)
 
@@ -376,9 +388,9 @@ cmd:
 		err := yaml.Unmarshal([]byte(in), &TestCmd)
 		a.NoError(err)
 		a.Equal([]Command{
-			{Dir: ".", Exec: []string{"ls -a"}},
-			{Dir: ".", Exec: []string{"dh -f"}},
-			{Dir: "/", Exec: []string{"pwd"}},
+			{Dir: entity.Empty, Exec: "ls", Args: []string{"-a"}},
+			{Dir: entity.Empty, Exec: "dh", Args: []string{"-f"}},
+			{Dir: "/", Exec: "pwd"},
 		}, TestCmd.Commands)
 
 	})
@@ -434,6 +446,31 @@ func assertSection[T any](a *assert.Assertions, sections []Section[[]T], tag str
 	a.Equal(line, section.Line)
 	d := section.Val
 	a.Equal(expected, d)
+}
+
+func Test_commandFromString(t *testing.T) {
+	t.Parallel()
+
+	const (
+		command = "ls"
+		arg     = "-a"
+	)
+
+	t.Run("success", func(t *testing.T) {
+		var (
+			commandStr = strings.Join(append([]string{command}, arg), entity.Space)
+		)
+
+		cmd, err := commandFromString(commandStr)
+		assert.NoError(t, err)
+		assert.Equal(t, Command{Dir: entity.Empty, Exec: command, Args: []string{arg}}, cmd)
+	})
+	t.Run("error_when_command_is_empty", func(t *testing.T) {
+		cmd, err := commandFromString("")
+		assert.Error(t, err)
+		assert.NotNil(t, cmd)
+		assert.ErrorIs(t, err, ErrCommandEmpty)
+	})
 }
 
 type MockLogger struct {
