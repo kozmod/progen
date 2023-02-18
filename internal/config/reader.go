@@ -12,6 +12,10 @@ import (
 	"github.com/kozmod/progen/internal/entity"
 )
 
+var (
+	newLIne = entity.NewLine[0]
+)
+
 type Reader struct {
 	reader io.Reader
 	path   string
@@ -41,7 +45,7 @@ func (r *Reader) Read() ([]byte, error) {
 
 	var data []byte
 	for {
-		line, err := reader.ReadBytes(entity.NewLine)
+		line, err := reader.ReadBytes(newLIne)
 		switch {
 		case errors.Is(err, io.EOF):
 			return data, nil

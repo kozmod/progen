@@ -83,16 +83,6 @@ func NewExecutorChain(
 				},
 			})
 	}
-	for _, exec := range conf.Scripts {
-		scripts := exec
-		generators = append(generators,
-			ProcGenerator{
-				line: scripts.Line,
-				procFn: func() (entity.Executor, error) {
-					return NewRunScriptsExecutor(scripts.Val, logger, dryRun)
-				},
-			})
-	}
 
 	sort.Slice(generators, func(i, j int) bool {
 		return generators[i].line < generators[j].line

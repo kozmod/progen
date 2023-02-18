@@ -9,6 +9,10 @@ import (
 	"github.com/kozmod/progen/internal/entity"
 )
 
+var (
+	ErrCommandEmpty = fmt.Errorf("command declaration is empty")
+)
+
 type YamlUnmarshaler struct {
 	tagFilter *entity.RegexpChain
 	logger    entity.Logger
@@ -50,8 +54,6 @@ func (u *YamlUnmarshaler) Unmarshal(rawConfig []byte) (Config, error) {
 			conf.Cmd, err = decode(conf.Cmd, node, tag)
 		case strings.Index(tag, TagFS) == 0:
 			conf.FS, err = decode(conf.FS, node, tag)
-		case strings.Index(tag, TagScripts) == 0:
-			conf.Scripts, err = decode(conf.Scripts, node, tag)
 		}
 
 		if err != nil {
@@ -80,16 +82,37 @@ func decode[T any](target []Section[T], node yaml.Node, tag string) ([]Section[T
 
 func validateConfigSections(conf Config) error {
 	var (
-		files   = len(conf.Files)
-		dirs    = len(conf.Dirs)
-		cmd     = len(conf.Cmd)
-		fs      = len(conf.FS)
-		scripts = len(conf.Scripts)
+		files = len(conf.Files)
+		dirs  = len(conf.Dirs)
+		cmd   = len(conf.Cmd)
+		fs    = len(conf.FS)
 	)
-	if files == 0 && dirs == 0 && cmd == 0 && fs == 0 && scripts == 0 {
+	if files == 0 && dirs == 0 && cmd == 0 && fs == 0 {
 		return fmt.Errorf(
-			"validate config: config not contains executable actions [dirs: %d, files: %d, cms: %d, scripts: %d]",
-			dirs, files, cmd, scripts)
+			"validate config: config not contains executable actions [dirs: %d, files: %d, cms: %d, fs: %d]",
+			dirs, files, cmd, fs)
 	}
 	return nil
+}
+
+func commandFromString(cmd string) (Command, error) {
+	var (
+		splitCmd = strings.Split(cmd, entity.Space)
+		command  = make([]string, 0, len(splitCmd))
+	)
+
+	for _, val := range splitCmd {
+		if trimmed := strings.TrimSpace(val); val != entity.Empty {
+			command = append(command, trimmed)
+		}
+	}
+
+	if len(command) == 0 {
+		return Command{}, ErrCommandEmpty
+	}
+
+	return Command{
+		Exec: command[0],
+		Args: command[1:],
+	}, nil
 }
