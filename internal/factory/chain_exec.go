@@ -12,24 +12,24 @@ import (
 func NewExecutorChain(
 	conf config.Config,
 	templateData map[string]any,
+	templateOptions []string,
 	logger entity.Logger,
 	preprocess,
 	dryRun bool,
-	templateOptions []string,
 ) (entity.Executor, error) {
 
 	type (
-		ProcGenerator struct {
+		ExecutorBuilder struct {
 			line   int32
 			procFn func() (entity.Executor, error)
 		}
 	)
 
-	var generators []ProcGenerator
+	builders := make([]ExecutorBuilder, 0, len(conf.Dirs)+len(conf.Files)+len(conf.Cmd)+len(conf.FS))
 	for _, dirs := range conf.Dirs {
 		d := dirs
-		generators = append(generators,
-			ProcGenerator{
+		builders = append(builders,
+			ExecutorBuilder{
 				line: d.Line,
 				procFn: func() (entity.Executor, error) {
 					return NewMkdirExecutor(d.Val, logger, dryRun)
@@ -40,8 +40,8 @@ func NewExecutorChain(
 	var loaders []entity.Preprocessor
 	for _, files := range conf.Files {
 		f := files
-		generators = append(generators,
-			ProcGenerator{
+		builders = append(builders,
+			ExecutorBuilder{
 				line: f.Line,
 				procFn: func() (entity.Executor, error) {
 					executor, l, err := NewFileExecutor(
@@ -60,8 +60,8 @@ func NewExecutorChain(
 
 	for _, commands := range conf.Cmd {
 		cmd := commands
-		generators = append(generators,
-			ProcGenerator{
+		builders = append(builders,
+			ExecutorBuilder{
 				line: cmd.Line,
 				procFn: func() (entity.Executor, error) {
 					return NewRunCommandExecutor(cmd.Val, logger, dryRun)
@@ -70,8 +70,8 @@ func NewExecutorChain(
 	}
 	for _, path := range conf.FS {
 		fs := path
-		generators = append(generators,
-			ProcGenerator{
+		builders = append(builders,
+			ExecutorBuilder{
 				line: fs.Line,
 				procFn: func() (entity.Executor, error) {
 					return NewFSExecutor(
@@ -84,21 +84,21 @@ func NewExecutorChain(
 			})
 	}
 
-	sort.Slice(generators, func(i, j int) bool {
-		return generators[i].line < generators[j].line
+	sort.Slice(builders, func(i, j int) bool {
+		return builders[i].line < builders[j].line
 	})
 
-	processors := make([]entity.Executor, 0, len(generators))
-	for i, generator := range generators {
-		p, err := generator.procFn()
+	executors := make([]entity.Executor, 0, len(builders))
+	for i, builder := range builders {
+		e, err := builder.procFn()
 		if err != nil {
-			return nil, fmt.Errorf("configure proc [%d]: %w", i, err)
+			return nil, fmt.Errorf("configure executor [%d]: %w", i, err)
 		}
-		if p == nil {
+		if e == nil {
 			continue
 		}
-		processors = append(processors, p)
+		executors = append(executors, e)
 	}
 
-	return exec.NewPreprocessingChain(loaders, processors), nil
+	return exec.NewPreprocessingChain(loaders, executors), nil
 }

@@ -89,10 +89,10 @@ func main() {
 	procChain, err := factory.NewExecutorChain(
 		conf,
 		templateData,
+		[]string{flags.MissingKey.String()},
 		logger,
 		flags.PreprocessFiles,
-		flags.DryRun,
-		[]string{flags.MissingKey.String()})
+		flags.DryRun)
 	if err != nil {
 		logger.Fatalf("create processors chain: %v", err)
 	}
