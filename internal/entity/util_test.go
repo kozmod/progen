@@ -153,20 +153,28 @@ func Test_NotNilValues(t *testing.T) {
 
 		nilStrict     *struct{}
 		defaultStruct struct{}
+
+		ptrAny   *any
+		valueAny any
 	)
 
 	test := []struct {
 		in  []any
 		exp int
 	}{
-		{in: []any{nilStr, nilInt, nilStrict}, exp: 0},
+		{in: []any{nilStr, nilInt, nilStrict, ptrAny, valueAny}, exp: 0},
+		{in: []any{ptrAny}, exp: 0},
+		{in: []any{valueAny}, exp: 0},
 		{in: []any{defaultStr, defaultInt, defaultStruct}, exp: 3},
 		{in: []any{nilStr, nilInt, nilStrict, defaultStr, defaultInt, defaultStruct}, exp: 3},
 		{in: []any{nilInt, defaultInt}, exp: 1},
 		{in: []any{}, exp: 0},
 	}
+
 	for i, tc := range test {
-		res := NotNilValues(tc.in...)
-		assert.Equalf(t, tc.exp, res, "case_%d", i)
+		t.Run(fmt.Sprintf("case_%d", i), func(t *testing.T) {
+			res := NotNilValues(tc.in...)
+			assert.Equalf(t, tc.exp, res, "case_%d", i)
+		})
 	}
 }

@@ -53,6 +53,12 @@ func Test_RegexpChain(t *testing.T) {
 func Test_RandomFn(t *testing.T) {
 	t.Parallel()
 
+	//goland:noinspection SpellCheckingInspection
+	const (
+		alnum = "^[[:alnum:]]*$"
+		print = "^[[:print:]]*$"
+	)
+
 	var (
 		f = RandomFn{}
 	)
@@ -70,7 +76,7 @@ func Test_RandomFn(t *testing.T) {
 		t.Run("generate_50", func(t *testing.T) {
 			s := f.AlphaNum(50)
 			assert.Len(t, s, 50)
-			assert.Regexp(t, "^[[:alnum:]]*$", s)
+			assert.Regexp(t, alnum, s)
 		})
 	})
 	t.Run("Alpha", func(t *testing.T) {
@@ -81,7 +87,7 @@ func Test_RandomFn(t *testing.T) {
 		t.Run("generate_50", func(t *testing.T) {
 			s := f.Alpha(50)
 			assert.Len(t, s, 50)
-			assert.Regexp(t, "^[[:alnum:]]*$", s)
+			assert.Regexp(t, alnum, s)
 		})
 	})
 	t.Run("ASCII", func(t *testing.T) {
@@ -92,7 +98,7 @@ func Test_RandomFn(t *testing.T) {
 		t.Run("generate_50", func(t *testing.T) {
 			s := f.ASCII(50)
 			assert.Len(t, s, 50)
-			assert.Regexp(t, "^[[:print:]]*$", s)
+			assert.Regexp(t, print, s)
 		})
 	})
 }

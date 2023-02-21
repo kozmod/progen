@@ -18,6 +18,8 @@ const (
 
 // WithTempDir create a temporary directory for testing, test function and remove a temporary directory after test execution
 func WithTempDir(t *testing.T, test func(dir string)) {
+	t.Helper()
+
 	pc := make([]uintptr, 1)
 	runtime.Callers(2, pc)
 	f := runtime.FuncForPC(pc[0])
@@ -33,6 +35,8 @@ func WithTempDir(t *testing.T, test func(dir string)) {
 }
 
 func CreateFile(t *testing.T, path string, data []byte) {
+	t.Helper()
+
 	dir := filepath.Dir(path)
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		err = os.MkdirAll(dir, os.ModePerm)
@@ -44,6 +48,8 @@ func CreateFile(t *testing.T, path string, data []byte) {
 }
 
 func SkipSLowTest(t *testing.T) {
+	t.Helper()
+
 	if testing.Short() {
 		pc := make([]uintptr, 1)
 		runtime.Callers(2, pc)
