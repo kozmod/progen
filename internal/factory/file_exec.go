@@ -3,7 +3,7 @@ package factory
 import (
 	"fmt"
 
-	"github.com/go-resty/resty/v2"
+	resty "github.com/go-resty/resty/v2"
 
 	"github.com/kozmod/progen/internal/config"
 	"github.com/kozmod/progen/internal/entity"
@@ -63,7 +63,7 @@ func NewFileExecutor(
 			producer = exec.NewLocalProducer(file)
 
 		default:
-			return nil, nil, fmt.Errorf("create file processor: one of `data`, `get`, `local` must not be empty")
+			return nil, nil, fmt.Errorf("build file executor: one of `data`, `get`, `local` must not be empty")
 		}
 
 		producers = append(producers, producer)
@@ -80,15 +80,15 @@ func NewFileExecutor(
 		preprocessors = append(preprocessors, preloader)
 	}
 
-	processors := []entity.FileProc{exec.NewTemplateFileProc(templateData, entity.TemplateFnsMap, templateOptions)}
+	strategies := []entity.FileStrategy{exec.NewTemplateFileStrategy(templateData, entity.TemplateFnsMap, templateOptions)}
 
 	switch {
 	case dryRun:
-		processors = append(processors, exec.NewDryRunFileProc(logger))
+		strategies = append(strategies, exec.NewDryRunFileStrategy(logger))
 	default:
-		processors = append(processors, exec.NewSaveFileProc(logger))
+		strategies = append(strategies, exec.NewSaveFileStrategy(logger))
 	}
-	executor := exec.NewFilesExecutor(producers, processors)
+	executor := exec.NewFilesExecutor(producers, strategies)
 
 	return executor, preprocessors, nil
 }

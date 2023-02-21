@@ -10,7 +10,7 @@ import (
 	"github.com/kozmod/progen/internal/entity"
 )
 
-func Test_FileSystemProc(t *testing.T) {
+func Test_FileSystemStrategy(t *testing.T) {
 	SkipSLowTest(t)
 
 	WithTempDir(t, func(tmpDir string) {
@@ -45,7 +45,7 @@ func Test_FileSystemProc(t *testing.T) {
 		CreateFile(t, pathTempB, dataB)
 		CreateFile(t, pathTempC, dataC)
 
-		proc := FileSystemProc{
+		proc := FileSystemStrategy{
 			templateProcFn: func() entity.TemplateProc {
 				return entity.NewTemplateProc(map[string]any{
 					"var": varTemplateVariableValue,
@@ -57,12 +57,12 @@ func Test_FileSystemProc(t *testing.T) {
 				a.ElementsMatch([]string{filepath.Dir(expectedPathB), filepath.Dir(expectedPathC)}, dirs)
 				return MockExecutor{}
 			},
-			processorsFn: func(paths map[string]string) []entity.FileProc {
-				return []entity.FileProc{MockFileProc{}}
+			strategiesFn: func(paths map[string]string) []entity.FileStrategy {
+				return []entity.FileStrategy{MockFileProc{}}
 			},
-			fileExecutorFn: func(producers []entity.FileProducer, processors []entity.FileProc) entity.Executor {
+			fileExecutorFn: func(producers []entity.FileProducer, strategies []entity.FileStrategy) entity.Executor {
 				a.NotEmpty(producers)
-				a.NotEmpty(processors)
+				a.NotEmpty(strategies)
 				return MockExecutor{}
 			},
 			removeAllFn: func(old string) error {
@@ -72,7 +72,7 @@ func Test_FileSystemProc(t *testing.T) {
 			logger: mockLogger,
 		}
 
-		dir, err := proc.Process(tmpDir)
+		dir, err := proc.Apply(tmpDir)
 		a.NoError(err)
 		a.Equal(tmpDir, dir)
 	})

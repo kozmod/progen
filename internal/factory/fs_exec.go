@@ -19,11 +19,11 @@ func NewFSExecutor(
 	dirSet := entity.Unique(dirs)
 
 	if dryRun {
-		return exec.NewDirExecutor(dirSet, []entity.DirProc{exec.NewDryRunFileSystemProc(logger)}), nil
+		return exec.NewDirExecutor(dirSet, []entity.DirStrategy{exec.NewDryRunFileSystemStrategy(logger)}), nil
 	}
 
-	return exec.NewDirExecutor(dirSet, []entity.DirProc{
-		exec.NewFileSystemProc(
+	return exec.NewDirExecutor(dirSet, []entity.DirStrategy{
+		exec.NewFileSystemStrategy(
 			templateData,
 			entity.TemplateFnsMap,
 			templateOptions,

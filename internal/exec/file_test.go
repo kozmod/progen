@@ -119,7 +119,7 @@ func Test_PreloadProducer(t *testing.T) {
 	})
 }
 
-func Test_TemplateFileProc(t *testing.T) {
+func Test_TemplateFileStrategy(t *testing.T) {
 	t.Parallel()
 
 	const (
@@ -144,7 +144,7 @@ func Test_TemplateFileProc(t *testing.T) {
 			templateValue = "VAL"
 			file          = newDataFileFn(`{{.some.Value}}`)
 		)
-		proc := TemplateFileProc{
+		str := TemplateFileStrategy{
 			templateProcFn: func() entity.TemplateProc {
 				return entity.NewTemplateProc(
 					map[string]any{"some": map[string]any{"Value": templateValue}},
@@ -153,7 +153,7 @@ func Test_TemplateFileProc(t *testing.T) {
 				)
 			},
 		}
-		res, err := proc.Process(file)
+		res, err := str.Apply(file)
 		assert.NoError(t, err)
 		assert.Equal(t, templateValue, string(res.Data))
 		assert.Equal(t, file.Name(), res.Name())
@@ -165,7 +165,7 @@ func Test_TemplateFileProc(t *testing.T) {
 			templateValue = "VAL"
 			file          = newDataFileFn(`{{ fn }}`)
 		)
-		proc := TemplateFileProc{
+		str := TemplateFileStrategy{
 			templateProcFn: func() entity.TemplateProc {
 				return entity.NewTemplateProc(
 					nil,
@@ -176,7 +176,7 @@ func Test_TemplateFileProc(t *testing.T) {
 				)
 			},
 		}
-		res, err := proc.Process(file)
+		res, err := str.Apply(file)
 		assert.NoError(t, err)
 		assert.Equal(t, templateValue, string(res.Data))
 		assert.Equal(t, file.Name(), res.Name())
@@ -187,7 +187,7 @@ func Test_TemplateFileProc(t *testing.T) {
 			var (
 				file = newDataFileFn(`{{ .vars.Some }}`)
 			)
-			proc := TemplateFileProc{
+			str := TemplateFileStrategy{
 				templateProcFn: func() entity.TemplateProc {
 					return entity.NewTemplateProc(
 						nil,
@@ -196,14 +196,14 @@ func Test_TemplateFileProc(t *testing.T) {
 					)
 				},
 			}
-			_, err := proc.Process(file)
+			_, err := str.Apply(file)
 			assert.Error(t, err)
 		})
 		t.Run("default", func(t *testing.T) {
 			var (
 				file = newDataFileFn(`{{ .vars.Some }}`)
 			)
-			proc := TemplateFileProc{
+			str := TemplateFileStrategy{
 				templateProcFn: func() entity.TemplateProc {
 					return entity.NewTemplateProc(
 						nil,
@@ -212,7 +212,7 @@ func Test_TemplateFileProc(t *testing.T) {
 					)
 				},
 			}
-			res, err := proc.Process(file)
+			res, err := str.Apply(file)
 			assert.NoError(t, err)
 			assert.Equal(t, noValue, string(res.Data))
 			assert.Equal(t, file.Name(), res.Name())
@@ -221,7 +221,7 @@ func Test_TemplateFileProc(t *testing.T) {
 	})
 }
 
-func Test_ReplacePathFileProc(t *testing.T) {
+func Test_ReplacePathFileStrategy(t *testing.T) {
 	t.Parallel()
 
 	const (
@@ -238,22 +238,22 @@ func Test_ReplacePathFileProc(t *testing.T) {
 	)
 
 	t.Run("success_replace_old_path_to_new_one", func(t *testing.T) {
-		proc := ReplacePathFileProc{paths: paths}
-		res, err := proc.Process(entity.DataFile{Data: []byte(someData), FileInfo: entity.NewFileInfo(oldPathA)})
+		str := ReplacePathFileStrategy{paths: paths}
+		res, err := str.Apply(entity.DataFile{Data: []byte(someData), FileInfo: entity.NewFileInfo(oldPathA)})
 		assert.NoError(t, err)
 		assert.Equal(t, newPathA, res.Path())
 		assert.Equal(t, []byte(someData), res.Data)
 	})
 	t.Run("success_nit_replace_old_path_when_new_one_not_present", func(t *testing.T) {
-		proc := ReplacePathFileProc{paths: paths}
-		res, err := proc.Process(entity.DataFile{Data: []byte(someData), FileInfo: entity.NewFileInfo(oldPathB)})
+		str := ReplacePathFileStrategy{paths: paths}
+		res, err := str.Apply(entity.DataFile{Data: []byte(someData), FileInfo: entity.NewFileInfo(oldPathB)})
 		assert.NoError(t, err)
 		assert.Equal(t, oldPathB, res.Path())
 		assert.Equal(t, []byte(someData), res.Data)
 	})
 }
 
-func Test_SaveFileProc(t *testing.T) {
+func Test_SaveFileStrategy(t *testing.T) {
 	SkipSLowTest(t)
 
 	const (
@@ -278,7 +278,7 @@ func Test_SaveFileProc(t *testing.T) {
 			}
 		)
 
-		res, err := NewSaveFileProc(mockLogger).Process(in)
+		res, err := NewSaveFileStrategy(mockLogger).Apply(in)
 		a.NoError(err)
 		a.Equal(in.Dir(), res.Dir())
 		a.Equal(in.Name(), res.Name())

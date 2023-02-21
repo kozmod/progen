@@ -81,6 +81,6 @@ func (m MockExecutor) Exec() error {
 
 type MockFileProc struct{}
 
-func (m MockFileProc) Process(_ entity.DataFile) (entity.DataFile, error) {
+func (m MockFileProc) Apply(_ entity.DataFile) (entity.DataFile, error) {
 	return entity.DataFile{}, nil
 }
