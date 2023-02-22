@@ -58,6 +58,14 @@ func SkipSLowTest(t *testing.T) {
 	}
 }
 
+func AssertFileDataEqual(t *testing.T, path string, expData []byte) {
+	t.Helper()
+
+	data, err := os.ReadFile(path)
+	assert.NoError(t, err)
+	assert.Equal(t, expData, data)
+}
+
 type MockLogger struct {
 	entity.Logger
 	infof func(format string, args ...any)
