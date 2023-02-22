@@ -9,21 +9,21 @@ import (
 
 type DirExecutor struct {
 	dirs       []string
-	processors []entity.DirProc
+	strategies []entity.DirStrategy
 }
 
-func NewDirExecutor(dirs []string, processors []entity.DirProc) *DirExecutor {
+func NewDirExecutor(dirs []string, strategies []entity.DirStrategy) *DirExecutor {
 	return &DirExecutor{
 		dirs:       dirs,
-		processors: processors,
+		strategies: strategies,
 	}
 }
 
 func (p *DirExecutor) Exec() error {
 	for _, dir := range p.dirs {
 		path := dir
-		for _, processor := range p.processors {
-			_, err := processor.Process(path)
+		for _, strategy := range p.strategies {
+			_, err := strategy.Apply(path)
 			if err != nil {
 				return fmt.Errorf("execute dir: process dir [%s]: %w", path, err)
 			}
@@ -32,19 +32,19 @@ func (p *DirExecutor) Exec() error {
 	return nil
 }
 
-type MkdirAllProc struct {
+type MkdirAllStrategy struct {
 	fileMode os.FileMode
 	logger   entity.Logger
 }
 
-func NewMkdirAllProc(logger entity.Logger) *MkdirAllProc {
-	return &MkdirAllProc{
+func NewMkdirAllStrategy(logger entity.Logger) *MkdirAllStrategy {
+	return &MkdirAllStrategy{
 		fileMode: os.ModePerm,
 		logger:   logger,
 	}
 }
 
-func (p *MkdirAllProc) Process(dir string) (string, error) {
+func (p *MkdirAllStrategy) Apply(dir string) (string, error) {
 	err := os.MkdirAll(dir, p.fileMode)
 	if err != nil {
 		return entity.Empty, fmt.Errorf("create dir [%s]: %w", dir, err)
@@ -53,19 +53,19 @@ func (p *MkdirAllProc) Process(dir string) (string, error) {
 	return dir, nil
 }
 
-type DryRunMkdirAllProc struct {
+type DryRunMkdirAllStrategy struct {
 	fileMode os.FileMode
 	logger   entity.Logger
 }
 
-func NewDryRunMkdirAllProc(logger entity.Logger) *DryRunMkdirAllProc {
-	return &DryRunMkdirAllProc{
+func NewDryRunMkdirAllStrategy(logger entity.Logger) *DryRunMkdirAllStrategy {
+	return &DryRunMkdirAllStrategy{
 		fileMode: os.ModePerm,
 		logger:   logger,
 	}
 }
 
-func (p *DryRunMkdirAllProc) Process(dir string) (string, error) {
+func (p *DryRunMkdirAllStrategy) Apply(dir string) (string, error) {
 	p.logger.Infof("dir created: %s", dir)
 	return dir, nil
 }

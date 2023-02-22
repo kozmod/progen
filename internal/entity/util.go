@@ -42,6 +42,9 @@ func NotNilValues(values ...any) int {
 		if val.Kind() == reflect.Ptr && val.IsNil() {
 			continue
 		}
+		if value == nil {
+			continue
+		}
 		counter++
 	}
 	return counter

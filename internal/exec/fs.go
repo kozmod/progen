@@ -9,43 +9,43 @@ import (
 	"github.com/kozmod/progen/internal/entity"
 )
 
-type FileSystemProc struct {
+type FileSystemStrategy struct {
 	logger         entity.Logger
-	processorsFn   func(paths map[string]string) []entity.FileProc
+	strategiesFn   func(paths map[string]string) []entity.FileStrategy
 	templateProcFn func() entity.TemplateProc
 	dirExecutorFn  func(dirs []string) entity.Executor
-	fileExecutorFn func(producers []entity.FileProducer, processors []entity.FileProc) entity.Executor
+	fileExecutorFn func(producers []entity.FileProducer, strategies []entity.FileStrategy) entity.Executor
 	removeAllFn    func(path string) error
 }
 
-func NewFileSystemProc(
+func NewFileSystemStrategy(
 	templateData,
 	templateFns map[string]any,
 	templateOptions []string,
-	logger entity.Logger) *FileSystemProc {
-	return &FileSystemProc{
+	logger entity.Logger) *FileSystemStrategy {
+	return &FileSystemStrategy{
 		logger: logger,
-		processorsFn: func(paths map[string]string) []entity.FileProc {
-			return []entity.FileProc{
-				NewTemplateFileProc(templateData, templateFns, templateOptions),
-				NewReplacePathFileProc(paths),
-				NewSaveFileProc(logger),
+		strategiesFn: func(paths map[string]string) []entity.FileStrategy {
+			return []entity.FileStrategy{
+				NewTemplateFileStrategy(templateData, templateFns, templateOptions),
+				NewReplacePathFileStrategy(paths),
+				NewSaveFileStrategy(logger),
 			}
 		},
 		templateProcFn: func() entity.TemplateProc {
 			return entity.NewTemplateProc(templateData, templateFns, templateOptions)
 		},
 		dirExecutorFn: func(dirs []string) entity.Executor {
-			return NewDirExecutor(dirs, []entity.DirProc{NewMkdirAllProc(logger)})
+			return NewDirExecutor(dirs, []entity.DirStrategy{NewMkdirAllStrategy(logger)})
 		},
-		fileExecutorFn: func(producers []entity.FileProducer, processors []entity.FileProc) entity.Executor {
-			return NewFilesExecutor(producers, processors)
+		fileExecutorFn: func(producers []entity.FileProducer, strategies []entity.FileStrategy) entity.Executor {
+			return NewFilesExecutor(producers, strategies)
 		},
 		removeAllFn: os.RemoveAll,
 	}
 }
 
-func (e *FileSystemProc) Process(dir string) (string, error) {
+func (e *FileSystemStrategy) Apply(dir string) (string, error) {
 	type (
 		Entity struct {
 			Path  string
@@ -104,7 +104,7 @@ func (e *FileSystemProc) Process(dir string) (string, error) {
 		return entity.Empty, fmt.Errorf("fs: dirs execute: %w", err)
 	}
 
-	fileExec := e.fileExecutorFn(fileProducers, e.processorsFn(filePaths))
+	fileExec := e.fileExecutorFn(fileProducers, e.strategiesFn(filePaths))
 	err = fileExec.Exec()
 	if err != nil {
 		return entity.Empty, fmt.Errorf("fs: files execute: %w", err)
@@ -124,17 +124,17 @@ func (e *FileSystemProc) Process(dir string) (string, error) {
 	return dir, nil
 }
 
-type DryRunFileSystemProc struct {
+type DryRunFileSystemStrategy struct {
 	logger entity.Logger
 }
 
-func NewDryRunFileSystemProc(logger entity.Logger) *DryRunFileSystemProc {
-	return &DryRunFileSystemProc{
+func NewDryRunFileSystemStrategy(logger entity.Logger) *DryRunFileSystemStrategy {
+	return &DryRunFileSystemStrategy{
 		logger: logger,
 	}
 }
 
-func (e *DryRunFileSystemProc) Process(dir string) (string, error) {
+func (e *DryRunFileSystemStrategy) Apply(dir string) (string, error) {
 	e.logger.Infof("fs: dir execute: %s", dir)
 	return dir, nil
 }

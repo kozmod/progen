@@ -14,8 +14,8 @@ func NewMkdirExecutor(dirs []string, logger entity.Logger, dryRun bool) (entity.
 	dirSet := entity.Unique(dirs)
 
 	if dryRun {
-		return exec.NewDirExecutor(dirSet, []entity.DirProc{exec.NewDryRunMkdirAllProc(logger)}), nil
+		return exec.NewDirExecutor(dirSet, []entity.DirStrategy{exec.NewDryRunMkdirAllStrategy(logger)}), nil
 	}
 
-	return exec.NewDirExecutor(dirSet, []entity.DirProc{exec.NewMkdirAllProc(logger)}), nil
+	return exec.NewDirExecutor(dirSet, []entity.DirStrategy{exec.NewMkdirAllStrategy(logger)}), nil
 }

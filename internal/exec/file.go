@@ -8,7 +8,7 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/go-resty/resty/v2"
+	resty "github.com/go-resty/resty/v2"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/kozmod/progen/internal/entity"
@@ -16,13 +16,13 @@ import (
 
 type FilesExecutor struct {
 	producers  []entity.FileProducer
-	processors []entity.FileProc
+	strategies []entity.FileStrategy
 }
 
-func NewFilesExecutor(producers []entity.FileProducer, processors []entity.FileProc) *FilesExecutor {
+func NewFilesExecutor(producers []entity.FileProducer, strategies []entity.FileStrategy) *FilesExecutor {
 	return &FilesExecutor{
 		producers:  producers,
-		processors: processors,
+		strategies: strategies,
 	}
 }
 
@@ -33,8 +33,8 @@ func (e *FilesExecutor) Exec() error {
 			return fmt.Errorf("execute file: get file: %w", err)
 		}
 
-		for _, processor := range e.processors {
-			file, err = processor.Process(file)
+		for _, processor := range e.strategies {
+			file, err = processor.Apply(file)
 			if err != nil {
 				return fmt.Errorf("execute file: process file: %w", err)
 			}
@@ -43,19 +43,19 @@ func (e *FilesExecutor) Exec() error {
 	return nil
 }
 
-type TemplateFileProc struct {
+type TemplateFileStrategy struct {
 	templateProcFn func() entity.TemplateProc
 }
 
-func NewTemplateFileProc(templateData, templateFns map[string]any, templateOptions []string) *TemplateFileProc {
-	return &TemplateFileProc{
+func NewTemplateFileStrategy(templateData, templateFns map[string]any, templateOptions []string) *TemplateFileStrategy {
+	return &TemplateFileStrategy{
 		templateProcFn: func() entity.TemplateProc {
 			return entity.NewTemplateProc(templateData, templateFns, templateOptions)
 		},
 	}
 }
 
-func (p *TemplateFileProc) Process(file entity.DataFile) (entity.DataFile, error) {
+func (p *TemplateFileStrategy) Apply(file entity.DataFile) (entity.DataFile, error) {
 	filePath := file.Path()
 
 	data, err := p.templateProcFn().Process(filePath, string(file.Data))
@@ -66,19 +66,19 @@ func (p *TemplateFileProc) Process(file entity.DataFile) (entity.DataFile, error
 	return file, nil
 }
 
-type SaveFileProc struct {
+type SaveFileStrategy struct {
 	fileMode os.FileMode
 	logger   entity.Logger
 }
 
-func NewSaveFileProc(logger entity.Logger) *SaveFileProc {
-	return &SaveFileProc{
+func NewSaveFileStrategy(logger entity.Logger) *SaveFileStrategy {
+	return &SaveFileStrategy{
 		fileMode: os.ModePerm,
 		logger:   logger,
 	}
 }
 
-func (p *SaveFileProc) Process(file entity.DataFile) (entity.DataFile, error) {
+func (p *SaveFileStrategy) Apply(file entity.DataFile) (entity.DataFile, error) {
 	fileDir := file.Dir()
 	if _, err := os.Stat(fileDir); os.IsNotExist(err) {
 		err = os.MkdirAll(fileDir, p.fileMode)
@@ -96,18 +96,18 @@ func (p *SaveFileProc) Process(file entity.DataFile) (entity.DataFile, error) {
 	return file, nil
 }
 
-type ReplacePathFileProc struct {
+type ReplacePathFileStrategy struct {
 	// paths contains old and new Files path to replace
 	paths map[string]string
 }
 
-func NewReplacePathFileProc(paths map[string]string) *ReplacePathFileProc {
-	return &ReplacePathFileProc{
+func NewReplacePathFileStrategy(paths map[string]string) *ReplacePathFileStrategy {
+	return &ReplacePathFileStrategy{
 		paths: paths,
 	}
 }
 
-func (p *ReplacePathFileProc) Process(file entity.DataFile) (entity.DataFile, error) {
+func (p *ReplacePathFileStrategy) Apply(file entity.DataFile) (entity.DataFile, error) {
 	newPath, ok := p.paths[file.Path()]
 	if ok {
 		file = entity.DataFile{
@@ -118,17 +118,17 @@ func (p *ReplacePathFileProc) Process(file entity.DataFile) (entity.DataFile, er
 	return file, nil
 }
 
-type DryRunFileProc struct {
+type DryRunFileStrategy struct {
 	logger entity.Logger
 }
 
-func NewDryRunFileProc(logger entity.Logger) *DryRunFileProc {
-	return &DryRunFileProc{
+func NewDryRunFileStrategy(logger entity.Logger) *DryRunFileStrategy {
+	return &DryRunFileStrategy{
 		logger: logger,
 	}
 }
 
-func (p *DryRunFileProc) Process(file entity.DataFile) (entity.DataFile, error) {
+func (p *DryRunFileStrategy) Apply(file entity.DataFile) (entity.DataFile, error) {
 	fileDir := file.Dir()
 	if _, err := os.Stat(fileDir); os.IsNotExist(err) {
 		p.logger.Infof("save file: create dir [%s] to store file [%s]", fileDir, file.Name)

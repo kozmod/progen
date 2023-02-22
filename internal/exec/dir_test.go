@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_MkdirAllProc(t *testing.T) {
+func Test_MkdirAllStrategy(t *testing.T) {
 	SkipSLowTest(t)
 
 	const (
@@ -25,7 +25,7 @@ func Test_MkdirAllProc(t *testing.T) {
 			}
 		)
 
-		res, err := NewMkdirAllProc(mockLogger).Process(exp)
+		res, err := NewMkdirAllStrategy(mockLogger).Apply(exp)
 		assert.NoError(t, err)
 		assert.Equal(t, exp, res)
 		assert.DirExists(t, res)

@@ -18,6 +18,8 @@ const (
 
 // WithTempDir create a temporary directory for testing, test function and remove a temporary directory after test execution
 func WithTempDir(t *testing.T, test func(dir string)) {
+	t.Helper()
+
 	pc := make([]uintptr, 1)
 	runtime.Callers(2, pc)
 	f := runtime.FuncForPC(pc[0])
@@ -33,6 +35,8 @@ func WithTempDir(t *testing.T, test func(dir string)) {
 }
 
 func CreateFile(t *testing.T, path string, data []byte) {
+	t.Helper()
+
 	dir := filepath.Dir(path)
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		err = os.MkdirAll(dir, os.ModePerm)
@@ -44,12 +48,22 @@ func CreateFile(t *testing.T, path string, data []byte) {
 }
 
 func SkipSLowTest(t *testing.T) {
+	t.Helper()
+
 	if testing.Short() {
 		pc := make([]uintptr, 1)
 		runtime.Callers(2, pc)
 		f := runtime.FuncForPC(pc[0])
 		t.Skipf("skipping slow test: %s", f.Name())
 	}
+}
+
+func AssertFileDataEqual(t *testing.T, path string, expData []byte) {
+	t.Helper()
+
+	data, err := os.ReadFile(path)
+	assert.NoError(t, err)
+	assert.Equal(t, expData, data)
 }
 
 type MockLogger struct {
@@ -81,6 +95,6 @@ func (m MockExecutor) Exec() error {
 
 type MockFileProc struct{}
 
-func (m MockFileProc) Process(_ entity.DataFile) (entity.DataFile, error) {
+func (m MockFileProc) Apply(_ entity.DataFile) (entity.DataFile, error) {
 	return entity.DataFile{}, nil
 }

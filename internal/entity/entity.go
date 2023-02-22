@@ -47,20 +47,16 @@ type (
 		Get() (DataFile, error)
 	}
 
-	FileProc interface {
-		Process(file DataFile) (DataFile, error)
+	FileStrategy interface {
+		Apply(file DataFile) (DataFile, error)
 	}
 
-	DirProc interface {
-		Process(path string) (string, error)
+	DirStrategy interface {
+		Apply(path string) (string, error)
 	}
 
 	TemplateProc interface {
 		Process(name, text string) (string, error)
-	}
-
-	CommandProc interface {
-		Process(commands []Command) error
 	}
 
 	Executor interface {
