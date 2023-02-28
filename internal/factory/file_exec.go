@@ -1,9 +1,8 @@
 package factory
 
 import (
-	"fmt"
-
 	resty "github.com/go-resty/resty/v2"
+	"golang.org/x/xerrors"
 
 	"github.com/kozmod/progen/internal/config"
 	"github.com/kozmod/progen/internal/entity"
@@ -63,7 +62,7 @@ func NewFileExecutor(
 			producer = exec.NewLocalProducer(file)
 
 		default:
-			return nil, nil, fmt.Errorf("build file executor: one of `data`, `get`, `local` must not be empty")
+			return nil, nil, xerrors.Errorf("build file executor: one of `data`, `get`, `local` must not be empty")
 		}
 
 		producers = append(producers, producer)

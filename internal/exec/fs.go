@@ -1,10 +1,11 @@
 package exec
 
 import (
-	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
+
+	"golang.org/x/xerrors"
 
 	"github.com/kozmod/progen/internal/entity"
 )
@@ -66,7 +67,7 @@ func (e *FileSystemStrategy) Apply(dir string) (string, error) {
 		}
 		entPath, err := e.templateProcFn().Process(path, path)
 		if err != nil {
-			return fmt.Errorf("fs: process template to path [%s]: %w", path, err)
+			return xerrors.Errorf("fs: process template to path [%s]: %w", path, err)
 		}
 		filePaths[path] = entPath
 		entitySet[path] = Entity{
@@ -76,7 +77,7 @@ func (e *FileSystemStrategy) Apply(dir string) (string, error) {
 		return err
 	})
 	if err != nil {
-		return entity.Empty, fmt.Errorf("fs: walk dir [%s]: %w", dir, err)
+		return entity.Empty, xerrors.Errorf("fs: walk dir [%s]: %w", dir, err)
 	}
 
 	var (
@@ -101,13 +102,13 @@ func (e *FileSystemStrategy) Apply(dir string) (string, error) {
 	dirExec := e.dirExecutorFn(dirs)
 	err = dirExec.Exec()
 	if err != nil {
-		return entity.Empty, fmt.Errorf("fs: dirs execute: %w", err)
+		return entity.Empty, xerrors.Errorf("fs: dirs execute: %w", err)
 	}
 
 	fileExec := e.fileExecutorFn(fileProducers, e.strategiesFn(filePaths))
 	err = fileExec.Exec()
 	if err != nil {
-		return entity.Empty, fmt.Errorf("fs: files execute: %w", err)
+		return entity.Empty, xerrors.Errorf("fs: files execute: %w", err)
 	}
 
 	for old, ent := range entitySet {
@@ -116,7 +117,7 @@ func (e *FileSystemStrategy) Apply(dir string) (string, error) {
 		}
 		err = e.removeAllFn(old)
 		if err != nil {
-			return entity.Empty, fmt.Errorf("fs: remove old: %w", err)
+			return entity.Empty, xerrors.Errorf("fs: remove old: %w", err)
 		}
 		e.logger.Infof("fs: remove: %s", old)
 	}

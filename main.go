@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"golang.org/x/sync/errgroup"
+	"golang.org/x/xerrors"
 
 	"github.com/kozmod/progen/internal"
 	"github.com/kozmod/progen/internal/config"
@@ -26,7 +27,7 @@ func main() {
 
 	logger, err := factory.NewLogger(flags.Verbose)
 	if err != nil {
-		log.Fatalf("create logger: %v", err)
+		log.Fatalf("create logger: %+v", err)
 	}
 	defer func() {
 		_ = logger.Sync()
@@ -34,13 +35,13 @@ func main() {
 
 	{
 		if err = os.Chdir(flags.AWD); err != nil {
-			logger.Fatalf("changes the application working directory: %v", err)
+			logger.Fatalf("changes the application working directory: %+v", err)
 		}
 
 		var awd string
 		awd, err = os.Getwd()
 		if err != nil {
-			logger.Fatalf("get the application working directory: %v", err)
+			logger.Fatalf("get the application working directory: %+v", err)
 		}
 		logger.Infof("application working directory: %s", awd)
 	}
@@ -53,7 +54,7 @@ func main() {
 
 	data, err := config.NewConfigReader(flags).Read()
 	if err != nil {
-		logger.Fatalf("read config: %v", err)
+		logger.Fatalf("read config: %+v", err)
 	}
 
 	rawConfig, templateData, err := config.NewRawPreprocessor(
@@ -64,7 +65,7 @@ func main() {
 	).
 		Process(data)
 	if err != nil {
-		logger.Fatalf("preprocess raw config: %v", err)
+		logger.Fatalf("preprocess raw config: %+v", err)
 	}
 
 	var (
@@ -77,13 +78,13 @@ func main() {
 	eg.Go(func() error {
 		conf, err = config.NewYamlConfigUnmarshaler(tagFilter, logger).Unmarshal(rawConfig)
 		if err != nil {
-			return fmt.Errorf("unmarshal config: %w", err)
+			return xerrors.Errorf("unmarshal config: %w", err)
 		}
 		return nil
 	})
 
 	if err = eg.Wait(); err != nil {
-		logger.Fatalf("prepare config: %v", err)
+		logger.Fatalf("prepare config: %+v", err)
 	}
 
 	procChain, err := factory.NewExecutorChain(
@@ -94,11 +95,11 @@ func main() {
 		flags.PreprocessFiles,
 		flags.DryRun)
 	if err != nil {
-		logger.Fatalf("create processors chain: %v", err)
+		logger.Fatalf("create processors chain: %+v", err)
 	}
 
 	err = procChain.Exec()
 	if err != nil {
-		logger.Fatalf("execute chain: %v", err)
+		logger.Fatalf("execute chain: %+v", err)
 	}
 }

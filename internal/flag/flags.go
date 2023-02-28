@@ -7,6 +7,8 @@ import (
 	"os"
 	"strings"
 
+	"golang.org/x/xerrors"
+
 	"github.com/kozmod/progen/internal/entity"
 )
 
@@ -119,7 +121,7 @@ func parseFlags(fs *flag.FlagSet, args []string) (Flags, error) {
 				f.ReadStdin = true
 				break
 			}
-			return f, ErrDashFlagNotLast
+			return f, xerrors.Errorf("%w", ErrDashFlagNotLast)
 		}
 	}
 

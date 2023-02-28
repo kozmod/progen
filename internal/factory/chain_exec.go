@@ -1,8 +1,9 @@
 package factory
 
 import (
-	"fmt"
 	"sort"
+
+	"golang.org/x/xerrors"
 
 	"github.com/kozmod/progen/internal/config"
 	"github.com/kozmod/progen/internal/entity"
@@ -92,7 +93,7 @@ func NewExecutorChain(
 	for i, builder := range builders {
 		e, err := builder.procFn()
 		if err != nil {
-			return nil, fmt.Errorf("configure executor [%d]: %w", i, err)
+			return nil, xerrors.Errorf("configure executor [%d]: %w", i, err)
 		}
 		if e == nil {
 			continue

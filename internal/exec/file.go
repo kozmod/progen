@@ -2,7 +2,6 @@ package exec
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"os"
 	"sort"
@@ -10,6 +9,7 @@ import (
 
 	resty "github.com/go-resty/resty/v2"
 	"golang.org/x/sync/errgroup"
+	"golang.org/x/xerrors"
 
 	"github.com/kozmod/progen/internal/entity"
 )
@@ -30,13 +30,13 @@ func (e *FilesExecutor) Exec() error {
 	for _, producer := range e.producers {
 		file, err := producer.Get()
 		if err != nil {
-			return fmt.Errorf("execute file: get file: %w", err)
+			return xerrors.Errorf("execute file: get file: %w", err)
 		}
 
 		for _, processor := range e.strategies {
 			file, err = processor.Apply(file)
 			if err != nil {
-				return fmt.Errorf("execute file: process file: %w", err)
+				return xerrors.Errorf("execute file: process file: %w", err)
 			}
 		}
 	}
@@ -60,7 +60,7 @@ func (p *TemplateFileStrategy) Apply(file entity.DataFile) (entity.DataFile, err
 
 	data, err := p.templateProcFn().Process(filePath, string(file.Data))
 	if err != nil {
-		return file, fmt.Errorf("process file template: %w", err)
+		return file, xerrors.Errorf("process file template: %w", err)
 	}
 	file.Data = []byte(data)
 	return file, nil
@@ -83,14 +83,14 @@ func (p *SaveFileStrategy) Apply(file entity.DataFile) (entity.DataFile, error) 
 	if _, err := os.Stat(fileDir); os.IsNotExist(err) {
 		err = os.MkdirAll(fileDir, p.fileMode)
 		if err != nil {
-			return file, fmt.Errorf("save file: create file dir [%s]: %w", fileDir, err)
+			return file, xerrors.Errorf("save file: create file dir [%s]: %w", fileDir, err)
 		}
 	}
 
 	filePath := file.Path()
 	err := os.WriteFile(filePath, file.Data, p.fileMode)
 	if err != nil {
-		return file, fmt.Errorf("save file: write file [%s]: %w", file.Name(), err)
+		return file, xerrors.Errorf("save file: write file [%s]: %w", file.Name(), err)
 	}
 	p.logger.Infof("file saved: %s", filePath)
 	return file, nil
@@ -176,7 +176,7 @@ func (p *PreloadProducer) Process() error {
 			}
 			file, err := producer.Get()
 			if err != nil {
-				return fmt.Errorf("preload file [%d]: %w", index, err)
+				return xerrors.Errorf("preload file [%d]: %w", index, err)
 			}
 			fChan <- OrderedFile{index: index, DataFile: file}
 			return nil
@@ -211,7 +211,7 @@ func (p *PreloadProducer) Get() (entity.DataFile, error) {
 	p.mx.Lock()
 
 	if len(p.producers) == 0 {
-		return entity.DataFile{}, fmt.Errorf("process files list is empty")
+		return entity.DataFile{}, xerrors.Errorf("process files list is empty")
 	}
 	producer := p.producers[0]
 	p.producers = p.producers[1:]
@@ -219,7 +219,7 @@ func (p *PreloadProducer) Get() (entity.DataFile, error) {
 
 	file, err := producer.Get()
 	if err != nil {
-		return entity.DataFile{}, fmt.Errorf("process files: get: %w", err)
+		return entity.DataFile{}, xerrors.Errorf("process files: get: %w", err)
 	}
 
 	return file, nil
@@ -252,7 +252,7 @@ func NewLocalProducer(file entity.LocalFile) *LocalProducer {
 func (p *LocalProducer) Get() (entity.DataFile, error) {
 	data, err := os.ReadFile(p.file.LocalPath)
 	if err != nil {
-		return entity.DataFile{}, fmt.Errorf("read local: %w", err)
+		return entity.DataFile{}, xerrors.Errorf("read local: %w", err)
 	}
 	return entity.DataFile{
 		FileInfo: p.file.FileInfo,
@@ -283,7 +283,7 @@ func (p *RemoteProducer) Get() (entity.DataFile, error) {
 
 	rs, err := rq.Get(url)
 	if err != nil {
-		return entity.DataFile{}, fmt.Errorf("get [%s]: %w", url, err)
+		return entity.DataFile{}, xerrors.Errorf("get [%s]: %w", url, err)
 	}
 
 	statusCode := rs.StatusCode()
@@ -294,5 +294,5 @@ func (p *RemoteProducer) Get() (entity.DataFile, error) {
 		}, nil
 
 	}
-	return entity.DataFile{}, fmt.Errorf("get [%s]: ststus [%d]: response status is not in the 2xx range", url, statusCode)
+	return entity.DataFile{}, xerrors.Errorf("get [%s]: status [%d]: response status is not in the 2xx range", url, statusCode)
 }
