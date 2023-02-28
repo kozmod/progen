@@ -28,52 +28,52 @@ ___
 
 ### Args
 
-| Name                                          |   Type   |   Default    | Description                                                                                                             |
-|:----------------------------------------------|:--------:|:------------:|-------------------------------------------------------------------------------------------------------------------------|
-| `-f`[<sup>**ⓘ**</sup>](#config_file)          |  string  | `progen.yml` | specify configuration file path                                                                                         |
-| `-v`                                          |   bool   |   `false`    | verbose output                                                                                                          |
-| `-pf`[<sup>**ⓘ**</sup>](#files_preprocessing) |   bool   |    `true`    | `preprocessing files`: load and process files <br/>as [text/template](https://pkg.go.dev/text/template) before creating |
-| `-dr`[<sup>**ⓘ**</sup>](#dry_run)             |   bool   |   `false`    | `dry run` mode <br/>(to verbose output should be combine with`-v`)                                                      |
-| `-awd`                                        |  string  |     `.`      | application working directory                                                                                           |
-| `-tvar`[<sup>**ⓘ**</sup>](#tvar)              | []string |    `[ ]`     | [text/template](https://pkg.go.dev/text/template) variables <br/>(override config variables tree)                       |
-| `-missingkey`                                 | []string |   `error`    | set [text/template.Option](https://pkg.go.dev/text/template#Template.Option) execution option                           |
-| `-skip`[<sup>**ⓘ**</sup>](#skip_actions)      | []string |    `[ ]`     | skip any `action` tag <br/>(regular expression)                                                                         |
-| `-version`                                    |   bool   |   `false`    | print version                                                                                                           |
-| `-help`                                       |   bool   |   `false`    | show flags                                                                                                              |
+| Name                                          |   Type   |   Default    | Description                                                                                                                                                                            |
+|:----------------------------------------------|:--------:|:------------:|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `-f`[<sup>**ⓘ**</sup>](#config_file)          |  string  | `progen.yml` | specify configuration file path                                                                                                                                                        |
+| `-v`                                          |   bool   |   `false`    | verbose output                                                                                                                                                                         |
+| `-pf`[<sup>**ⓘ**</sup>](#files_preprocessing) |   bool   |    `true`    | `preprocessing files`: load and process all files <br/>(all files `actions`[<sup>**ⓘ**</sup>](#files_actio_desk)) as [text/template](https://pkg.go.dev/text/template) before creating |
+| `-dr`[<sup>**ⓘ**</sup>](#dry_run)             |   bool   |   `false`    | `dry run` mode <br/>(to verbose output should be combine with`-v`)                                                                                                                     |
+| `-awd`                                        |  string  |     `.`      | application working directory                                                                                                                                                          |
+| `-tvar`[<sup>**ⓘ**</sup>](#tvar)              | []string |    `[ ]`     | [text/template](https://pkg.go.dev/text/template) variables <br/>(override config variables tree)                                                                                      |
+| `-missingkey`                                 | []string |   `error`    | set `missingkey`[text/template.Option](https://pkg.go.dev/text/template#Template.Option) execution option                                                                              |
+| `-skip`[<sup>**ⓘ**</sup>](#skip_actions)      | []string |    `[ ]`     | skip any `action` tag <br/>(regular expression)                                                                                                                                        |
+| `-version`                                    |   bool   |   `false`    | print version                                                                                                                                                                          |
+| `-help`                                       |   bool   |   `false`    | show flags                                                                                                                                                                             |
 
 ___
 
 ### Actions and tags
 
-| Key                                                |       Type        | Optional | Description                                                                                                 |
-|:---------------------------------------------------|:-----------------:|:---------|:------------------------------------------------------------------------------------------------------------|
-|                                                    |                   |          |                                                                                                             |
-| settings                                           |                   | ✅        | `progen` settings section                                                                                   |
-|                                                    |                   |          |
-| settings.http[<sup>**ⓘ**</sup>](#http_client)      |                   | ✅        | http client configuration                                                                                   |
-| settings.http.debug                                |       bool        | ✅        | http client `DEBUG` mode                                                                                    |
-| settings.http.base_url                             |      string       | ✅        | http client base `URL`                                                                                      |
-| settings.http.headers                              | map[string]string | ✅        | http client base request `Headers`                                                                          |
-| settings.http.query_params                         | map[string]string | ✅        | http client base request `Query Parameters`                                                                 |
-|                                                    |                   |          |                                                                                                             |
-| dirs`<unique_suffix>`[<sup>**ⓘ**</sup>](#Generate) |     []string      | ✅        | list of directories to create                                                                               |
-|                                                    |                   |          |                                                                                                             |
-| files`<unique_suffix>`[<sup>**ⓘ**</sup>](#Files)   |                   | ✅        | list file's `path` and `data`                                                                               |
-| files.path                                         |      string       | ❌        | save file `path`                                                                                            |
-| files.local                                        |      string       | `❕`      | local file path to copy                                                                                     |
-| files.data                                         |      string       | `❕`      | save file `data`                                                                                            |
-|                                                    |                   |          |                                                                                                             |
-| files.get                                          |                   | `❕`      | struct describe `GET` request for getting file's data                                                       |
-| files.get.url                                      |      string       | ❌        | request `URL`                                                                                               |
-| files.get.headers                                  | map[string]string | ✅        | request `Headers`                                                                                           |
-| files.get.query_params                             | map[string]string | ✅        | request `Query Parameters`                                                                                  |
-|                                                    |                   |          |                                                                                                             |
-| cmd`<unique_suffix>`[<sup>**ⓘ**</sup>](#Commands)  |                   | ✅        | configuration command list                                                                                  |
-| cmd.exec                                           |      string       | ❌        | command to execution                                                                                        |
-| cmd.args                                           |      []slice      | ✅        | list of command's arguments                                                                                 |
-| cmd.dir                                            |      string       | ✅        | execution commands (`cmd.exec`) directory                                                                   |
-|                                                    |                   |          |                                                                                                             |
-| fs[<sup>**ⓘ**</sup>](#fs)                          |     []string      | ✅        | execute [text/template.Option](https://pkg.go.dev/text/template#Template.Option) on the list of directories |
+| Key                                                                             |       Type        | Optional | Description                                                                                                 |
+|:--------------------------------------------------------------------------------|:-----------------:|:---------|:------------------------------------------------------------------------------------------------------------|
+|                                                                                 |                   |          |                                                                                                             |
+| settings                                                                        |                   | ✅        | `progen` settings section                                                                                   |
+|                                                                                 |                   |          |
+| settings.http[<sup>**ⓘ**</sup>](#http_client)                                   |                   | ✅        | http client configuration                                                                                   |
+| settings.http.debug                                                             |       bool        | ✅        | http client `DEBUG` mode                                                                                    |
+| settings.http.base_url                                                          |      string       | ✅        | http client base `URL`                                                                                      |
+| settings.http.headers                                                           | map[string]string | ✅        | http client base request `Headers`                                                                          |
+| settings.http.query_params                                                      | map[string]string | ✅        | http client base request `Query Parameters`                                                                 |
+|                                                                                 |                   |          |                                                                                                             |
+| dirs`<unique_suffix>`[<sup>**ⓘ**</sup>](#Generate)                              |     []string      | ✅        | list of directories to create                                                                               |
+|                                                                                 |                   |          |                                                                                                             |
+| <a name="files_actio_desk"><a/>files`<unique_suffix>`[<sup>**ⓘ**</sup>](#Files) |                   | ✅        | list file's `path` and `data`                                                                               |
+| files.path                                                                      |      string       | ❌        | save file `path`                                                                                            |
+| files.local                                                                     |      string       | `❕`      | local file path to copy                                                                                     |
+| files.data                                                                      |      string       | `❕`      | save file `data`                                                                                            |
+|                                                                                 |                   |          |                                                                                                             |
+| files.get                                                                       |                   | `❕`      | struct describe `GET` request for getting file's data                                                       |
+| files.get.url                                                                   |      string       | ❌        | request `URL`                                                                                               |
+| files.get.headers                                                               | map[string]string | ✅        | request `Headers`                                                                                           |
+| files.get.query_params                                                          | map[string]string | ✅        | request `Query Parameters`                                                                                  |
+|                                                                                 |                   |          |                                                                                                             |
+| cmd`<unique_suffix>`[<sup>**ⓘ**</sup>](#Commands)                               |                   | ✅        | configuration command list                                                                                  |
+| cmd.exec                                                                        |      string       | ❌        | command to execution                                                                                        |
+| cmd.args                                                                        |      []slice      | ✅        | list of command's arguments                                                                                 |
+| cmd.dir                                                                         |      string       | ✅        | execution commands (`cmd.exec`) directory                                                                   |
+|                                                                                 |                   |          |                                                                                                             |
+| fs[<sup>**ⓘ**</sup>](#fs)                                                       |     []string      | ✅        | execute [text/template.Option](https://pkg.go.dev/text/template#Template.Option) on the list of directories |
 
 `❕` only one must be specified in parent section
 
