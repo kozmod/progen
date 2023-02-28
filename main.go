@@ -25,9 +25,17 @@ func main() {
 		return
 	}
 
+	logFatalSuffixFn := func(s string) string {
+		const pv, v = "%+v", "%v"
+		if flags.PrintErrorStackTrace {
+			return s + pv
+		}
+		return s + v
+	}
+
 	logger, err := factory.NewLogger(flags.Verbose)
 	if err != nil {
-		log.Fatalf("create logger: %+v", err)
+		log.Fatalf(logFatalSuffixFn("create logger: "), err)
 	}
 	defer func() {
 		_ = logger.Sync()
@@ -35,13 +43,13 @@ func main() {
 
 	{
 		if err = os.Chdir(flags.AWD); err != nil {
-			logger.Fatalf("changes the application working directory: %+v", err)
+			logger.Fatalf(logFatalSuffixFn("changes the application working directory: "), xerrors.Errorf("%w", err))
 		}
 
 		var awd string
 		awd, err = os.Getwd()
 		if err != nil {
-			logger.Fatalf("get the application working directory: %+v", err)
+			logger.Fatalf(logFatalSuffixFn("get the application working directory: "), xerrors.Errorf("%w", err))
 		}
 		logger.Infof("application working directory: %s", awd)
 	}
@@ -54,7 +62,7 @@ func main() {
 
 	data, err := config.NewConfigReader(flags).Read()
 	if err != nil {
-		logger.Fatalf("read config: %+v", err)
+		logger.Fatalf(logFatalSuffixFn("read config: "), err)
 	}
 
 	rawConfig, templateData, err := config.NewRawPreprocessor(
@@ -65,7 +73,7 @@ func main() {
 	).
 		Process(data)
 	if err != nil {
-		logger.Fatalf("preprocess raw config: %+v", err)
+		logger.Fatalf(logFatalSuffixFn("preprocess raw config: "), err)
 	}
 
 	var (
@@ -84,7 +92,7 @@ func main() {
 	})
 
 	if err = eg.Wait(); err != nil {
-		logger.Fatalf("prepare config: %+v", err)
+		logger.Fatalf(logFatalSuffixFn("prepare config: "), err)
 	}
 
 	procChain, err := factory.NewExecutorChain(
@@ -95,11 +103,11 @@ func main() {
 		flags.PreprocessFiles,
 		flags.DryRun)
 	if err != nil {
-		logger.Fatalf("create processors chain: %+v", err)
+		logger.Fatalf(logFatalSuffixFn("create processors chain: "), err)
 	}
 
 	err = procChain.Exec()
 	if err != nil {
-		logger.Fatalf("execute chain: %+v", err)
+		logger.Fatalf(logFatalSuffixFn("execute chain: "), err)
 	}
 }
