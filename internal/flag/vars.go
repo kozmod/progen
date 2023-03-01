@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"golang.org/x/xerrors"
+
 	"github.com/kozmod/progen/internal/entity"
 )
 
@@ -49,7 +51,7 @@ func (v *TemplateVarsFlag) Set(s string) error {
 
 			keyVal := strings.SplitN(key, entity.EqualsSign, 2)
 			if len(keyVal) < 2 {
-				return ErrVariableNotSet
+				return xerrors.Errorf("%w", ErrVariableNotSet)
 			}
 
 			current[keyVal[0]] = keyVal[1]

@@ -1,10 +1,9 @@
 package factory
 
 import (
-	"fmt"
-
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"golang.org/x/xerrors"
 )
 
 func NewLogger(verbose bool) (*zap.SugaredLogger, error) {
@@ -38,7 +37,7 @@ func NewLogger(verbose bool) (*zap.SugaredLogger, error) {
 
 	base, err := cfg.Build()
 	if err != nil {
-		return nil, fmt.Errorf("create new logger: %w", err)
+		return nil, xerrors.Errorf("create new logger: %w", err)
 	}
 
 	return base.Sugar(), nil

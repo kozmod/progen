@@ -18,7 +18,7 @@ func Test_TemplateVarsFlag(t *testing.T) {
 	const (
 		usage    = "parse vars"
 		setName  = "template vars test flag set"
-		flagName = "tvar"
+		flagName = flagKeyTemplateVariables
 	)
 
 	var (
@@ -218,6 +218,7 @@ func Test_parseFlags(t *testing.T) {
 	const (
 		fsName     = "testFlagSet"
 		v          = "-v"
+		errstack   = "-errtrace"
 		dr         = "-dr"
 		f          = "-f"
 		pf         = "-pf"
@@ -231,10 +232,10 @@ func Test_parseFlags(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		testFs := flag.NewFlagSet(fsName, flag.ContinueOnError)
-		flags, err := parseFlags(testFs, []string{v, dr, f, configPath})
+		flags, err := parseFlags(testFs, []string{v, errstack, dr, f, configPath})
 		assert.NoError(t, err)
 		assert.Equal(t,
-			Flags{Verbose: true, PreprocessFiles: true, DryRun: true, ConfigPath: configPath, AWD: dot},
+			Flags{Verbose: true, PrintErrorStackTrace: true, PreprocessFiles: true, DryRun: true, ConfigPath: configPath, AWD: dot},
 			flags)
 	})
 	t.Run("success_when_dash_last", func(t *testing.T) {
