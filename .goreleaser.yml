@@ -35,3 +35,8 @@ snapshot:
 
 changelog:
   sort: asc
+  filters:
+    exclude:
+      - Merge pull request
+      - Merge remote-tracking branch
+      - Merge branch
