@@ -1,9 +1,10 @@
 package entity
 
 import (
-	"fmt"
 	"path/filepath"
 	"regexp"
+
+	"golang.org/x/xerrors"
 )
 
 type (
@@ -19,7 +20,7 @@ func (v MissingKeyValue) Valid() error {
 		MissingKeyError:
 		return nil
 	default:
-		return fmt.Errorf("templte option [%v] is not valid: %v", TemplateOptionsMissingKey, v)
+		return xerrors.Errorf("templte option [%v] is not valid: %v", TemplateOptionsMissingKey, v)
 	}
 }
 

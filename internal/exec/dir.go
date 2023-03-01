@@ -1,8 +1,9 @@
 package exec
 
 import (
-	"fmt"
 	"os"
+
+	"golang.org/x/xerrors"
 
 	"github.com/kozmod/progen/internal/entity"
 )
@@ -25,7 +26,7 @@ func (p *DirExecutor) Exec() error {
 		for _, strategy := range p.strategies {
 			_, err := strategy.Apply(path)
 			if err != nil {
-				return fmt.Errorf("execute dir: process dir [%s]: %w", path, err)
+				return xerrors.Errorf("execute dir: process dir [%s]: %w", path, err)
 			}
 		}
 	}
@@ -47,7 +48,7 @@ func NewMkdirAllStrategy(logger entity.Logger) *MkdirAllStrategy {
 func (p *MkdirAllStrategy) Apply(dir string) (string, error) {
 	err := os.MkdirAll(dir, p.fileMode)
 	if err != nil {
-		return entity.Empty, fmt.Errorf("create dir [%s]: %w", dir, err)
+		return entity.Empty, xerrors.Errorf("create dir [%s]: %w", dir, err)
 	}
 	p.logger.Infof("dir created: %s", dir)
 	return dir, nil

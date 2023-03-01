@@ -1,7 +1,7 @@
 package exec
 
 import (
-	"fmt"
+	"golang.org/x/xerrors"
 
 	"github.com/kozmod/progen/internal/entity"
 )
@@ -22,14 +22,14 @@ func (c *PreprocessingChain) Exec() error {
 	for i, loader := range c.loaders {
 		err := loader.Process()
 		if err != nil {
-			return fmt.Errorf("prealod [%d]: %w", i, err)
+			return xerrors.Errorf("preload [%d]: %w", i, err)
 		}
 	}
 
 	for i, processor := range c.processors {
 		err := processor.Exec()
 		if err != nil {
-			return fmt.Errorf("execute proc [%d]: %w", i, err)
+			return xerrors.Errorf("execute proc [%d]: %w", i, err)
 		}
 	}
 	return nil

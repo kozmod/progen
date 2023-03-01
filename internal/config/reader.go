@@ -3,13 +3,13 @@ package config
 import (
 	"bufio"
 	"errors"
-	"fmt"
 	"io"
 	"os"
 
-	"github.com/kozmod/progen/internal/flag"
+	"golang.org/x/xerrors"
 
 	"github.com/kozmod/progen/internal/entity"
+	"github.com/kozmod/progen/internal/flag"
 )
 
 var (
@@ -36,7 +36,7 @@ func (r *Reader) Read() ([]byte, error) {
 	if r.reader == nil {
 		data, err := os.ReadFile(r.path)
 		if err != nil {
-			return nil, fmt.Errorf("config file: %w", err)
+			return nil, xerrors.Errorf("config file: %w", err)
 		}
 		return data, nil
 	}
@@ -50,7 +50,7 @@ func (r *Reader) Read() ([]byte, error) {
 		case errors.Is(err, io.EOF):
 			return data, nil
 		case err != nil:
-			return nil, fmt.Errorf("stdin: %w", err)
+			return nil, xerrors.Errorf("stdin: %w", err)
 		default:
 			data = append(data, line...)
 		}

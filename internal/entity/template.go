@@ -2,8 +2,9 @@ package entity
 
 import (
 	"bytes"
-	"fmt"
 	"text/template"
+
+	"golang.org/x/xerrors"
 )
 
 type TmplProc struct {
@@ -29,13 +30,13 @@ func (p *TmplProc) Process(name, text string) (string, error) {
 		Option(p.templateOptions...).
 		Parse(text)
 	if err != nil {
-		return Empty, fmt.Errorf("process template: new template [%s]: %w", name, err)
+		return Empty, xerrors.Errorf("process template: new template [%s]: %w", name, err)
 	}
 
 	var buf bytes.Buffer
 	err = tmpl.Execute(&buf, p.templateData)
 	if err != nil {
-		return Empty, fmt.Errorf("process template: execute [%s]: %w", name, err)
+		return Empty, xerrors.Errorf("process template: execute [%s]: %w", name, err)
 	}
 	return buf.String(), err
 }

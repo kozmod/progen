@@ -7,12 +7,25 @@ import (
 	"os"
 	"strings"
 
+	"golang.org/x/xerrors"
+
 	"github.com/kozmod/progen/internal/entity"
 )
 
 //goland:noinspection SpellCheckingInspection
 const (
 	defaultConfigFilePath = "progen.yml"
+
+	flagKeyConfigFile                  = "f"
+	flagKeyVarbose                     = "v"
+	flagKeyErrorStackTrace             = "errtrace"
+	flagKeyDryRun                      = "dr"
+	flagKeyVersion                     = "version"
+	flagKeyTemplateVariables           = "tvar"
+	flagKeyApplicationWorkingDirectory = "awd"
+	flagKeySkip                        = "skip"
+	flagKeyPreprocessingAllFiles       = "pf"
+	flagKeyMissingKey                  = "missingkey"
 )
 
 var (
@@ -20,16 +33,17 @@ var (
 )
 
 type Flags struct {
-	ConfigPath      string
-	Verbose         bool
-	DryRun          bool
-	Version         bool
-	ReadStdin       bool
-	TemplateVars    TemplateVarsFlag
-	AWD             string // AWD application working directory
-	Skip            SkipFlag
-	PreprocessFiles bool
-	MissingKey      MissingKeyFlag
+	ConfigPath           string
+	Verbose              bool
+	DryRun               bool
+	Version              bool
+	ReadStdin            bool
+	TemplateVars         TemplateVarsFlag
+	AWD                  string // AWD application working directory
+	Skip                 SkipFlag
+	PreprocessFiles      bool
+	MissingKey           MissingKeyFlag
+	PrintErrorStackTrace bool
 }
 
 func (f *Flags) FileLocationMessage() string {
@@ -60,46 +74,51 @@ func parseFlags(fs *flag.FlagSet, args []string) (Flags, error) {
 	)
 	fs.StringVar(
 		&f.ConfigPath,
-		"f",
+		flagKeyConfigFile,
 		defaultConfigFilePath,
-		fmt.Sprintf("configuration file path (default: %s)", defaultConfigFilePath))
+		"configuration file path")
 	fs.BoolVar(
 		&f.Verbose,
-		"v",
+		flagKeyVarbose,
 		false,
 		"verbose output")
+	//goland:noinspection SpellCheckingInspection
+	fs.BoolVar(
+		&f.PrintErrorStackTrace,
+		flagKeyErrorStackTrace,
+		false,
+		"output errors stacktrace")
 	fs.BoolVar(
 		&f.DryRun,
-		"dr",
+		flagKeyDryRun,
 		false,
 		"dry run mode (can be combine with `-v`)")
 	fs.BoolVar(
 		&f.Version,
-		"version",
+		flagKeyVersion,
 		false,
 		"output version")
-	//goland:noinspection SpellCheckingInspection
 	fs.Var(
 		&f.TemplateVars,
-		"tvar",
+		flagKeyTemplateVariables,
 		"template variables (override config variables tree)")
 	fs.StringVar(
 		&f.AWD,
-		"awd",
+		flagKeyApplicationWorkingDirectory,
 		entity.Dot,
-		"application working directory (default: '.')")
+		"application working directory")
 	fs.Var(
 		&f.Skip,
-		"skip",
+		flagKeySkip,
 		"list of skipping 'yaml' tags")
 	fs.BoolVar(
 		&f.PreprocessFiles,
-		"pf",
+		flagKeyPreprocessingAllFiles,
 		true,
-		"preprocessing all files before saving (default: 'true')")
+		"preprocessing all files before saving")
 	fs.Var(
 		&f.MissingKey,
-		"missingkey",
+		flagKeyMissingKey,
 		fmt.Sprintf(
 			"`missingkey` template option: %v, %v, %v, %v",
 			entity.MissingKeyDefault,
@@ -119,7 +138,7 @@ func parseFlags(fs *flag.FlagSet, args []string) (Flags, error) {
 				f.ReadStdin = true
 				break
 			}
-			return f, ErrDashFlagNotLast
+			return f, xerrors.Errorf("%w", ErrDashFlagNotLast)
 		}
 	}
 

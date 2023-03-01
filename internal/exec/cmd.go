@@ -6,6 +6,8 @@ import (
 	"os/exec"
 	"strings"
 
+	"golang.org/x/xerrors"
+
 	"github.com/kozmod/progen/internal/entity"
 )
 
@@ -35,7 +37,7 @@ func (p *CommandExecutor) Exec() error {
 
 		err := cmd.Run()
 		if err != nil {
-			return fmt.Errorf("execute command [dir: %s] %s\nerror: %w", dir, prepareCmdMessage(&stderr, command), err)
+			return xerrors.Errorf("execute command [dir: %s] %s\nerror: %w", dir, prepareCmdMessage(&stderr, command), err)
 		}
 
 		p.logger.Infof("execute [dir: %s]: %s", dir, prepareCmdMessage(&stdout, command))

@@ -1,9 +1,10 @@
 package config
 
 import (
-	"fmt"
 	"net/url"
 	"strings"
+
+	"golang.org/x/xerrors"
 
 	"github.com/kozmod/progen/internal/entity"
 )
@@ -99,7 +100,7 @@ func (addr *AddrURL) UnmarshalYAML(unmarshal func(any) error) error {
 	}
 	u, err := url.Parse(raw)
 	if err != nil {
-		return fmt.Errorf("unmarshal url: %w", err)
+		return xerrors.Errorf("unmarshal url: %w", err)
 	}
 	addr.URL = u
 	return nil
@@ -109,11 +110,11 @@ func ValidateFile(file File) error {
 	notNil := entity.NotNilValues(file.Get, file.Data, file.Local)
 	switch {
 	case notNil == 0:
-		return fmt.Errorf("files: `get`, `data`, `local` - all are empty")
+		return xerrors.Errorf("files: `get`, `data`, `local` - all are empty")
 	case notNil > 1:
-		return fmt.Errorf("files: sections `get`, `data`, `local` tags - only one can be present")
+		return xerrors.Errorf("files: sections `get`, `data`, `local` tags - only one can be present")
 	case strings.TrimSpace(file.Path) == entity.Empty:
-		return fmt.Errorf("files: save `path` are empty")
+		return xerrors.Errorf("files: save `path` are empty")
 	}
 	return nil
 }

@@ -1,8 +1,7 @@
 package config
 
 import (
-	"fmt"
-
+	"golang.org/x/xerrors"
 	yaml "gopkg.in/yaml.v3"
 
 	"github.com/kozmod/progen/internal/entity"
@@ -32,14 +31,14 @@ func (p *RawPreprocessor) Process(data []byte) ([]byte, map[string]any, error) {
 
 	err := yaml.Unmarshal(data, &conf)
 	if err != nil {
-		return nil, nil, fmt.Errorf("parse config to map: %w", err)
+		return nil, nil, xerrors.Errorf("parse config to map: %w", err)
 	}
 
 	conf = entity.MergeKeys(conf, p.templateVars)
 
 	res, err := entity.NewTemplateProc(conf, p.templateFns, p.templateOptions).Process(name, string(data))
 	if err != nil {
-		return nil, nil, fmt.Errorf("preprocess config: %w", err)
+		return nil, nil, xerrors.Errorf("preprocess config: %w", err)
 	}
 
 	return []byte(res), conf, nil

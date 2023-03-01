@@ -1,16 +1,16 @@
 package config
 
 import (
-	"fmt"
 	"strings"
 
+	"golang.org/x/xerrors"
 	yaml "gopkg.in/yaml.v3"
 
 	"github.com/kozmod/progen/internal/entity"
 )
 
 var (
-	ErrCommandEmpty = fmt.Errorf("command declaration is empty")
+	ErrCommandEmpty = xerrors.Errorf("command declaration is empty")
 )
 
 type YamlUnmarshaler struct {
@@ -32,7 +32,7 @@ func (u *YamlUnmarshaler) Unmarshal(rawConfig []byte) (Config, error) {
 	)
 
 	if err := yaml.Unmarshal(rawConfig, &rootTags); err != nil {
-		return conf, fmt.Errorf("unmarshal url: %w", err)
+		return conf, xerrors.Errorf("unmarshal url: %w", err)
 	}
 
 	for tag, node := range rootTags {
@@ -57,7 +57,7 @@ func (u *YamlUnmarshaler) Unmarshal(rawConfig []byte) (Config, error) {
 		}
 
 		if err != nil {
-			return conf, fmt.Errorf("unmarshal tag [%s]: %w", tag, err)
+			return conf, xerrors.Errorf("unmarshal tag [%s]: %w", tag, err)
 		}
 	}
 
@@ -65,7 +65,7 @@ func (u *YamlUnmarshaler) Unmarshal(rawConfig []byte) (Config, error) {
 		for _, file := range files.Val {
 			err := ValidateFile(file)
 			if err != nil {
-				return conf, fmt.Errorf("validate config: files: %d [%s]: %w", i, file.Path, err)
+				return conf, xerrors.Errorf("validate config: files: %d [%s]: %w", i, file.Path, err)
 			}
 		}
 	}
@@ -88,7 +88,7 @@ func validateConfigSections(conf Config) error {
 		fs    = len(conf.FS)
 	)
 	if files == 0 && dirs == 0 && cmd == 0 && fs == 0 {
-		return fmt.Errorf(
+		return xerrors.Errorf(
 			"validate config: config not contains executable actions [dirs: %d, files: %d, cms: %d, fs: %d]",
 			dirs, files, cmd, fs)
 	}
