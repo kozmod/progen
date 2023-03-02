@@ -68,12 +68,18 @@ type (
 		Process() error
 	}
 
-	//goland:noinspection SpellCheckingInspection
+	LoggerWrapper interface {
+		Logger
+		ForceInfof(format string, args ...any)
+		Sync() error
+	}
+
 	Logger interface {
 		Infof(format string, args ...any)
 		Errorf(format string, any ...any)
 		Warnf(format string, any ...any)
 		Debugf(format string, any ...any)
+		Fatalf(format string, any ...any)
 	}
 )
 

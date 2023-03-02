@@ -76,6 +76,10 @@ func main() {
 		logger.Fatalf(logFatalSuffixFn("preprocess raw config: "), err)
 	}
 
+	if flags.PrintProcessedConfig {
+		logger.ForceInfof("preprocessed config:\n%s", string(rawConfig))
+	}
+
 	var (
 		eg errgroup.Group
 
