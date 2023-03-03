@@ -216,13 +216,7 @@ func Test_parseFlags(t *testing.T) {
 
 	//goland:noinspection SpellCheckingInspection
 	const (
-		fsName     = "testFlagSet"
-		v          = "-v"
-		errstack   = "-errtrace"
-		dr         = "-dr"
-		f          = "-f"
-		pf         = "-pf"
-		missingkey = "-missingkey"
+		fsName = "testFlagSet"
 
 		configPath = "progen.yml"
 		dot        = entity.Dot
@@ -230,12 +224,35 @@ func Test_parseFlags(t *testing.T) {
 		lessThan   = entity.LessThan
 	)
 
+	dashPrefixFn := func(s string) string {
+		t.Helper()
+		return dash + s
+	}
+
+	//goland:noinspection SpellCheckingInspection
+	var (
+		v           = dashPrefixFn(flagKeyVarbose)
+		errstack    = dashPrefixFn(flagKeyErrorStackTrace)
+		printconfig = dashPrefixFn(flagKeyPrintConfig)
+		dr          = dashPrefixFn(flagKeyDryRun)
+		f           = dashPrefixFn(flagKeyConfigFile)
+		pf          = dashPrefixFn(flagKeyPreprocessingAllFiles)
+		missingkey  = dashPrefixFn(flagKeyMissingKey)
+	)
+
 	t.Run("success", func(t *testing.T) {
 		testFs := flag.NewFlagSet(fsName, flag.ContinueOnError)
-		flags, err := parseFlags(testFs, []string{v, errstack, dr, f, configPath})
+		flags, err := parseFlags(testFs, []string{v, printconfig, errstack, dr, f, configPath})
 		assert.NoError(t, err)
 		assert.Equal(t,
-			Flags{Verbose: true, PrintErrorStackTrace: true, PreprocessFiles: true, DryRun: true, ConfigPath: configPath, AWD: dot},
+			Flags{
+				Verbose:              true,
+				PrintErrorStackTrace: true,
+				PrintProcessedConfig: true,
+				PreprocessFiles:      true,
+				DryRun:               true,
+				ConfigPath:           configPath,
+				AWD:                  dot},
 			flags)
 	})
 	t.Run("success_when_dash_last", func(t *testing.T) {
