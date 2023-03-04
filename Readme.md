@@ -164,7 +164,7 @@ use `-errtrace` flag:
 % progen -f ../not_exists_config.yml
 2023-03-04 15:05:54	FATAL	read config: config file:
     github.com/kozmod/progen/internal/config.(*Reader).Read
-        /Users/19798572/GolandProjects/progen/internal/config/reader.go:39
+        /Users/some_user/projects/progen/internal/config/reader.go:39
   - open ../not_exists_config.yml: no such file or directory
 ```
 
