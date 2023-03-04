@@ -19,6 +19,7 @@ const (
 	flagKeyConfigFile                  = "f"
 	flagKeyVarbose                     = "v"
 	flagKeyErrorStackTrace             = "errtrace"
+	flagKeyPrintConfig                 = "printconf"
 	flagKeyDryRun                      = "dr"
 	flagKeyVersion                     = "version"
 	flagKeyTemplateVariables           = "tvar"
@@ -44,6 +45,7 @@ type Flags struct {
 	PreprocessFiles      bool
 	MissingKey           MissingKeyFlag
 	PrintErrorStackTrace bool
+	PrintProcessedConfig bool
 }
 
 func (f *Flags) FileLocationMessage() string {
@@ -88,6 +90,11 @@ func parseFlags(fs *flag.FlagSet, args []string) (Flags, error) {
 		flagKeyErrorStackTrace,
 		false,
 		"output errors stacktrace")
+	fs.BoolVar(
+		&f.PrintProcessedConfig,
+		flagKeyPrintConfig,
+		false,
+		"output processed config")
 	fs.BoolVar(
 		&f.DryRun,
 		flagKeyDryRun,

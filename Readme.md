@@ -28,19 +28,20 @@ ___
 
 ### Args
 
-| Name                                          |   Type   |   Default    | Description                                                                                                                                                                            |
-|:----------------------------------------------|:--------:|:------------:|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `-f`[<sup>**ⓘ**</sup>](#config_file)          |  string  | `progen.yml` | specify configuration file path                                                                                                                                                        |
-| `-v`                                          |   bool   |   `false`    | verbose output                                                                                                                                                                         |
-| `-errtrace`                                   |   bool   |   `false`    | output errors stack trace                                                                                                                                                              |
-| `-pf`[<sup>**ⓘ**</sup>](#files_preprocessing) |   bool   |    `true`    | `preprocessing files`: load and process all files <br/>(all files `actions`[<sup>**ⓘ**</sup>](#files_actio_desk)) as [text/template](https://pkg.go.dev/text/template) before creating |
-| `-dr`[<sup>**ⓘ**</sup>](#dry_run)             |   bool   |   `false`    | `dry run` mode <br/>(to verbose output should be combine with`-v`)                                                                                                                     |
-| `-awd`                                        |  string  |     `.`      | application working directory                                                                                                                                                          |
-| `-tvar`[<sup>**ⓘ**</sup>](#tvar)              | []string |    `[ ]`     | [text/template](https://pkg.go.dev/text/template) variables <br/>(override config variables tree)                                                                                      |
-| `-missingkey`                                 | []string |   `error`    | set `missingkey`[text/template.Option](https://pkg.go.dev/text/template#Template.Option) execution option                                                                              |
-| `-skip`[<sup>**ⓘ**</sup>](#skip_actions)      | []string |    `[ ]`     | skip any `action` tag <br/>(regular expression)                                                                                                                                        |
-| `-version`                                    |   bool   |   `false`    | print version                                                                                                                                                                          |
-| `-help`                                       |   bool   |   `false`    | show flags                                                                                                                                                                             |
+| Name                                            |   Type   |   Default    | Description                                                                                                                                                                            |
+|:------------------------------------------------|:--------:|:------------:|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `-f`[<sup>**ⓘ**</sup>](#config_file)            |  string  | `progen.yml` | specify configuration file path                                                                                                                                                        |
+| `-v`                                            |   bool   |   `false`    | verbose output                                                                                                                                                                         |
+| `-printconf`[<sup>**ⓘ**</sup>](#print_config)   |   bool   |   `false`    | output processed config                                                                                                                                                                |
+| `-errtrace`[<sup>**ⓘ**</sup>](#print_err_trace) |   bool   |   `false`    | output errors stack trace                                                                                                                                                              |
+| `-pf`[<sup>**ⓘ**</sup>](#files_preprocessing)   |   bool   |    `true`    | `preprocessing files`: load and process all files <br/>(all files `actions`[<sup>**ⓘ**</sup>](#files_actio_desk)) as [text/template](https://pkg.go.dev/text/template) before creating |
+| `-dr`[<sup>**ⓘ**</sup>](#dry_run)               |   bool   |   `false`    | `dry run` mode <br/>(to verbose output should be combine with`-v`)                                                                                                                     |
+| `-awd`                                          |  string  |     `.`      | application working directory                                                                                                                                                          |
+| `-tvar`[<sup>**ⓘ**</sup>](#tvar)                | []string |    `[ ]`     | [text/template](https://pkg.go.dev/text/template) variables <br/>(override config variables tree)                                                                                      |
+| `-missingkey`                                   | []string |   `error`    | set `missingkey`[text/template.Option](https://pkg.go.dev/text/template#Template.Option) execution option                                                                              |
+| `-skip`[<sup>**ⓘ**</sup>](#skip_actions)        | []string |    `[ ]`     | skip any `action` tag <br/>(regular expression)                                                                                                                                        |
+| `-version`                                      |   bool   |   `false`    | print version                                                                                                                                                                          |
+| `-help`                                         |   bool   |   `false`    | show flags                                                                                                                                                                             |
 
 ___
 
@@ -123,6 +124,50 @@ out:
 
 2 directories, 2 files
 ```
+
+### <a name="print_config"><a/>Print configuration file
+
+To print the configuration file after processing as [text/template](https://pkg.go.dev/text/template),
+use `-printconf` flag:
+
+```yaml
+## progen.yml
+
+vars:
+  some_data: VARS_SOME_DATA
+
+# {{- $var_1 := random.AlphaNum 15}}
+#  {{- $var_2 := "echo some_%s"}}
+cmd:
+  - echo {{ $var_1 }}
+  - "{{ printf $var_2  `value` }}"
+  - echo {{ .vars.some_data }}
+```
+```console
+% progen -printconf
+2023-03-04 14:57:43	INFO	preprocessed config:
+vars:
+  some_data: VARS_SOME_DATA
+
+#
+#
+cmd:
+  - echo AHNsgyzVxRqeqLt
+  - "echo some_value"
+  - echo VARS_SOME_DATA
+```
+
+### <a name="print_err_trace"><a/>Print error stack trace
+To print a stack trace of the error which occurred during execution of the `cli`,
+use `-errtrace` flag:
+```console
+% progen -f ../not_exists_config.yml
+2023-03-04 15:05:54	FATAL	read config: config file:
+    github.com/kozmod/progen/internal/config.(*Reader).Read
+        /Users/19798572/GolandProjects/progen/internal/config/reader.go:39
+  - open ../not_exists_config.yml: no such file or directory
+```
+
 
 ### Execution
 
@@ -364,11 +409,15 @@ dirs:
 
 #### Custom template functions
 
-| Function          |     args     | Description                                                                                                                                                                       |
-|:------------------|:------------:|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `random.Alpha`    | length `int` | Generates a random alphabetical `(A-Z, a-z)` string of a desired length.                                                                                                          | 
-| `random.AlphaNum` | length `int` | Generates a random alphanumeric `(0-9, A-Z, a-z)` string of a desired length.                                                                                                     |
-| `random.ASCII`    | length `int` | Generates a random string of a desired length, containing the set of printable characters from the 7-bit ASCII set. This includes space (’ ‘), but no other whitespace character. |
+| Function          |             args             | Description                                                                                                                                                                       |
+|:------------------|:----------------------------:|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `random`          |
+| `random.Alpha`    |         length `int`         | Generates a random alphabetical `(A-Z, a-z)` string of a desired length.                                                                                                          | 
+| `random.AlphaNum` |         length `int`         | Generates a random alphanumeric `(0-9, A-Z, a-z)` string of a desired length.                                                                                                     |
+| `random.ASCII`    |         length `int`         | Generates a random string of a desired length, containing the set of printable characters from the 7-bit ASCII set. This includes space (’ ‘), but no other whitespace character. |
+| `slice`           |                              |                                                                                                                                                                                   |
+| `slice.New`       |       N `any` elements       | Create new slice from any numbers of elements (`{ $element := slice.New "a" 1 "b" }}`)                                                                                            |
+| `slice.Append`    | slice,<br/> N `any` elements | Add element to exists slice (`{{ $element := slice.Append $element "b"}}`)                                                                                                        |
 
 Custom template functions adds the elements of the argument map to the
 template's [function map]](https://pkg.go.dev/text/template#hdr-Functions).

@@ -20,10 +20,6 @@ var (
 	_lettersASCII string
 
 	mapHashSrc = rand.New(rand.NewSource(int64(new(maphash.Hash).Sum64())))
-
-	TemplateFnsMap = map[string]any{
-		"random": func() any { return RandomFn{} },
-	}
 )
 
 func init() {

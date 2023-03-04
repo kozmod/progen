@@ -38,7 +38,7 @@ func (p *RawPreprocessor) Process(data []byte) ([]byte, map[string]any, error) {
 
 	res, err := entity.NewTemplateProc(conf, p.templateFns, p.templateOptions).Process(name, string(data))
 	if err != nil {
-		return nil, nil, xerrors.Errorf("preprocess config: %w", err)
+		return nil, nil, xerrors.Errorf("config data: %w", err)
 	}
 
 	return []byte(res), conf, nil

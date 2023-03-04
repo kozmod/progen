@@ -12,7 +12,7 @@ func NewFSExecutor(
 	logger entity.Logger,
 	dryRun bool) (entity.Executor, error) {
 	if len(dirs) == 0 {
-		logger.Infof("`dir` section is empty")
+		logger.Infof("fs executor: `dir` section is empty")
 		return nil, nil
 	}
 

@@ -7,6 +7,13 @@ import (
 	"golang.org/x/xerrors"
 )
 
+var (
+	TemplateFnsMap = map[string]any{
+		"random": func() any { return RandomFn{} },
+		"slice":  func() any { return SLiceFn{} },
+	}
+)
+
 type TmplProc struct {
 	templateData    map[string]any
 	templateFns     map[string]any
@@ -32,7 +39,6 @@ func (p *TmplProc) Process(name, text string) (string, error) {
 	if err != nil {
 		return Empty, xerrors.Errorf("process template: new template [%s]: %w", name, err)
 	}
-
 	var buf bytes.Buffer
 	err = tmpl.Execute(&buf, p.templateData)
 	if err != nil {

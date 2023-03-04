@@ -7,7 +7,7 @@ import (
 
 func NewMkdirExecutor(dirs []string, logger entity.Logger, dryRun bool) (entity.Executor, error) {
 	if len(dirs) == 0 {
-		logger.Infof("`dir` section is empty")
+		logger.Infof("mkdir executor: `dir` section is empty")
 		return nil, nil
 	}
 
