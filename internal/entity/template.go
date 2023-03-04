@@ -7,6 +7,13 @@ import (
 	"golang.org/x/xerrors"
 )
 
+var (
+	TemplateFnsMap = map[string]any{
+		"random": func() any { return RandomFn{} },
+		"slice":  func() any { return SLiceFn{} },
+	}
+)
+
 type TmplProc struct {
 	templateData    map[string]any
 	templateFns     map[string]any
