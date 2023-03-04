@@ -365,11 +365,15 @@ dirs:
 
 #### Custom template functions
 
-| Function          |     args     | Description                                                                                                                                                                       |
-|:------------------|:------------:|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `random.Alpha`    | length `int` | Generates a random alphabetical `(A-Z, a-z)` string of a desired length.                                                                                                          | 
-| `random.AlphaNum` | length `int` | Generates a random alphanumeric `(0-9, A-Z, a-z)` string of a desired length.                                                                                                     |
-| `random.ASCII`    | length `int` | Generates a random string of a desired length, containing the set of printable characters from the 7-bit ASCII set. This includes space (’ ‘), but no other whitespace character. |
+| Function          |             args             | Description                                                                                                                                                                       |
+|:------------------|:----------------------------:|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `random`          |
+| `random.Alpha`    |         length `int`         | Generates a random alphabetical `(A-Z, a-z)` string of a desired length.                                                                                                          | 
+| `random.AlphaNum` |         length `int`         | Generates a random alphanumeric `(0-9, A-Z, a-z)` string of a desired length.                                                                                                     |
+| `random.ASCII`    |         length `int`         | Generates a random string of a desired length, containing the set of printable characters from the 7-bit ASCII set. This includes space (’ ‘), but no other whitespace character. |
+| `slice`           |                              |                                                                                                                                                                                   |
+| `slice.New`       |       N `any` elements       | Create new slice from any numbers of elements (`{ $element := slice.New "a" 1 "b" }}`)                                                                                            |
+| `slice.Append`    | slice,<br/> N `any` elements | Add element to exists slice (`{{ $element := slice.Append $element "b"}}`)                                                                                                        |
 
 Custom template functions adds the elements of the argument map to the
 template's [function map]](https://pkg.go.dev/text/template#hdr-Functions).
