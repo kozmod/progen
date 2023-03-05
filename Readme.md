@@ -143,6 +143,7 @@ cmd:
   - "{{ printf $var_2  `value` }}"
   - echo {{ .vars.some_data }}
 ```
+
 ```console
 % progen -printconf
 2023-03-04 14:57:43	INFO	preprocessed config:
@@ -158,8 +159,10 @@ cmd:
 ```
 
 ### <a name="print_err_trace"><a/>Print error stack trace
+
 To print a stack trace of the error which occurred during execution of the `cli`,
 use `-errtrace` flag:
+
 ```console
 % progen -f ../not_exists_config.yml
 2023-03-04 15:05:54	FATAL	read config: config file:
@@ -167,7 +170,6 @@ use `-errtrace` flag:
         /Users/some_user/projects/progen/internal/config/reader.go:39
   - open ../not_exists_config.yml: no such file or directory
 ```
-
 
 ### Execution
 
@@ -413,6 +415,7 @@ dirs:
 |:------------------|:----------------------------:|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `random`          |
 | `random.Alpha`    |         length `int`         | Generates a random alphabetical `(A-Z, a-z)` string of a desired length.                                                                                                          | 
+| `random.Num`      |         length `int`         | Generates a random numeric `(0-9)` string of a desired length.                                                                                                                    | 
 | `random.AlphaNum` |         length `int`         | Generates a random alphanumeric `(0-9, A-Z, a-z)` string of a desired length.                                                                                                     |
 | `random.ASCII`    |         length `int`         | Generates a random string of a desired length, containing the set of printable characters from the 7-bit ASCII set. This includes space (’ ‘), but no other whitespace character. |
 | `slice`           |                              |                                                                                                                                                                                   |

@@ -49,6 +49,11 @@ func (RandomFn) Alpha(n int) string {
 	return randomString(n, _lettersAlpha)
 }
 
+// Num Generates a random numeric (0-9) string of a desired length.
+func (RandomFn) Num(n int) string {
+	return randomString(n, _lettersNum)
+}
+
 // AlphaNum Generates a random alphanumeric (0-9, A-Z, a-z) string of a desired length.
 func (RandomFn) AlphaNum(n int) string {
 	return randomString(n, _lettersAlphaNum)
