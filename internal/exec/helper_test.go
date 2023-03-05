@@ -28,7 +28,7 @@ func WithTempDir(t *testing.T, test func(dir string)) {
 	defer func() {
 		err = os.RemoveAll(tmpPath)
 		if err != nil {
-			t.Log(err)
+			t.Fatalf("remove all in tmp dir: %v", err)
 		}
 	}()
 	test(tmpPath)
