@@ -26,17 +26,17 @@ make build
 
 ___
 
-### Args
+### Flags
 
 | Name                                            |   Type   |   Default    | Description                                                                                                                                                                            |
 |:------------------------------------------------|:--------:|:------------:|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `-f`[<sup>**ⓘ**</sup>](#config_file)            |  string  | `progen.yml` | specify configuration file path                                                                                                                                                        |
 | `-v`                                            |   bool   |   `false`    | verbose output                                                                                                                                                                         |
+| `-dr`[<sup>**ⓘ**</sup>](#dry_run)               |   bool   |   `false`    | `dry run` mode <br/>(to verbose output should be combine with`-v`)                                                                                                                     |
+| `-awd`[<sup>**ⓘ**</sup>](#awd)                  |  string  |     `.`      | application working directory                                                                                                                                                          |
 | `-printconf`[<sup>**ⓘ**</sup>](#print_config)   |   bool   |   `false`    | output processed config                                                                                                                                                                |
 | `-errtrace`[<sup>**ⓘ**</sup>](#print_err_trace) |   bool   |   `false`    | output errors stack trace                                                                                                                                                              |
 | `-pf`[<sup>**ⓘ**</sup>](#files_preprocessing)   |   bool   |    `true`    | `preprocessing files`: load and process all files <br/>(all files `actions`[<sup>**ⓘ**</sup>](#files_actio_desk)) as [text/template](https://pkg.go.dev/text/template) before creating |
-| `-dr`[<sup>**ⓘ**</sup>](#dry_run)               |   bool   |   `false`    | `dry run` mode <br/>(to verbose output should be combine with`-v`)                                                                                                                     |
-| `-awd`                                          |  string  |     `.`      | application working directory                                                                                                                                                          |
 | `-tvar`[<sup>**ⓘ**</sup>](#tvar)                | []string |    `[ ]`     | [text/template](https://pkg.go.dev/text/template) variables <br/>(override config variables tree)                                                                                      |
 | `-missingkey`                                   | []string |   `error`    | set `missingkey`[text/template.Option](https://pkg.go.dev/text/template#Template.Option) execution option                                                                              |
 | `-skip`[<sup>**ⓘ**</sup>](#skip_actions)        | []string |    `[ ]`     | skip any `action` tag <br/>(regular expression)                                                                                                                                        |
@@ -85,7 +85,7 @@ ___
 
 ### Generate
 
-`prohen` execute commands and generate files and directories based on configuration file
+The cli executes commands and generate files and directories based on configuration file
 
 ```yaml
 ## progen.yml
@@ -125,52 +125,6 @@ out:
 2 directories, 2 files
 ```
 
-### <a name="print_config"><a/>Print configuration file
-
-To print the configuration file after processing as [text/template](https://pkg.go.dev/text/template),
-use `-printconf` flag:
-
-```yaml
-## progen.yml
-
-vars:
-  some_data: VARS_SOME_DATA
-
-# {{- $var_1 := random.AlphaNum 15}}
-#  {{- $var_2 := "echo some_%s"}}
-cmd:
-  - echo {{ $var_1 }}
-  - "{{ printf $var_2  `value` }}"
-  - echo {{ .vars.some_data }}
-```
-
-```console
-% progen -printconf
-2023-03-04 14:57:43	INFO	preprocessed config:
-vars:
-  some_data: VARS_SOME_DATA
-
-#
-#
-cmd:
-  - echo AHNsgyzVxRqeqLt
-  - "echo some_value"
-  - echo VARS_SOME_DATA
-```
-
-### <a name="print_err_trace"><a/>Print error stack trace
-
-To print a stack trace of the error which occurred during execution of the `cli`,
-use `-errtrace` flag:
-
-```console
-% progen -f ../not_exists_config.yml
-2023-03-04 15:05:54	FATAL	read config: config file:
-    github.com/kozmod/progen/internal/config.(*Reader).Read
-        /Users/some_user/projects/progen/internal/config/reader.go:39
-  - open ../not_exists_config.yml: no such file or directory
-```
-
 ### Execution
 
 All actions execute in declared order. Base actions (`dir`, `files`,`cmd`) could be configured
@@ -196,107 +150,6 @@ cmd2:
 2023-01-22 13:38:52	INFO	execute [dir: .]: chmod -R 777 api
 2023-01-22 13:38:52	INFO	dir created: api/some_project_2/v1
 2023-01-22 13:38:52	INFO	execute [dir: .]: chmod -R 777 api
-```
-
-### <a name="dry_run"><a/>Dry Run mode
-
-flag `-dr` use to execute configuration in dry run mod. All `action` will be executed without applying.
-
-```yaml
-## progen.yml
-
-# {{$project_name := "SOME_PROJECT"}}
-dirs:
-  - api/{{ $project_name }}/v1
-cmd:
-  - chmod -R 777 api/v1
-
-files:
-  - path: api/v1/some_file.txt
-    data: |
-      some file data data fot project: {{ $project_name }}
-```
-
-### <a name="files_preprocessing"><a/>Files preprocessing
-
-By default, all files loading to the memory and process as [text/template](https://pkg.go.dev/text/template) before
-saving to a file system.
-To change this behavior, set `-pf=false`.
-
-```console
-% progen -v -dr -f progen.yml
-2023-02-05 14:15:54	INFO	application working directory: /Users/user_1/GoProjects/service
-2023-02-05 14:15:54	INFO	configuration file: progen.yml
-2023-02-05 14:15:54	INFO	file process: api/v1/some_file.txt
-2023-02-05 14:15:54	INFO	dir created: api/SOME_PROJECT/v1
-2023-02-05 14:15:54	INFO	execute cmd: chmod -R 777 api/v1
-2023-02-05 14:15:54	INFO	save file: create dir [api/v1] to store file [some_file.txt]
-2023-02-05 14:15:54	INFO	file saved [path: api/v1/some_file.txt]:
-some file data data fot project: SOME_PROJECT
-```
-
-### <a name="skip_actions"><a/>Skip `actions`
-
-Set `-skip` flag to skip any `action` (only root actions: `cmd`, `files`, `dirs`). Value of the flag is a regular
-expression.
-
-```yaml
-## progen.yml
-
-dirs:
-  - api/v1
-cmd:
-  - chmod -R 777 api/v1
-dirs1:
-  - api/v2
-cmd1:
-  - chmod -R 777 api/v2
-dirs2:
-  - api/v3
-cmd2:
-  - chmod -R 777 api/v3 
-```
-
-```console
-% progen -v -dr -f progen.yml -skip=^dirs$$ -skip=cmd.+ 
-2023-02-05 14:18:11	INFO	application working directory: /Users/user_1/GoProjects/service
-2023-02-05 14:18:11	INFO	configuration file: progen.yml
-2023-02-05 14:18:11	INFO	action tag will be skipped: cmd1
-2023-02-05 14:18:11	INFO	action tag will be skipped: cmd2
-2023-02-05 14:18:11	INFO	action tag will be skipped: dirs
-2023-02-05 14:18:11	INFO	execute cmd: chmod -R 777 api/v1
-2023-02-05 14:18:11	INFO	dir created: api/v2
-2023-02-05 14:18:11	INFO	dir created: api/v3
-```
-
-### <a name="config_file"><a/>Configuration file
-
-By default `progen` try to find `progen.yml` file for execution. `-f` flag specify custom configuration file location:
-
-```console
-progen -f custom_conf.yaml
-```
-
-Instead of specifying a config file, you can pass a single configuration file in the pipe the file in via `STDIN`.
-To pipe a `progen.yml` from `STDIN`:
-
-```console
-progen - < progen.yml
-```
-
-or
-
-```console
-cat progen.yml | progen -
-```
-
-If you use `STDIN`  the system ignores any `-f` option.
-
-**Example** (get `progen.yml` from gitlab repository with replacing [text/template](https://pkg.go.dev/text/template)
-variables using `-tvar` flag):
-
-```console
-curl -H PRIVATE-TOKEN:token https://gitlab.some.com/api/v4/projects/13/repository/files/shared%2Fteplates%2Fsimple%2Fprogen.yml/raw\?ref\=feature/templates | progen -v -dr -tvar=.vars.GOPROXY=some_proxy -
 ```
 
 ### Templates
@@ -338,7 +191,6 @@ cmd:
     args: [ -l ]
   - exec: tree
 ```
-
 ```console
 % progen -v
 2023-01-22 13:03:58	INFO	current working direcotry: /Users/user_1/GoProjects/service
@@ -380,8 +232,160 @@ out:
 
 9 directories, 2 files
 ```
+#### Custom template functions
 
-<a name="tvar"><a/>any part of template variable tree can be override using `-tvar` flag
+| Function          |             args             | Description                                                                                                                                                                       |
+|:------------------|:----------------------------:|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `random`          |
+| `random.Alpha`    |         length `int`         | Generates a random alphabetical `(A-Z, a-z)` string of a desired length.                                                                                                          | 
+| `random.Num`      |         length `int`         | Generates a random numeric `(0-9)` string of a desired length.                                                                                                                    | 
+| `random.AlphaNum` |         length `int`         | Generates a random alphanumeric `(0-9, A-Z, a-z)` string of a desired length.                                                                                                     |
+| `random.ASCII`    |         length `int`         | Generates a random string of a desired length, containing the set of printable characters from the 7-bit ASCII set. This includes space (’ ‘), but no other whitespace character. |
+| `slice`           |                              |                                                                                                                                                                                   |
+| `slice.New`       |       N `any` elements       | Create new slice from any numbers of elements <br/>(`{ $element := slice.New "a" 1 "b" }}`)                                                                                       |
+| `slice.Append`    | slice,<br/> N `any` elements | Add element to exists slice <br/>(`{{ $element := slice.Append $element "b"}}`)                                                                                                   |
+
+Custom template's functions added as custom arguments to the template 
+[function map](https://pkg.go.dev/text/template#hdr-Functions).
+
+---
+
+## Flags
+
+### <a name="config_file"><a/>Configuration file
+
+By default `progen` try to find `progen.yml` file for execution. `-f` flag specify custom configuration file location:
+
+```console
+progen -f custom_conf.yaml
+```
+
+Instead of specifying a config file, you can pass a single configuration file in the pipe the file in via `STDIN`.
+To pipe a `progen.yml` from `STDIN`:
+
+```console
+progen - < progen.yml
+```
+
+or
+
+```console
+cat progen.yml | progen -
+```
+
+If you use `STDIN`  the system ignores any `-f` option.
+
+**Example** (get `progen.yml` from gitlab repository with replacing [text/template](https://pkg.go.dev/text/template)
+variables using `-tvar` flag):
+
+```console
+curl -H PRIVATE-TOKEN:token https://gitlab.some.com/api/v4/projects/13/repository/files/shared%2Fteplates%2Fsimple%2Fprogen.yml/raw\?ref\=feature/templates | progen -v -dr -tvar=.vars.GOPROXY=some_proxy -
+```
+
+### <a name="print_err_trace"><a/>Print error stack trace
+
+To print a stack trace of the error which occurred during execution of the `cli`,
+use `-errtrace` flag:
+
+```console
+% progen -f ../not_exists_config.yml
+2023-03-04 15:05:54	FATAL	read config: config file:
+    github.com/kozmod/progen/internal/config.(*Reader).Read
+        /Users/some_user/projects/progen/internal/config/reader.go:39
+  - open ../not_exists_config.yml: no such file or directory
+```
+
+### <a name="dry_run"><a/>Dry Run mode
+
+The `-dr` flag uses to execute configuration in dry run mod. All `action` will be executed without applying.
+
+```yaml
+## progen.yml
+
+# {{$project_name := "SOME_PROJECT"}}
+dirs:
+  - api/{{ $project_name }}/v1 # apply template variables, but not create directories on 'dry run'
+cmd:
+  - tree # not execute on 'dry run' mode
+
+files:
+  - path: api/v1/some_file.txt # apply template variables and only printing the file's data
+    data: |
+      some file data data fot project: {{ $project_name }}
+```
+
+```console
+% progen -v -dr
+2023-03-07 07:57:52	INFO	application working directory: /Users/user_1/GoProjects/service
+2023-03-07 07:57:52	INFO	configuration file: progen.yml
+2023-03-07 07:57:52	INFO	file process: api/v1/some_file.txt
+2023-03-07 07:57:52	INFO	dir created: api/SOME_PROJECT/v1
+2023-03-07 07:57:52	INFO	execute [dir: .]: tree
+2023-03-07 07:57:52	INFO	save file: create dir [api/v1] to store file [%!s(func() string=0x136ecc0)]
+2023-03-07 07:57:52	INFO	file saved [path: api/v1/some_file.txt]:
+some file data data fot project: SOME_PROJECT
+2023-03-07 07:57:52	INFO	execution time: 3.69506ms
+```
+
+### <a name="awd"><a/>Application working directory
+
+The `-awd` flag uses for setting application working directory.
+All `paths` declared in the config file are calculated considering the root directory.
+
+### <a name="print_config"><a/>Print configuration file
+
+To print the configuration file after processing as [text/template](https://pkg.go.dev/text/template),
+use `-printconf` flag:
+
+```yaml
+## progen.yml
+
+vars:
+  some_data: VARS_SOME_DATA
+
+# {{- $var_1 := random.AlphaNum 15}}
+#  {{- $var_2 := "echo some_%s"}}
+cmd:
+  - echo {{ $var_1 }}
+  - "{{ printf $var_2  `value` }}"
+  - echo {{ .vars.some_data }}
+```
+
+```console
+% progen -printconf
+2023-03-04 14:57:43	INFO	preprocessed config:
+vars:
+  some_data: VARS_SOME_DATA
+
+#
+#
+cmd:
+  - echo AHNsgyzVxRqeqLt
+  - "echo some_value"
+  - echo VARS_SOME_DATA
+```
+
+### <a name="files_preprocessing"><a/>Files preprocessing
+
+By default, all files loading to the memory and process as [text/template](https://pkg.go.dev/text/template) before
+saving to a file system.
+To change this behavior, set `-pf=false`.
+
+```console
+% progen -v -dr -f progen.yml
+2023-02-05 14:15:54	INFO	application working directory: /Users/user_1/GoProjects/service
+2023-02-05 14:15:54	INFO	configuration file: progen.yml
+2023-02-05 14:15:54	INFO	file process: api/v1/some_file.txt
+2023-02-05 14:15:54	INFO	dir created: api/SOME_PROJECT/v1
+2023-02-05 14:15:54	INFO	execute cmd: chmod -R 777 api/v1
+2023-02-05 14:15:54	INFO	save file: create dir [api/v1] to store file [some_file.txt]
+2023-02-05 14:15:54	INFO	file saved [path: api/v1/some_file.txt]:
+some file data data fot project: SOME_PROJECT
+```
+
+### <a name="tvar"><a/>Template variables
+
+Any part of template variable tree can be overrides using `-tvar` flag
 
 ```yaml
 ## progen.yml
@@ -409,21 +413,43 @@ dirs:
 2023-02-05 14:51:38	INFO	dir created: internal/overrided_path
 ```
 
-#### Custom template functions
+### <a name="skip_actions"><a/>Skip `actions`
 
-| Function          |             args             | Description                                                                                                                                                                       |
-|:------------------|:----------------------------:|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `random`          |
-| `random.Alpha`    |         length `int`         | Generates a random alphabetical `(A-Z, a-z)` string of a desired length.                                                                                                          | 
-| `random.Num`      |         length `int`         | Generates a random numeric `(0-9)` string of a desired length.                                                                                                                    | 
-| `random.AlphaNum` |         length `int`         | Generates a random alphanumeric `(0-9, A-Z, a-z)` string of a desired length.                                                                                                     |
-| `random.ASCII`    |         length `int`         | Generates a random string of a desired length, containing the set of printable characters from the 7-bit ASCII set. This includes space (’ ‘), but no other whitespace character. |
-| `slice`           |                              |                                                                                                                                                                                   |
-| `slice.New`       |       N `any` elements       | Create new slice from any numbers of elements (`{ $element := slice.New "a" 1 "b" }}`)                                                                                            |
-| `slice.Append`    | slice,<br/> N `any` elements | Add element to exists slice (`{{ $element := slice.Append $element "b"}}`)                                                                                                        |
+Set `-skip` flag to skip any `action` (only root actions: `cmd`, `files`, `dirs`). Value of the flag is a regular
+expression.
 
-Custom template functions adds the elements of the argument map to the
-template's [function map]](https://pkg.go.dev/text/template#hdr-Functions).
+```yaml
+## progen.yml
+
+dirs:
+  - api/v1
+cmd:
+  - chmod -R 777 api/v1
+dirs1:
+  - api/v2
+cmd1:
+  - chmod -R 777 api/v2
+dirs2:
+  - api/v3
+cmd2:
+  - chmod -R 777 api/v3 
+```
+
+```console
+% progen -v -dr -f progen.yml -skip=^dirs$$ -skip=cmd.+ 
+2023-02-05 14:18:11	INFO	application working directory: /Users/user_1/GoProjects/service
+2023-02-05 14:18:11	INFO	configuration file: progen.yml
+2023-02-05 14:18:11	INFO	action tag will be skipped: cmd1
+2023-02-05 14:18:11	INFO	action tag will be skipped: cmd2
+2023-02-05 14:18:11	INFO	action tag will be skipped: dirs
+2023-02-05 14:18:11	INFO	execute cmd: chmod -R 777 api/v1
+2023-02-05 14:18:11	INFO	dir created: api/v2
+2023-02-05 14:18:11	INFO	dir created: api/v3
+```
+
+---
+
+## Actions and tags
 
 ### <a name="http_client"></a>Http Client
 
@@ -573,8 +599,6 @@ cmd:
 2023-02-15 17:56:58	INFO	execute [dir: .]: ls -a
 ```
 
-___
-
 ### <a name="fs"></a>File System
 
 `fs` section configure execution [text/template](https://pkg.go.dev/text/template) on a directories tree.
@@ -639,6 +663,8 @@ out:
     │   └── VAR_f
     └── file1
 ```
+
+---
 
 ### Examples
 
