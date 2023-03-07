@@ -57,6 +57,7 @@ func Test_RandomFn(t *testing.T) {
 	const (
 		alnum = "^[[:alnum:]]*$"
 		print = "^[[:print:]]*$"
+		num   = "^[0-9]*$"
 	)
 
 	var (
@@ -99,6 +100,17 @@ func Test_RandomFn(t *testing.T) {
 			s := f.ASCII(50)
 			assert.Len(t, s, 50)
 			assert.Regexp(t, print, s)
+		})
+	})
+	t.Run("Num,", func(t *testing.T) {
+		t.Run("generate_zero", func(t *testing.T) {
+			s := f.Num(0)
+			assert.Empty(t, s)
+		})
+		t.Run("generate_50", func(t *testing.T) {
+			s := f.Num(50)
+			assert.Len(t, s, 50)
+			assert.Regexp(t, num, s)
 		})
 	})
 }

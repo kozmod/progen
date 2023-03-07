@@ -9,7 +9,8 @@ import (
 // Default set, matches "[a-zA-Z0-9_.-]"
 const (
 	_lettersAlpha    = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
-	_lettersAlphaNum = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+	_lettersNum      = "0123456789"
+	_lettersAlphaNum = _lettersAlpha + _lettersNum
 
 	_letterIdxBits = 6                     // 6 bits to represent a letter index
 	_letterIdxMask = 1<<_letterIdxBits - 1 // All 1-bits, as many as letterIdxBits
@@ -18,23 +19,26 @@ const (
 
 var (
 	_lettersASCII string
-
-	mapHashSrc = rand.New(rand.NewSource(int64(new(maphash.Hash).Sum64())))
+	_mapHashSrc   *rand.Rand
 )
 
 func init() {
-	var (
-		lower = int32(Space[0])
-		upper = int32(Tilda[0])
-	)
+	{
+		var (
+			lower = int32(Space[0])
+			upper = int32(Tilda[0])
+		)
 
-	chars := make([]rune, 0, int(upper)-int(lower))
-	for r := lower; r <= upper; r++ {
-		if unicode.IsGraphic(r) {
-			chars = append(chars, r)
+		chars := make([]rune, 0, int(upper)-int(lower))
+		for r := lower; r <= upper; r++ {
+			if unicode.IsGraphic(r) {
+				chars = append(chars, r)
+			}
 		}
+		_lettersASCII = string(chars)
 	}
-	_lettersASCII = string(chars)
+
+	_mapHashSrc = rand.New(rand.NewSource(int64(new(maphash.Hash).Sum64())))
 }
 
 // RandomFn has to generate random string value
@@ -43,6 +47,11 @@ type RandomFn struct{}
 // Alpha Generates a random alphabetical (A-Z, a-z) string of a desired length.
 func (RandomFn) Alpha(n int) string {
 	return randomString(n, _lettersAlpha)
+}
+
+// Num Generates a random numeric (0-9) string of a desired length.
+func (RandomFn) Num(n int) string {
+	return randomString(n, _lettersNum)
 }
 
 // AlphaNum Generates a random alphanumeric (0-9, A-Z, a-z) string of a desired length.
@@ -57,7 +66,7 @@ func (RandomFn) ASCII(n int) string {
 }
 
 func randomString(n int, set string) string {
-	src := mapHashSrc
+	src := _mapHashSrc
 	b := make([]byte, n)
 	// A src.Int63() generates 63 random bits, enough for letterIdxMax characters!
 	for i, cache, remain := n-1, src.Int63(), _letterIdxMax; i >= 0; {
