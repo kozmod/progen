@@ -126,7 +126,7 @@ func Test_ValidateFile(t *testing.T) {
 	t.Run("not_error_when_data_is_not_nil", func(t *testing.T) {
 		in := File{
 			Path: path,
-			Data: func(s string) *string { return &s }("some data"),
+			Data: func(d Bytes) *Bytes { return &d }(Bytes("some data")),
 			Get:  nil,
 		}
 		err := ValidateFile(in)
@@ -144,7 +144,7 @@ func Test_ValidateFile(t *testing.T) {
 	t.Run("error_when_data_and_get_are_not_nil_both", func(t *testing.T) {
 		in := File{
 			Path: path,
-			Data: func(s string) *string { return &s }("some data"),
+			Data: func(d Bytes) *Bytes { return &d }(Bytes("some data")),
 			Get:  &Get{},
 		}
 		err := ValidateFile(in)
@@ -272,7 +272,7 @@ cmd2:
 		file := files.Val[0]
 		a.Equal("x/DDDDDD", file.Path)
 		a.NotNil(file.Data)
-		a.Equal("ENV GOPROXY \"{{.vars.GOPROXY}} ,proxy.golang.org,direct\"\n", *file.Data)
+		a.Equal(Bytes("ENV GOPROXY \"{{.vars.GOPROXY}} ,proxy.golang.org,direct\"\n"), *file.Data)
 	})
 
 	t.Run("success_unmarshal_skip_all_cmd_and_dirs2_sections", func(t *testing.T) {
@@ -333,7 +333,7 @@ cmd2:
 		file := files.Val[0]
 		a.Equal("x/DDDDDD", file.Path)
 		a.NotNil(file.Data)
-		a.Equal("ENV GOPROXY \"{{.vars.GOPROXY}} ,proxy.golang.org,direct\"\n", *file.Data)
+		a.Equal(Bytes("ENV GOPROXY \"{{.vars.GOPROXY}} ,proxy.golang.org,direct\"\n"), *file.Data)
 	})
 	t.Run("error_when-config_not_contains_executable_actions", func(t *testing.T) {
 		const (

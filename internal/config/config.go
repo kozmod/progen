@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"golang.org/x/xerrors"
+	"gopkg.in/yaml.v3"
 
 	"github.com/kozmod/progen/internal/entity"
 )
@@ -43,9 +44,16 @@ type Section[T any] struct {
 
 type File struct {
 	Path  string  `yaml:"path"`
-	Data  *string `yaml:"data"`
+	Data  *Bytes  `yaml:"data"`
 	Get   *Get    `yaml:"get"`
 	Local *string `yaml:"local"`
+}
+
+type Bytes []byte
+
+func (fd *Bytes) UnmarshalYAML(node *yaml.Node) error {
+	*fd = Bytes(node.Value)
+	return nil
 }
 
 type Command struct {

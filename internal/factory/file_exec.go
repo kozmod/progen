@@ -36,7 +36,7 @@ func NewFileExecutor(
 		case f.Data != nil:
 			file := entity.DataFile{
 				FileInfo: tmpl,
-				Data:     []byte(*f.Data),
+				Data:     *f.Data,
 			}
 			producer = exec.NewDummyProducer(file)
 		case f.Get != nil:
