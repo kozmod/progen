@@ -38,7 +38,7 @@ func NewExecutorChain(
 			})
 	}
 
-	var loaders []entity.Preprocessor
+	var preprocessors []entity.Preprocessor
 	for _, files := range conf.Files {
 		f := files
 		builders = append(builders,
@@ -53,7 +53,7 @@ func NewExecutorChain(
 						logger,
 						preprocess,
 						dryRun)
-					loaders = append(loaders, l...)
+					preprocessors = append(preprocessors, l...)
 					return executor, err
 				},
 			})
@@ -101,5 +101,5 @@ func NewExecutorChain(
 		executors = append(executors, e)
 	}
 
-	return exec.NewPreprocessingChain(loaders, executors), nil
+	return exec.NewPreprocessingChain(preprocessors, executors), nil
 }

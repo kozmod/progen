@@ -7,27 +7,27 @@ import (
 )
 
 type PreprocessingChain struct {
-	loaders    []entity.Preprocessor
-	processors []entity.Executor
+	preprocessors []entity.Preprocessor
+	executors     []entity.Executor
 }
 
-func NewPreprocessingChain(loaders []entity.Preprocessor, processors []entity.Executor) *PreprocessingChain {
+func NewPreprocessingChain(preprocessors []entity.Preprocessor, executors []entity.Executor) *PreprocessingChain {
 	return &PreprocessingChain{
-		loaders:    loaders,
-		processors: processors,
+		preprocessors: preprocessors,
+		executors:     executors,
 	}
 }
 
 func (c *PreprocessingChain) Exec() error {
-	for i, loader := range c.loaders {
-		err := loader.Process()
+	for i, preprocessor := range c.preprocessors {
+		err := preprocessor.Process()
 		if err != nil {
 			return xerrors.Errorf("preload [%d]: %w", i, err)
 		}
 	}
 
-	for i, processor := range c.processors {
-		err := processor.Exec()
+	for i, executor := range c.executors {
+		err := executor.Exec()
 		if err != nil {
 			return xerrors.Errorf("execute proc [%d]: %w", i, err)
 		}
