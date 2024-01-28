@@ -20,7 +20,7 @@ func (v MissingKeyValue) Valid() error {
 		MissingKeyError:
 		return nil
 	default:
-		return xerrors.Errorf("templte option [%v] is not valid: %v", TemplateOptionsMissingKey, v)
+		return xerrors.Errorf("template option [%v] is not valid: %v", TemplateOptionsMissingKey, v)
 	}
 }
 

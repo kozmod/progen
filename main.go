@@ -70,8 +70,7 @@ func main() {
 		flags.TemplateVars.Vars,
 		entity.TemplateFnsMap,
 		[]string{flags.MissingKey.String()},
-	).
-		Process(data)
+	).Process(data)
 	if err != nil {
 		logger.Fatalf(logFatalSuffixFn("preprocess raw config: "), err)
 	}
