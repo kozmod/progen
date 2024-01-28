@@ -1,8 +1,3 @@
-.PHONT: deps
-deps: ## Install required dependencies and tools
-	go install golang.org/x/tools/cmd/goimports@latest
-	@command -v golangci-lint >/dev/null 2>&1 || go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.51.1
-
 .PHONT: tools
 tools: ## Run tools (vet, gofmt, goimports, tidy, etc.)
 	@go version
@@ -10,6 +5,16 @@ tools: ## Run tools (vet, gofmt, goimports, tidy, etc.)
 	goimports -w .
 	go mod tidy
 	go vet ./...
+
+.PHONT: tools.update
+tools.update: ## Update or install tool
+	go install golang.org/x/tools/cmd/goimports@latest
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.55.2
+
+.PHONT: deps.update
+deps.update: ## Update dependencies versions
+	go get -u all
+	go mod tidy
 
 .PHONY: lint
 lint: ## Run `golangci-lint`
@@ -20,6 +25,10 @@ lint: ## Run `golangci-lint`
 .PHONT: test
 test: ## Run all tests in project with coverage
 	@go test ./... -cover
+
+.PHONT: test.cover.all
+test.cover.all: ## Run tests with coverage (show all coverage)
+	go test -v ./... -cover -coverprofile cover.out  && go tool cover -func cover.out
 
 .PHONT: build
 build: ## Build binaries from source
@@ -35,4 +44,4 @@ list: ## List all make targets
 
 .PHONY: help
 help: ## List all make targets with description
-	@grep -h -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
+	@grep -h -E '^[.a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
