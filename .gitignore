@@ -8,3 +8,6 @@ out/
 cover.out
 progen
 main
+
+progen.yaml
+progen.yml

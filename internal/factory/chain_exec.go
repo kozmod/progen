@@ -12,6 +12,7 @@ import (
 
 func NewExecutorChain(
 	conf config.Config,
+	actionFilter actionFilter,
 	templateData map[string]any,
 	templateOptions []string,
 	logger entity.Logger,
@@ -21,6 +22,7 @@ func NewExecutorChain(
 
 	type (
 		ExecutorBuilder struct {
+			action string
 			line   int32
 			procFn func() (entity.Executor, error)
 		}
@@ -28,10 +30,18 @@ func NewExecutorChain(
 
 	builders := make([]ExecutorBuilder, 0, len(conf.Dirs)+len(conf.Files)+len(conf.Cmd)+len(conf.FS))
 	for _, dirs := range conf.Dirs {
-		d := dirs
+		var (
+			d      = dirs
+			action = d.Tag
+		)
+
+		if !actionFilter.MatchString(action) {
+			continue
+		}
 		builders = append(builders,
 			ExecutorBuilder{
-				line: d.Line,
+				action: action,
+				line:   d.Line,
 				procFn: func() (entity.Executor, error) {
 					return NewMkdirExecutor(d.Val, logger, dryRun)
 				},
@@ -40,10 +50,17 @@ func NewExecutorChain(
 
 	var preprocessors []entity.Preprocessor
 	for _, files := range conf.Files {
-		f := files
+		var (
+			f      = files
+			action = f.Tag
+		)
+		if !actionFilter.MatchString(action) {
+			continue
+		}
 		builders = append(builders,
 			ExecutorBuilder{
-				line: f.Line,
+				action: action,
+				line:   f.Line,
 				procFn: func() (entity.Executor, error) {
 					executor, l, err := NewFileExecutor(
 						f.Val,
@@ -60,20 +77,34 @@ func NewExecutorChain(
 	}
 
 	for _, commands := range conf.Cmd {
-		cmd := commands
+		var (
+			cmd    = commands
+			action = cmd.Tag
+		)
+		if !actionFilter.MatchString(action) {
+			continue
+		}
 		builders = append(builders,
 			ExecutorBuilder{
-				line: cmd.Line,
+				action: action,
+				line:   cmd.Line,
 				procFn: func() (entity.Executor, error) {
 					return NewRunCommandExecutor(cmd.Val, logger, dryRun)
 				},
 			})
 	}
 	for _, path := range conf.FS {
-		fs := path
+		var (
+			fs     = path
+			action = fs.Tag
+		)
+		if actionFilter.MatchString(action) {
+			continue
+		}
 		builders = append(builders,
 			ExecutorBuilder{
-				line: fs.Line,
+				action: action,
+				line:   fs.Line,
 				procFn: func() (entity.Executor, error) {
 					return NewFSExecutor(
 						fs.Val,
@@ -90,10 +121,10 @@ func NewExecutorChain(
 	})
 
 	executors := make([]entity.Executor, 0, len(builders))
-	for i, builder := range builders {
+	for _, builder := range builders {
 		e, err := builder.procFn()
 		if err != nil {
-			return nil, xerrors.Errorf("configure executor [%d]: %w", i, err)
+			return nil, xerrors.Errorf("configure executor [%s]: %w", builder.action, err)
 		}
 		if e == nil {
 			continue

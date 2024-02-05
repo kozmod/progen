@@ -18,11 +18,8 @@ type YamlUnmarshaler struct {
 	logger    entity.Logger
 }
 
-func NewYamlConfigUnmarshaler(tagFilter *entity.RegexpChain, logger entity.Logger) *YamlUnmarshaler {
-	return &YamlUnmarshaler{
-		tagFilter: tagFilter,
-		logger:    logger,
-	}
+func NewYamlConfigUnmarshaler() *YamlUnmarshaler {
+	return &YamlUnmarshaler{}
 }
 
 func (u *YamlUnmarshaler) Unmarshal(rawConfig []byte) (Config, error) {
@@ -43,9 +40,6 @@ func (u *YamlUnmarshaler) Unmarshal(rawConfig []byte) (Config, error) {
 			var settings Settings
 			err = node.Decode(&settings)
 			conf.Settings = settings
-		case u.tagFilter != nil && u.tagFilter.MatchString(tag):
-			u.logger.Infof("action tag will be skipped: %s", tag)
-			continue
 		case strings.Index(tag, TagDirs) == 0:
 			conf.Dirs, err = decode(conf.Dirs, node, tag)
 		case strings.Index(tag, TagFiles) == 0:
@@ -61,16 +55,7 @@ func (u *YamlUnmarshaler) Unmarshal(rawConfig []byte) (Config, error) {
 		}
 	}
 
-	for i, files := range conf.Files {
-		for _, file := range files.Val {
-			err := ValidateFile(file)
-			if err != nil {
-				return conf, xerrors.Errorf("validate config: files: %d [%s]: %w", i, file.Path, err)
-			}
-		}
-	}
-
-	return conf, validateConfigSections(conf)
+	return conf, nil
 }
 
 func decode[T any](target []Section[T], node yaml.Node, tag string) ([]Section[T], error) {
@@ -78,21 +63,6 @@ func decode[T any](target []Section[T], node yaml.Node, tag string) ([]Section[T
 	err := node.Decode(&section.Val)
 	target = append(target, section)
 	return target, err
-}
-
-func validateConfigSections(conf Config) error {
-	var (
-		files = len(conf.Files)
-		dirs  = len(conf.Dirs)
-		cmd   = len(conf.Cmd)
-		fs    = len(conf.FS)
-	)
-	if files == 0 && dirs == 0 && cmd == 0 && fs == 0 {
-		return xerrors.Errorf(
-			"validate config: config not contains executable actions [dirs: %d, files: %d, cms: %d, fs: %d]",
-			dirs, files, cmd, fs)
-	}
-	return nil
 }
 
 func commandFromString(cmd string) (Command, error) {

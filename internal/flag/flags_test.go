@@ -211,6 +211,64 @@ func Test_SkipFlag(t *testing.T) {
 	})
 }
 
+func Test_group(t *testing.T) {
+	t.Parallel()
+
+	const (
+		usage    = "group_flag_test_usage"
+		setName  = "group"
+		flagName = setName
+	)
+
+	var (
+		flagKey = fmt.Sprintf("-%s", flagName)
+	)
+
+	t.Run("success_when_flag_not_set", func(t *testing.T) {
+		var (
+			fs    = flag.NewFlagSet(setName, flag.ContinueOnError)
+			group GroupFlag
+		)
+		fs.Var(&group, flagName, usage)
+
+		err := fs.Parse([]string{
+			flagKey, "",
+			flagKey, "",
+		})
+		assert.NoError(t, err)
+		assert.Len(t, group, 0)
+	})
+	t.Run("success_when_flag_not_set_v2", func(t *testing.T) {
+		var (
+			fs    = flag.NewFlagSet(setName, flag.ContinueOnError)
+			group GroupFlag
+		)
+		fs.Var(&group, flagName, usage)
+
+		err := fs.Parse(nil)
+		assert.NoError(t, err)
+		assert.Len(t, group, 0)
+	})
+	t.Run("success_when_flag_set", func(t *testing.T) {
+		var (
+			fs    = flag.NewFlagSet(setName, flag.ContinueOnError)
+			group GroupFlag
+
+			flagA = "group1"
+			flagB = "group2"
+		)
+		fs.Var(&group, flagName, usage)
+
+		err := fs.Parse([]string{
+			flagKey, flagA,
+			flagKey, flagB,
+		})
+		assert.NoError(t, err)
+		assert.Len(t, group, 2)
+		assert.ElementsMatch(t, []string{flagA, flagB}, group)
+	})
+}
+
 func Test_parseFlags(t *testing.T) {
 	t.Parallel()
 
