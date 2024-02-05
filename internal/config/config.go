@@ -1,11 +1,13 @@
 package config
 
 import (
-	"github.com/kozmod/progen/internal/entity"
-	"golang.org/x/xerrors"
-	"gopkg.in/yaml.v3"
 	"net/url"
 	"strings"
+
+	"golang.org/x/xerrors"
+	"gopkg.in/yaml.v3"
+
+	"github.com/kozmod/progen/internal/entity"
 )
 
 const (

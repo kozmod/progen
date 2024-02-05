@@ -1,9 +1,10 @@
 package factory
 
 import (
-	"github.com/kozmod/progen/internal/entity"
 	"slices"
 	"strings"
+
+	"github.com/kozmod/progen/internal/entity"
 )
 
 type (

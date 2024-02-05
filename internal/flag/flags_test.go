@@ -153,6 +153,7 @@ func Test_TemplateVarsFlag(t *testing.T) {
 	})
 }
 
+// nolint: dupl
 func Test_SkipFlag(t *testing.T) {
 	t.Parallel()
 
@@ -211,6 +212,7 @@ func Test_SkipFlag(t *testing.T) {
 	})
 }
 
+// nolint: dupl
 func Test_group(t *testing.T) {
 	t.Parallel()
 

@@ -13,10 +13,7 @@ var (
 	ErrCommandEmpty = xerrors.Errorf("command declaration is empty")
 )
 
-type YamlUnmarshaler struct {
-	tagFilter *entity.RegexpChain
-	logger    entity.Logger
-}
+type YamlUnmarshaler struct{}
 
 func NewYamlConfigUnmarshaler() *YamlUnmarshaler {
 	return &YamlUnmarshaler{}
