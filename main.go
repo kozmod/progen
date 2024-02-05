@@ -6,7 +6,6 @@ import (
 	"os"
 	"time"
 
-	"golang.org/x/sync/errgroup"
 	"golang.org/x/xerrors"
 
 	"github.com/kozmod/progen/internal"
@@ -80,26 +79,26 @@ func main() {
 	}
 
 	var (
-		eg errgroup.Group
-
-		conf      config.Config
-		tagFilter = entity.NewRegexpChain(flags.Skip...)
+		conf config.Config
 	)
+	conf, err = config.NewYamlConfigUnmarshaler().Unmarshal(rawConfig)
+	if err != nil {
+		logger.Fatalf(logFatalSuffixFn("unmarshal config: "), err)
+	}
 
-	eg.Go(func() error {
-		conf, err = config.NewYamlConfigUnmarshaler(tagFilter, logger).Unmarshal(rawConfig)
-		if err != nil {
-			return xerrors.Errorf("unmarshal config: %w", err)
-		}
-		return nil
-	})
-
-	if err = eg.Wait(); err != nil {
-		logger.Fatalf(logFatalSuffixFn("prepare config: "), err)
+	if err = conf.Validate(); err != nil {
+		logger.Fatalf(logFatalSuffixFn("validate config: "), err)
 	}
 
 	procChain, err := factory.NewExecutorChain(
 		conf,
+		factory.NewActionFilter(
+			flags.Skip,
+			flags.Group,
+			conf.Settings.Groups.GroupByAction(),
+			conf.Settings.Groups.ManualActions(),
+			logger,
+		),
 		templateData,
 		[]string{flags.MissingKey.String()},
 		logger,

@@ -37,10 +37,13 @@ const (
 	Empty      = ""
 	Dash       = "-"
 	Dot        = "."
+	Comma      = ","
 	EqualsSign = "="
 	LessThan   = "<"
 	Tilda      = "~"
 	NewLine    = "\n"
+
+	LogSliceSep = Comma + Space
 )
 
 type (
@@ -163,4 +166,12 @@ func (c *RegexpChain) MatchString(s string) bool {
 		}
 	}
 	return false
+}
+
+func SliceSet[T comparable](in []T) map[T]struct{} {
+	set := make(map[T]struct{}, len(in))
+	for _, val := range in {
+		set[val] = struct{}{}
+	}
+	return set
 }

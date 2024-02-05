@@ -27,6 +27,7 @@ const (
 	flagKeySkip                        = "skip"
 	flagKeyPreprocessingAllFiles       = "pf"
 	flagKeyMissingKey                  = "missingkey"
+	flagKeyGroup                       = "gp"
 )
 
 var (
@@ -44,6 +45,7 @@ type Flags struct {
 	Skip                 SkipFlag
 	PreprocessFiles      bool
 	MissingKey           MissingKeyFlag
+	Group                GroupFlag
 	PrintErrorStackTrace bool
 	PrintProcessedConfig bool
 }
@@ -117,7 +119,7 @@ func parseFlags(fs *flag.FlagSet, args []string) (Flags, error) {
 	fs.Var(
 		&f.Skip,
 		flagKeySkip,
-		"list of skipping 'yaml' tags")
+		"list of skipping actions")
 	fs.BoolVar(
 		&f.PreprocessFiles,
 		flagKeyPreprocessingAllFiles,
@@ -133,6 +135,11 @@ func parseFlags(fs *flag.FlagSet, args []string) (Flags, error) {
 			entity.MissingKeyZero,
 			entity.MissingKeyError,
 		),
+	)
+	fs.Var(
+		&f.Group,
+		flagKeyGroup,
+		"list of executing groups",
 	)
 	err := fs.Parse(args)
 	if err != nil {

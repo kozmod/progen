@@ -40,6 +40,7 @@ ___
 | `-tvar`[<sup>**ⓘ**</sup>](#tvar)                | []string |    `[ ]`     | [text/template](https://pkg.go.dev/text/template) variables <br/>(override config variables tree)                                                                                      |
 | `-missingkey`                                   | []string |   `error`    | set `missingkey`[text/template.Option](https://pkg.go.dev/text/template#Template.Option) execution option                                                                              |
 | `-skip`[<sup>**ⓘ**</sup>](#skip_actions)        | []string |    `[ ]`     | skip any `action` tag <br/>(regular expression)                                                                                                                                        |
+| `-gp`[<sup>**ⓘ**</sup>](#groups_of_actions)     | []string |    `[ ]`     | set of the action's groups to execution                                                                                                                                                |
 | `-version`                                      |   bool   |   `false`    | print version                                                                                                                                                                          |
 | `-help`                                         |   bool   |   `false`    | show flags                                                                                                                                                                             |
 
@@ -57,6 +58,11 @@ ___
 | settings.http.base_url                                                          |      string       | ✅        | http client base `URL`                                                                                      |
 | settings.http.headers                                                           | map[string]string | ✅        | http client base request `Headers`                                                                          |
 | settings.http.query_params                                                      | map[string]string | ✅        | http client base request `Query Parameters`                                                                 |
+|                                                                                 |                   |          |                                                                                                             |
+| settings.groups[<sup>**ⓘ**</sup>](#groups_of_actions)                           |                   | ✅        | groups of actions                                                                                           |
+| settings.groups.name                                                            |      string       | ✅        | group's name                                                                                                |
+| settings.groups.actions                                                         |     []string      | ✅        | actions names                                                                                               |
+| settings.groups.manual                                                          |       bool        | ✅        | determines that the group starts automatically (default `false`)                                            |
 |                                                                                 |                   |          |                                                                                                             |
 | dirs`<unique_suffix>`[<sup>**ⓘ**</sup>](#Generate)                              |     []string      | ✅        | list of directories to create                                                                               |
 |                                                                                 |                   |          |                                                                                                             |
@@ -191,6 +197,7 @@ cmd:
     args: [ -l ]
   - exec: tree
 ```
+
 ```console
 % progen -v
 2023-01-22 13:03:58	INFO	current working direcotry: /Users/user_1/GoProjects/service
@@ -232,6 +239,7 @@ out:
 
 9 directories, 2 files
 ```
+
 #### Custom template functions
 
 | Function          |             args             | Description                                                                                                                                                                       |
@@ -245,7 +253,7 @@ out:
 | `slice.New`       |       N `any` elements       | Create new slice from any numbers of elements <br/>(`{ $element := slice.New "a" 1 "b" }}`)                                                                                       |
 | `slice.Append`    | slice,<br/> N `any` elements | Add element to exists slice <br/>(`{{ $element := slice.Append $element "b"}}`)                                                                                                   |
 
-Custom template's functions added as custom arguments to the template 
+Custom template's functions added as custom arguments to the template
 [function map](https://pkg.go.dev/text/template#hdr-Functions).
 
 ---
@@ -436,12 +444,12 @@ cmd2:
 ```
 
 ```console
-% progen -v -dr -f progen.yml -skip=^dirs$$ -skip=cmd.+ 
+% progen -v -dr -f progen.yml -skip=^dirs$ -skip=cmd.+ 
 2023-02-05 14:18:11	INFO	application working directory: /Users/user_1/GoProjects/service
 2023-02-05 14:18:11	INFO	configuration file: progen.yml
-2023-02-05 14:18:11	INFO	action tag will be skipped: cmd1
-2023-02-05 14:18:11	INFO	action tag will be skipped: cmd2
-2023-02-05 14:18:11	INFO	action tag will be skipped: dirs
+2023-02-05 14:18:11	INFO	action will be skipped: [cmd1]
+2023-02-05 14:18:11	INFO	action will be skipped: [cmd2]
+2023-02-05 14:18:11	INFO	action will be skipped: [dirs]
 2023-02-05 14:18:11	INFO	execute cmd: chmod -R 777 api/v1
 2023-02-05 14:18:11	INFO	dir created: api/v2
 2023-02-05 14:18:11	INFO	dir created: api/v3
@@ -466,6 +474,71 @@ settings:
       PRIVATE-TOKEN: glpat-SOME_TOKEN
     query_params:
       PARAM_1: Val_1
+```
+
+### <a name="groups_of_actions"></a>Groups of actions
+
+All actions execute in declaration order in the config file and can be union to groups.
+All actions in `manual` groups will be skipped during execution process.
+
+```yaml
+settings:
+  groups:
+    - name: group1
+      actions: [ cmd, cmd_2 ]
+      manual: true
+    - name: group2
+      actions: [ cmd_2 ]
+      manual: true
+
+cmd:
+  - echo CMD_1
+
+cmd_2:
+  - echo CMD_2
+
+cmd_3:
+  - echo CMD_3
+
+cmd_4:
+  - echo CMD_4
+
+```
+
+```console
+% progen -v
+2024-02-05 23:08:21     INFO    application working directory: /Users/user_1/GoProjects/service
+2024-02-05 23:08:21     INFO    configuration file: progen.yml
+2024-02-05 23:08:21     INFO    manual actions will be skipped: [cmd, cmd_2]
+2024-02-05 23:08:21     INFO    execute [dir: .]: echo CMD_3
+out:
+CMD_3
+
+2024-02-05 23:08:21     INFO    execute [dir: .]: echo CMD_4
+out:
+CMD_4
+
+2024-02-05 23:08:21     INFO    execution time: 7.916615ms
+```
+
+Actions in `manual` groups execute using `gp` flag (all action execute only once independent on declaration's quantity
+in different groups).
+
+```console
+% progen -v -gp=group1 -gp=group2
+2024-02-05 23:19:50     INFO    application working directory: /Users/user_1/GoProjects/service
+2024-02-05 23:19:50     INFO    configuration file: progen.yml
+2024-02-05 23:19:50     INFO    groups will be execute: [group1, group2]
+2024-02-05 23:19:50     INFO    execute [dir: .]: echo CMD_1
+out:
+CMD_1
+
+2024-02-05 23:19:50     INFO    execute [dir: .]: echo CMD_2
+out:
+CMD_2
+
+2024-02-05 23:19:50     INFO    execution time: 7.192257ms
+
 ```
 
 ### Files
