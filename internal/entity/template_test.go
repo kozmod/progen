@@ -41,9 +41,29 @@ func Test_TemplateProc(t *testing.T) {
 	})
 }
 
-func Test_TemplateFnsMap(t *testing.T) {
-	t.Run("slice_func", func(t *testing.T) {
-		t.Run("new", func(t *testing.T) {
+func Test_TemplateFunctions_slice(t *testing.T) {
+	t.Run("entity", func(t *testing.T) {
+		const (
+			elem1 = "1"
+			elem2 = "2"
+			elem3 = "3"
+		)
+
+		var (
+			fn = SliceFn{}
+		)
+
+		t.Run("slice.New", func(t *testing.T) {
+			slice := fn.New([]any{elem1, elem2, elem3}...)
+			assert.Equal(t, []any{elem1, elem2, elem3}, slice)
+		})
+		t.Run("slice.Append", func(t *testing.T) {
+			slice := fn.Append([]any{elem1, elem2}, elem3)
+			assert.Equal(t, []any{elem1, elem2, elem3}, slice)
+		})
+	})
+	t.Run("template_slice", func(t *testing.T) {
+		t.Run("slice.New", func(t *testing.T) {
 			t.Run("var", func(t *testing.T) {
 				const (
 					in = `{{ $element := slice.New "a" 1 "b" }}{{ $element }}`
@@ -88,7 +108,7 @@ cmd:
 				assert.Equal(t, exp, res)
 			})
 		})
-		t.Run("append", func(t *testing.T) {
+		t.Run("slice.Append", func(t *testing.T) {
 			t.Run("single", func(t *testing.T) {
 				const (
 					in = `{{ $element := slice.New "a" }}{{ $element := slice.Append $element "b"}}{{ $element }}`
@@ -109,5 +129,32 @@ cmd:
 
 			})
 		})
+	})
+}
+
+func Test_TemplateFunctions_strings(t *testing.T) {
+	var (
+		fn = StringsFn{}
+	)
+
+	t.Run("entity", func(t *testing.T) {
+		t.Run("strings.Replace", func(t *testing.T) {
+			const (
+				in  = "some_value"
+				exp = "some value"
+			)
+			result := fn.Replace(in, "_", " ", -1)
+			assert.Equal(t, exp, result)
+
+		})
+	})
+	t.Run("template_strings", func(t *testing.T) {
+		const (
+			in = `{{ strings.Replace "some_value" "_" " " -1 }}`
+		)
+		proc := TmplProc{templateFns: TemplateFnsMap}
+		res, err := proc.Process(tmplName, in)
+		assert.NoError(t, err)
+		assert.Equal(t, "some value", res)
 	})
 }

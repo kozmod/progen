@@ -252,6 +252,8 @@ out:
 | `slice`           |                              |                                                                                                                                                                                   |
 | `slice.New`       |       N `any` elements       | Create new slice from any numbers of elements <br/>(`{ $element := slice.New "a" 1 "b" }}`)                                                                                       |
 | `slice.Append`    | slice,<br/> N `any` elements | Add element to exists slice <br/>(`{{ $element := slice.Append $element "b"}}`)                                                                                                   |
+| `strings`         |                              |                                                                                                                                                                                   |
+| `strings.Replace` |  s, old, new string, n int   | Replace returns a copy of the string `s` with `old` replaced by `new` (work the same as `strings.Replace` from `stdlib`).                                                         |
 
 Custom template's functions added as custom arguments to the template
 [function map](https://pkg.go.dev/text/template#hdr-Functions).

@@ -9,8 +9,9 @@ import (
 
 var (
 	TemplateFnsMap = map[string]any{
-		"random": func() any { return RandomFn{} },
-		"slice":  func() any { return SLiceFn{} },
+		"random":  func() any { return RandomFn{} },
+		"slice":   func() any { return SliceFn{} },
+		"strings": func() any { return StringsFn{} },
 	}
 )
 
