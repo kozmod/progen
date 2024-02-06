@@ -1,11 +1,11 @@
 package entity
 
-type SLiceFn struct{}
+type SliceFn struct{}
 
-func (sfn SLiceFn) New(elems ...any) []any {
+func (sfn SliceFn) New(elems ...any) []any {
 	return elems
 }
 
-func (sfn SLiceFn) Append(s []any, elems ...any) []any {
+func (sfn SliceFn) Append(s []any, elems ...any) []any {
 	return append(s, elems...)
 }
