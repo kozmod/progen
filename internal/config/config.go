@@ -12,6 +12,7 @@ import (
 
 const (
 	TagDirs      = "dirs"
+	TagRm        = "rm"
 	TagFiles     = "files"
 	TagCmd       = "cmd"
 	TagFS        = "fs"
@@ -21,6 +22,7 @@ const (
 type Config struct {
 	Settings Settings             `yaml:"settings"`
 	Dirs     []Section[[]string]  `yaml:"dirs,flow"`
+	Rm       []Section[[]string]  `yaml:"rm,flow"`
 	Files    []Section[[]File]    `yaml:"files,flow"`
 	Cmd      []Section[[]Command] `yaml:"cmd,flow"`
 	FS       []Section[[]string]  `yaml:"fs,flow"`
@@ -211,13 +213,14 @@ func validateConfigSections(conf Config) error {
 	var (
 		files = len(conf.Files)
 		dirs  = len(conf.Dirs)
+		rm    = len(conf.Rm)
 		cmd   = len(conf.Cmd)
 		fs    = len(conf.FS)
 	)
-	if files == 0 && dirs == 0 && cmd == 0 && fs == 0 {
+	if files == 0 && dirs == 0 && rm == 0 && cmd == 0 && fs == 0 {
 		return xerrors.Errorf(
-			"config not contains executable actions [dirs: %d, files: %d, cms: %d, fs: %d]",
-			dirs, files, cmd, fs,
+			"config not contains executable actions [dirs: %d, rm: %d, files: %d, cms: %d, fs: %d]",
+			dirs, rm, files, cmd, fs,
 		)
 	}
 	return nil

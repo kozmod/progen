@@ -39,6 +39,8 @@ func (u *YamlUnmarshaler) Unmarshal(rawConfig []byte) (Config, error) {
 			conf.Settings = settings
 		case strings.Index(tag, TagDirs) == 0:
 			conf.Dirs, err = decode(conf.Dirs, node, tag)
+		case strings.Index(tag, TagRm) == 0:
+			conf.Rm, err = decode(conf.Rm, node, tag)
 		case strings.Index(tag, TagFiles) == 0:
 			conf.Files, err = decode(conf.Files, node, tag)
 		case strings.Index(tag, TagCmd) == 0:

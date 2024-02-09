@@ -66,6 +66,8 @@ ___
 |                                                                                 |                   |          |                                                                                                             |
 | dirs`<unique_suffix>`[<sup>**ⓘ**</sup>](#Generate)                              |     []string      | ✅        | list of directories to create                                                                               |
 |                                                                                 |                   |          |                                                                                                             |
+| rm`<unique_suffix>`[<sup>**ⓘ**</sup>](#rm)                                      |     []string      | ✅        | list for remove (files, dirs, all file in a dir)                                                            |
+|                                                                                 |                   |          |                                                                                                             |
 | <a name="files_actio_desk"><a/>files`<unique_suffix>`[<sup>**ⓘ**</sup>](#Files) |                   | ✅        | list file's `path` and `data`                                                                               |
 | files.path                                                                      |      string       | ❌        | save file `path`                                                                                            |
 | files.local                                                                     |      string       | `❕`      | local file path to copy                                                                                     |
@@ -737,6 +739,30 @@ out:
     ├── VAR_d
     │   └── VAR_f
     └── file1
+```
+
+### <a name="rm"></a>Rm
+
+`rm` use to remove files, directories or files inside a directory.
+
+```yaml
+rm:
+  # remove the dir
+  - some_dir
+  # remove all files in the dir
+  - some_dir_2/*
+  # remove the file
+  - some_dir_3/file.txt
+```
+
+```console
+% progen -v
+2024-02-09 22:50:51     INFO    application working directory: /Users/user_1/GoProjects/progen
+2023-02-12 14:01:45	    INFO	configuration file: progen.yml
+2024-02-09 22:50:51     INFO    rm: some_dir
+2024-02-09 22:50:51     INFO    rm all: some_dir_2/*
+2024-02-09 22:50:51     INFO    rm: some_dir_3/file.txt
+2024-02-09 22:50:51     INFO    execution time: 350.149µs
 ```
 
 ---

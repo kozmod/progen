@@ -47,6 +47,24 @@ func NewExecutorChain(
 				},
 			})
 	}
+	for _, rm := range conf.Rm {
+		var (
+			r      = rm
+			action = r.Tag
+		)
+
+		if !actionFilter.MatchString(action) {
+			continue
+		}
+		builders = append(builders,
+			ExecutorBuilder{
+				action: action,
+				line:   r.Line,
+				procFn: func() (entity.Executor, error) {
+					return NewRmExecutor(r.Val, logger, dryRun)
+				},
+			})
+	}
 
 	var preprocessors []entity.Preprocessor
 	for _, files := range conf.Files {
