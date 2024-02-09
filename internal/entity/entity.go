@@ -41,6 +41,7 @@ const (
 	EqualsSign = "="
 	LessThan   = "<"
 	Tilda      = "~"
+	Astrix     = "*"
 	NewLine    = "\n"
 
 	LogSliceSep = Comma + Space
@@ -57,6 +58,10 @@ type (
 
 	DirStrategy interface {
 		Apply(path string) (string, error)
+	}
+
+	RmStrategy interface {
+		Apply(path string) error
 	}
 
 	TemplateProc interface {
