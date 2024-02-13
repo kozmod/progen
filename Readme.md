@@ -758,7 +758,7 @@ rm:
 ```console
 % progen -v
 2024-02-09 22:50:51     INFO    application working directory: /Users/user_1/GoProjects/progen
-2023-02-12 14:01:45	    INFO	configuration file: progen.yml
+2023-02-12 14:01:45     INFO    configuration file: progen.yml
 2024-02-09 22:50:51     INFO    rm: some_dir
 2024-02-09 22:50:51     INFO    rm all: some_dir_2/*
 2024-02-09 22:50:51     INFO    rm: some_dir_3/file.txt
