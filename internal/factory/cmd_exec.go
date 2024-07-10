@@ -3,13 +3,12 @@ package factory
 import (
 	"strings"
 
-	"github.com/kozmod/progen/internal/config"
 	"github.com/kozmod/progen/internal/entity"
 	"github.com/kozmod/progen/internal/exec"
 )
 
 //goland:noinspection SpellCheckingInspection
-func NewRunCommandExecutor(cmds []config.Command, logger entity.Logger, dryRun bool) (entity.Executor, error) {
+func NewRunCommandExecutor(cmds []entity.Command, logger entity.Logger, dryRun bool) (entity.Executor, error) {
 	if len(cmds) == 0 {
 		logger.Infof("`cmd` section is empty")
 		return nil, nil
@@ -26,7 +25,7 @@ func NewRunCommandExecutor(cmds []config.Command, logger entity.Logger, dryRun b
 		args = append(args, cmd.Args...)
 
 		commands = append(commands, entity.Command{
-			Cmd:  cmd.Exec,
+			Cmd:  cmd.Cmd,
 			Args: args,
 			Dir:  dir,
 		})
