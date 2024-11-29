@@ -62,7 +62,6 @@ func (f ExecutorChainFactory) Create() (entity.Executor, error) {
 		executors = append(executors, e)
 	}
 
-	//return exec.NewPreprocessingChain(f.preprocessors, executors), nil
 	return f.createFn(executors), nil
 }
 
