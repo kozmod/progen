@@ -1,26 +1,87 @@
 package factory
 
 import (
-	resty "github.com/go-resty/resty/v2"
 	"golang.org/x/xerrors"
 
-	"github.com/kozmod/progen/internal/config"
+	resty "github.com/go-resty/resty/v2"
+
 	"github.com/kozmod/progen/internal/entity"
 	"github.com/kozmod/progen/internal/exec"
 )
 
-func NewFileExecutor(
-	files []config.File,
-	http *config.HTTPClient,
+type FileExecutorFactory struct {
+	templateData    map[string]any
+	templateOptions []string
+}
+
+func NewFileExecutorFactory(
 	templateData map[string]any,
 	templateOptions []string,
-	logger entity.Logger,
-	preprocess,
-	dryRun bool,
-) (entity.Executor, []entity.Preprocessor, error) {
+) *FileExecutorFactory {
+	return &FileExecutorFactory{
+		templateData:    templateData,
+		templateOptions: templateOptions,
+	}
+}
+
+func (ff *FileExecutorFactory) Create(files []entity.UndefinedFile, logger entity.Logger, dryRun bool) (entity.Executor, error) {
 	if len(files) == 0 {
 		logger.Infof("`files` section is empty")
-		return nil, nil, nil
+		return nil, nil
+	}
+
+	producers := make([]entity.FileProducer, 0, len(files))
+	for _, f := range files {
+		file := entity.DataFile{
+			FileInfo: entity.NewFileInfo(f.Path),
+			Data:     *f.Data,
+		}
+		producer := exec.NewDummyProducer(file)
+		producers = append(producers, producer)
+	}
+
+	strategies := []entity.FileStrategy{exec.NewTemplateFileStrategy(ff.templateData, entity.TemplateFnsMap, ff.templateOptions)}
+
+	switch {
+	case dryRun:
+		strategies = append(strategies, exec.NewDryRunFileStrategy(logger))
+	default:
+		strategies = append(strategies, exec.NewSaveFileStrategy(logger))
+	}
+	executor := exec.NewFilesExecutor(producers, strategies)
+
+	return executor, nil
+}
+
+type PreprocessorsFileExecutorFactory struct {
+	templateData    map[string]any
+	templateOptions []string
+
+	preprocess         bool
+	preprocessors      *exec.Preprocessors
+	httpClientSupplier func(logger entity.Logger) *resty.Client
+}
+
+func NewPreprocessorsFileExecutorFactory(
+	templateData map[string]any,
+	templateOptions []string,
+	preprocess bool,
+	preprocessors *exec.Preprocessors,
+	httpClientSupplier func(logger entity.Logger) *resty.Client,
+) *PreprocessorsFileExecutorFactory {
+	return &PreprocessorsFileExecutorFactory{
+		templateData:       templateData,
+		templateOptions:    templateOptions,
+		preprocess:         preprocess,
+		preprocessors:      preprocessors,
+		httpClientSupplier: httpClientSupplier,
+	}
+}
+
+func (ff *PreprocessorsFileExecutorFactory) Create(files []entity.UndefinedFile, logger entity.Logger, dryRun bool) (entity.Executor, error) {
+	if len(files) == 0 {
+		logger.Infof("`files` section is empty")
+		return nil, nil
 	}
 
 	producers := make([]entity.FileProducer, 0, len(files))
@@ -50,7 +111,7 @@ func NewFileExecutor(
 			}
 
 			if client == nil {
-				client = NewHTTPClient(http, logger)
+				client = ff.httpClientSupplier(logger)
 			}
 
 			producer = exec.NewRemoteProducer(file, client)
@@ -62,24 +123,26 @@ func NewFileExecutor(
 			producer = exec.NewLocalProducer(file)
 
 		default:
-			return nil, nil, xerrors.Errorf("build file executor: one of `data`, `get`, `local` must not be empty")
+			return nil, xerrors.Errorf("build file executor from config: one of `data`, `get`, `local` must not be empty")
 		}
 
 		producers = append(producers, producer)
 	}
 
-	var preprocessors []entity.Preprocessor
-	if preprocess {
+	if preprocess := ff.preprocess; preprocess {
+		if ff.preprocessors == nil {
+			return nil, xerrors.Errorf("creating file executor - preprocesso is nil [preprocess:%v]", preprocess)
+		}
 		preloadProducers := make([]entity.FileProducer, 0, len(producers))
 		preloader := exec.NewPreloadProducer(producers, logger)
 		for i := 0; i < len(producers); i++ {
 			preloadProducers = append(preloadProducers, preloader)
 		}
 		producers = preloadProducers
-		preprocessors = append(preprocessors, preloader)
+		ff.preprocessors.Add(preloader)
 	}
 
-	strategies := []entity.FileStrategy{exec.NewTemplateFileStrategy(templateData, entity.TemplateFnsMap, templateOptions)}
+	strategies := []entity.FileStrategy{exec.NewTemplateFileStrategy(ff.templateData, entity.TemplateFnsMap, ff.templateOptions)}
 
 	switch {
 	case dryRun:
@@ -89,5 +152,5 @@ func NewFileExecutor(
 	}
 	executor := exec.NewFilesExecutor(producers, strategies)
 
-	return executor, preprocessors, nil
+	return executor, nil
 }

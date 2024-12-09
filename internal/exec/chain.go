@@ -1,31 +1,22 @@
 package exec
 
 import (
+	"sync"
+
 	"golang.org/x/xerrors"
 
 	"github.com/kozmod/progen/internal/entity"
 )
 
-type PreprocessingChain struct {
-	preprocessors []entity.Preprocessor
-	executors     []entity.Executor
+type Chain struct {
+	executors []entity.Executor
 }
 
-func NewPreprocessingChain(preprocessors []entity.Preprocessor, executors []entity.Executor) *PreprocessingChain {
-	return &PreprocessingChain{
-		preprocessors: preprocessors,
-		executors:     executors,
-	}
+func NewChain(executors []entity.Executor) *Chain {
+	return &Chain{executors: executors}
 }
 
-func (c *PreprocessingChain) Exec() error {
-	for i, preprocessor := range c.preprocessors {
-		err := preprocessor.Process()
-		if err != nil {
-			return xerrors.Errorf("preload [%d]: %w", i, err)
-		}
-	}
-
+func (c *Chain) Exec() error {
 	for i, executor := range c.executors {
 		err := executor.Exec()
 		if err != nil {
@@ -33,4 +24,56 @@ func (c *PreprocessingChain) Exec() error {
 		}
 	}
 	return nil
+}
+
+type PreprocessingChain struct {
+	preprocessors *Preprocessors
+	chain         *Chain
+}
+
+func NewPreprocessingChain(preprocessors *Preprocessors, executors []entity.Executor) *PreprocessingChain {
+	return &PreprocessingChain{
+		preprocessors: preprocessors,
+		chain:         NewChain(executors),
+	}
+}
+
+func (c *PreprocessingChain) Exec() error {
+	for i, preprocessor := range c.preprocessors.Get() {
+		err := preprocessor.Process()
+		if err != nil {
+			return xerrors.Errorf("preprocess [%d]: %w", i, err)
+		}
+	}
+	return c.chain.Exec()
+}
+
+type Preprocessors struct {
+	mx  sync.RWMutex
+	val []entity.Preprocessor
+}
+
+func (p *Preprocessors) Add(in ...entity.Preprocessor) {
+	if p == nil {
+		return
+	}
+
+	p.mx.Lock()
+	defer p.mx.Unlock()
+	p.val = append(p.val, in...)
+}
+
+func (p *Preprocessors) Get() []entity.Preprocessor {
+	if p == nil {
+		return nil
+	}
+
+	p.mx.RLock()
+	defer p.mx.RUnlock()
+	if len(p.val) == 0 {
+		return nil
+	}
+	res := make([]entity.Preprocessor, len(p.val))
+	copy(res, p.val)
+	return res
 }

@@ -10,7 +10,7 @@ import (
 	"github.com/kozmod/progen/internal/entity"
 )
 
-type FileSystemStrategy struct {
+type FileSystemModifyStrategy struct {
 	logger         entity.Logger
 	strategiesFn   func(paths map[string]string) []entity.FileStrategy
 	templateProcFn func() entity.TemplateProc
@@ -19,12 +19,12 @@ type FileSystemStrategy struct {
 	removeAllFn    func(path string) error
 }
 
-func NewFileSystemStrategy(
+func NewFileSystemModifyStrategy(
 	templateData,
 	templateFns map[string]any,
 	templateOptions []string,
-	logger entity.Logger) *FileSystemStrategy {
-	return &FileSystemStrategy{
+	logger entity.Logger) *FileSystemModifyStrategy {
+	return &FileSystemModifyStrategy{
 		logger: logger,
 		strategiesFn: func(paths map[string]string) []entity.FileStrategy {
 			return []entity.FileStrategy{
@@ -46,7 +46,7 @@ func NewFileSystemStrategy(
 	}
 }
 
-func (e *FileSystemStrategy) Apply(dir string) (string, error) {
+func (e *FileSystemModifyStrategy) Apply(dir string) (string, error) {
 	type (
 		Entity struct {
 			Path  string
@@ -67,7 +67,7 @@ func (e *FileSystemStrategy) Apply(dir string) (string, error) {
 		}
 		entPath, err := e.templateProcFn().Process(path, path)
 		if err != nil {
-			return xerrors.Errorf("fs: process template to path [%s]: %w", path, err)
+			return xerrors.Errorf("fs modify: process template to path [%s]: %w", path, err)
 		}
 		filePaths[path] = entPath
 		entitySet[path] = Entity{
@@ -77,7 +77,7 @@ func (e *FileSystemStrategy) Apply(dir string) (string, error) {
 		return err
 	})
 	if err != nil {
-		return entity.Empty, xerrors.Errorf("fs: walk dir [%s]: %w", dir, err)
+		return entity.Empty, xerrors.Errorf("fs modify: walk dir [%s]: %w", dir, err)
 	}
 
 	var (
@@ -102,13 +102,13 @@ func (e *FileSystemStrategy) Apply(dir string) (string, error) {
 	dirExec := e.dirExecutorFn(dirs)
 	err = dirExec.Exec()
 	if err != nil {
-		return entity.Empty, xerrors.Errorf("fs: dirs execute: %w", err)
+		return entity.Empty, xerrors.Errorf("fs modify: dirs execute: %w", err)
 	}
 
 	fileExec := e.fileExecutorFn(fileProducers, e.strategiesFn(filePaths))
 	err = fileExec.Exec()
 	if err != nil {
-		return entity.Empty, xerrors.Errorf("fs: files execute: %w", err)
+		return entity.Empty, xerrors.Errorf("fs modify: files execute: %w", err)
 	}
 
 	for old, ent := range entitySet {
@@ -117,25 +117,25 @@ func (e *FileSystemStrategy) Apply(dir string) (string, error) {
 		}
 		err = e.removeAllFn(old)
 		if err != nil {
-			return entity.Empty, xerrors.Errorf("fs: remove old: %w", err)
+			return entity.Empty, xerrors.Errorf("fs modify: remove old: %w", err)
 		}
-		e.logger.Infof("fs: remove: %s", old)
+		e.logger.Infof("fs modify: remove: %s", old)
 	}
 
 	return dir, nil
 }
 
-type DryRunFileSystemStrategy struct {
+type DryRunFileSystemModifyStrategy struct {
 	logger entity.Logger
 }
 
-func NewDryRunFileSystemStrategy(logger entity.Logger) *DryRunFileSystemStrategy {
-	return &DryRunFileSystemStrategy{
+func NewDryRunFileSystemModifyStrategy(logger entity.Logger) *DryRunFileSystemModifyStrategy {
+	return &DryRunFileSystemModifyStrategy{
 		logger: logger,
 	}
 }
 
-func (e *DryRunFileSystemStrategy) Apply(dir string) (string, error) {
-	e.logger.Infof("fs: dir execute: %s", dir)
+func (e *DryRunFileSystemModifyStrategy) Apply(dir string) (string, error) {
+	e.logger.Infof("fs modify: dir execute: %s", dir)
 	return dir, nil
 }

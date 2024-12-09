@@ -58,7 +58,7 @@ func (u *YamlUnmarshaler) Unmarshal(rawConfig []byte) (Config, error) {
 }
 
 func decode[T any](target []Section[T], node yaml.Node, tag string) ([]Section[T], error) {
-	section := Section[T]{Line: int32(node.Line), Tag: tag}
+	section := Section[T]{Line: node.Line, Tag: tag}
 	err := node.Decode(&section.Val)
 	target = append(target, section)
 	return target, err

@@ -1,6 +1,7 @@
 package entity
 
 import (
+	"io/fs"
 	"path/filepath"
 	"regexp"
 
@@ -47,6 +48,7 @@ const (
 	LogSliceSep = Comma + Space
 )
 
+//goland:noinspection SpellCheckingInspection
 type (
 	FileProducer interface {
 		Get() (DataFile, error)
@@ -89,7 +91,46 @@ type (
 		Debugf(format string, any ...any)
 		Fatalf(format string, any ...any)
 	}
+
+	ActionFilter interface {
+		MatchString(s string) bool
+	}
 )
+
+type ExecutorBuilder struct {
+	Action   string
+	Priority int
+	ProcFn   func() (Executor, error)
+}
+
+type Group struct {
+	Name    string
+	Actions []string
+	Manual  bool
+}
+
+type Action[T any] struct {
+	Priority int
+	Name     string
+	Val      T
+}
+
+func (a Action[T]) WithPriority(priority int) Action[T] {
+	a.Priority = priority
+	return a
+}
+
+type TargetFs struct {
+	TargetDir string
+	Fs        fs.FS
+}
+
+type UndefinedFile struct {
+	Path  string
+	Data  *[]byte
+	Get   *HTTPClientParams
+	Local *string
+}
 
 type DataFile struct {
 	FileInfo

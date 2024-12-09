@@ -6,12 +6,14 @@ import (
 	"os"
 	"time"
 
+	"github.com/go-resty/resty/v2"
+	"github.com/kozmod/progen/internal/exec"
+	"github.com/kozmod/progen/internal/factory"
 	"golang.org/x/xerrors"
 
 	"github.com/kozmod/progen/internal"
 	"github.com/kozmod/progen/internal/config"
 	"github.com/kozmod/progen/internal/entity"
-	"github.com/kozmod/progen/internal/factory"
 	"github.com/kozmod/progen/internal/flag"
 )
 
@@ -24,13 +26,7 @@ func main() {
 		return
 	}
 
-	logFatalSuffixFn := func(s string) string {
-		const pv, v = "%+v", "%v"
-		if flags.PrintErrorStackTrace {
-			return s + pv
-		}
-		return s + v
-	}
+	logFatalSuffixFn := entity.NewAppendVPlusOrV(flags.PrintErrorStackTrace)
 
 	logger, err := factory.NewLogger(flags.Verbose)
 	if err != nil {
@@ -42,13 +38,15 @@ func main() {
 
 	{
 		if err = os.Chdir(flags.AWD); err != nil {
-			logger.Fatalf(logFatalSuffixFn("changes the application working directory: "), xerrors.Errorf("%w", err))
+			logger.Errorf(logFatalSuffixFn("changes the application working directory: "), xerrors.Errorf("%w", err))
+			return
 		}
 
 		var awd string
 		awd, err = os.Getwd()
 		if err != nil {
-			logger.Fatalf(logFatalSuffixFn("get the application working directory: "), xerrors.Errorf("%w", err))
+			logger.Errorf(logFatalSuffixFn("get the application working directory: "), xerrors.Errorf("%w", err))
+			return
 		}
 		logger.Infof("application working directory: %s", awd)
 	}
@@ -61,7 +59,8 @@ func main() {
 
 	data, err := config.NewConfigReader(flags).Read()
 	if err != nil {
-		logger.Fatalf(logFatalSuffixFn("read config: "), err)
+		logger.Errorf(logFatalSuffixFn("read config: "), err)
+		return
 	}
 
 	rawConfig, templateData, err := config.NewRawPreprocessor(
@@ -71,7 +70,8 @@ func main() {
 		[]string{flags.MissingKey.String()},
 	).Process(data)
 	if err != nil {
-		logger.Fatalf(logFatalSuffixFn("preprocess raw config: "), err)
+		logger.Errorf(logFatalSuffixFn("preprocess raw config: "), err)
+		return
 	}
 
 	if flags.PrintProcessedConfig {
@@ -83,33 +83,78 @@ func main() {
 	)
 	conf, err = config.NewYamlConfigUnmarshaler().Unmarshal(rawConfig)
 	if err != nil {
-		logger.Fatalf(logFatalSuffixFn("unmarshal config: "), err)
+		logger.Errorf(logFatalSuffixFn("unmarshal config: "), err)
+		return
 	}
 
 	if err = conf.Validate(); err != nil {
-		logger.Fatalf(logFatalSuffixFn("validate config: "), err)
+		logger.Errorf(logFatalSuffixFn("validate config: "), err)
+		return
 	}
 
-	procChain, err := factory.NewExecutorChain(
-		conf,
-		factory.NewActionFilter(
+	var (
+		actionFilter = factory.NewActionFilter(
 			flags.Skip,
 			flags.Group,
 			conf.Settings.Groups.GroupByAction(),
 			conf.Settings.Groups.ManualActions(),
 			logger,
-		),
-		templateData,
-		[]string{flags.MissingKey.String()},
+		)
+		templateOptions = []string{flags.MissingKey.String()}
+		preprocessors   = &exec.Preprocessors{}
+	)
+
+	procChain, err := factory.NewExecutorChainFactory(
 		logger,
-		flags.PreprocessFiles,
-		flags.DryRun)
+		flags.DryRun,
+		func(executors []entity.Executor) entity.Executor {
+			return exec.NewPreprocessingChain(preprocessors, executors)
+		},
+		factory.NewExecutorBuilderFactory(
+			conf.DirActions(),
+			factory.NewMkdirExecutor,
+			actionFilter,
+		),
+		factory.NewExecutorBuilderFactory(
+			conf.RmActions(),
+			factory.NewRmExecutor,
+			actionFilter,
+		),
+		factory.NewExecutorBuilderFactory(
+			conf.CommandActions(),
+			factory.NewRunCommandExecutor,
+			actionFilter,
+		),
+		factory.NewExecutorBuilderFactory(
+			conf.FilesActions(),
+			factory.NewPreprocessorsFileExecutorFactory(
+				templateData,
+				templateOptions,
+				flags.PreprocessFiles,
+				preprocessors,
+				func(logger entity.Logger) *resty.Client {
+					return factory.NewHTTPClient(conf.Settings.HTTP, logger)
+				},
+			).Create,
+			actionFilter,
+		),
+		factory.NewExecutorBuilderFactory(
+			conf.FsActions(),
+			factory.NewFsModifyExecFactory(
+				templateData,
+				templateOptions,
+			).Create,
+			actionFilter,
+		),
+	).Create()
 	if err != nil {
-		logger.Fatalf(logFatalSuffixFn("create processors chain: "), err)
+		logger.Errorf(logFatalSuffixFn("create processors chain: "), err)
+		return
 	}
 
 	err = procChain.Exec()
 	if err != nil {
-		logger.Fatalf(logFatalSuffixFn("execute chain: "), err)
+		logger.Errorf(logFatalSuffixFn("execute chain: "), err)
+		return
 	}
 }

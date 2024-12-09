@@ -33,8 +33,8 @@ func (e *FilesExecutor) Exec() error {
 			return xerrors.Errorf("execute file: get file: %w", err)
 		}
 
-		for _, processor := range e.strategies {
-			file, err = processor.Apply(file)
+		for _, strategy := range e.strategies {
+			file, err = strategy.Apply(file)
 			if err != nil {
 				return xerrors.Errorf("execute file: process file: %w", err)
 			}

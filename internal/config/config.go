@@ -28,6 +28,72 @@ type Config struct {
 	FS       []Section[[]string]  `yaml:"fs,flow"`
 }
 
+func (c Config) CommandActions() []entity.Action[[]entity.Command] {
+	return toActionsSlice(c.Cmd, func(cmd Command) entity.Command {
+		return entity.Command{
+			Cmd:  cmd.Exec,
+			Args: cmd.Args,
+			Dir:  cmd.Dir,
+		}
+	})
+}
+
+func (c Config) FilesActions() []entity.Action[[]entity.UndefinedFile] {
+	return toActionsSlice(c.Files, func(file File) entity.UndefinedFile {
+		uFile := entity.UndefinedFile{
+			Path: file.Path,
+		}
+		if file.Data != nil {
+			*uFile.Data = *file.Data
+		}
+		if get := file.Get; get != nil {
+			uFile.Get = &entity.HTTPClientParams{
+				URL:         get.URL,
+				Headers:     get.Headers,
+				QueryParams: get.QueryParams,
+			}
+		}
+		if file.Local != nil {
+			uFile.Local = file.Local
+		}
+		return uFile
+	})
+}
+
+func (c Config) DirActions() []entity.Action[[]string] {
+	return toActionsSlice(c.Dirs, func(dir string) string {
+		return dir
+	})
+}
+
+func (c Config) RmActions() []entity.Action[[]string] {
+	return toActionsSlice(c.Rm, func(rms string) string {
+		return rms
+	})
+}
+
+func (c Config) FsActions() []entity.Action[[]string] {
+	return toActionsSlice(c.FS, func(fss string) string {
+		return fss
+	})
+}
+
+func toActionsSlice[S any, T any](sections []Section[[]S], mapFn func(s S) T) []entity.Action[[]T] {
+	actions := make([]entity.Action[[]T], len(sections))
+	for i, section := range sections {
+		action := entity.Action[[]T]{
+			Priority: section.Line,
+			Name:     section.Tag,
+			Val:      make([]T, len(section.Val)),
+		}
+		for j, val := range section.Val {
+			action.Val[j] = mapFn(val)
+		}
+		actions[i] = action
+	}
+	return actions
+}
+
 type Settings struct {
 	HTTP   *HTTPClient `yaml:"http"`
 	Groups Groups      `yaml:"groups"`
@@ -76,7 +142,7 @@ type Group struct {
 }
 
 type Section[T any] struct {
-	Line int32
+	Line int
 	Tag  string
 	Val  T
 }

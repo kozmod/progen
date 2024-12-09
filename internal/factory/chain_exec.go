@@ -5,144 +5,56 @@ import (
 
 	"golang.org/x/xerrors"
 
-	"github.com/kozmod/progen/internal/config"
 	"github.com/kozmod/progen/internal/entity"
-	"github.com/kozmod/progen/internal/exec"
 )
 
-func NewExecutorChain(
-	conf config.Config,
-	actionFilter actionFilter,
-	templateData map[string]any,
-	templateOptions []string,
+type (
+	executorBuilderFactory interface {
+		Create(logger entity.Logger, dryRun bool) []entity.ExecutorBuilder
+	}
+)
+
+type ExecutorChainFactory struct {
+	logger entity.Logger
+	dryRun bool
+
+	executorBuilderFactories []executorBuilderFactory
+	createFn                 func([]entity.Executor) entity.Executor
+}
+
+func NewExecutorChainFactory(
 	logger entity.Logger,
-	preprocess,
 	dryRun bool,
-) (entity.Executor, error) {
+	createFn func([]entity.Executor) entity.Executor,
+	executorBuilderFactories ...executorBuilderFactory,
 
-	type (
-		ExecutorBuilder struct {
-			action string
-			line   int32
-			procFn func() (entity.Executor, error)
-		}
+) *ExecutorChainFactory {
+	return &ExecutorChainFactory{
+		createFn:                 createFn,
+		logger:                   logger,
+		dryRun:                   dryRun,
+		executorBuilderFactories: executorBuilderFactories,
+	}
+}
+
+func (f ExecutorChainFactory) Create() (entity.Executor, error) {
+	var (
+		allBuilders []entity.ExecutorBuilder
 	)
-
-	builders := make([]ExecutorBuilder, 0, len(conf.Dirs)+len(conf.Files)+len(conf.Cmd)+len(conf.FS))
-	for _, dirs := range conf.Dirs {
-		var (
-			d      = dirs
-			action = d.Tag
-		)
-
-		if !actionFilter.MatchString(action) {
-			continue
-		}
-		builders = append(builders,
-			ExecutorBuilder{
-				action: action,
-				line:   d.Line,
-				procFn: func() (entity.Executor, error) {
-					return NewMkdirExecutor(d.Val, logger, dryRun)
-				},
-			})
-	}
-	for _, rm := range conf.Rm {
-		var (
-			r      = rm
-			action = r.Tag
-		)
-
-		if !actionFilter.MatchString(action) {
-			continue
-		}
-		builders = append(builders,
-			ExecutorBuilder{
-				action: action,
-				line:   r.Line,
-				procFn: func() (entity.Executor, error) {
-					return NewRmExecutor(r.Val, logger, dryRun)
-				},
-			})
+	for _, factory := range f.executorBuilderFactories {
+		builder := factory.Create(f.logger, f.dryRun)
+		allBuilders = append(allBuilders, builder...)
 	}
 
-	var preprocessors []entity.Preprocessor
-	for _, files := range conf.Files {
-		var (
-			f      = files
-			action = f.Tag
-		)
-		if !actionFilter.MatchString(action) {
-			continue
-		}
-		builders = append(builders,
-			ExecutorBuilder{
-				action: action,
-				line:   f.Line,
-				procFn: func() (entity.Executor, error) {
-					executor, l, err := NewFileExecutor(
-						f.Val,
-						conf.Settings.HTTP,
-						templateData,
-						templateOptions,
-						logger,
-						preprocess,
-						dryRun)
-					preprocessors = append(preprocessors, l...)
-					return executor, err
-				},
-			})
-	}
-
-	for _, commands := range conf.Cmd {
-		var (
-			cmd    = commands
-			action = cmd.Tag
-		)
-		if !actionFilter.MatchString(action) {
-			continue
-		}
-		builders = append(builders,
-			ExecutorBuilder{
-				action: action,
-				line:   cmd.Line,
-				procFn: func() (entity.Executor, error) {
-					return NewRunCommandExecutor(cmd.Val, logger, dryRun)
-				},
-			})
-	}
-	for _, path := range conf.FS {
-		var (
-			fs     = path
-			action = fs.Tag
-		)
-		if actionFilter.MatchString(action) {
-			continue
-		}
-		builders = append(builders,
-			ExecutorBuilder{
-				action: action,
-				line:   fs.Line,
-				procFn: func() (entity.Executor, error) {
-					return NewFSExecutor(
-						fs.Val,
-						templateData,
-						templateOptions,
-						logger,
-						dryRun)
-				},
-			})
-	}
-
-	sort.Slice(builders, func(i, j int) bool {
-		return builders[i].line < builders[j].line
+	sort.Slice(allBuilders, func(i, j int) bool {
+		return allBuilders[i].Priority < allBuilders[j].Priority
 	})
 
-	executors := make([]entity.Executor, 0, len(builders))
-	for _, builder := range builders {
-		e, err := builder.procFn()
+	executors := make([]entity.Executor, 0, len(allBuilders))
+	for _, builder := range allBuilders {
+		e, err := builder.ProcFn()
 		if err != nil {
-			return nil, xerrors.Errorf("configure executor [%s]: %w", builder.action, err)
+			return nil, xerrors.Errorf("configure executor [%s]: %w", builder.Action, err)
 		}
 		if e == nil {
 			continue
@@ -150,5 +62,52 @@ func NewExecutorChain(
 		executors = append(executors, e)
 	}
 
-	return exec.NewPreprocessingChain(preprocessors, executors), nil
+	return f.createFn(executors), nil
+}
+
+type (
+	actionValConsumer[T any] func(vals []T, logger entity.Logger, dryRun bool) (entity.Executor, error)
+)
+
+type ExecutorBuilderFactory[T any] struct {
+	actionsSupplier   []entity.Action[[]T]
+	actionValConsumer actionValConsumer[T]
+	actionFilter      entity.ActionFilter
+}
+
+func NewExecutorBuilderFactory[T any](
+	actionSupplier []entity.Action[[]T],
+	actionValConsumer actionValConsumer[T],
+	actionFilter entity.ActionFilter,
+) *ExecutorBuilderFactory[T] {
+	return &ExecutorBuilderFactory[T]{
+		actionsSupplier:   actionSupplier,
+		actionValConsumer: actionValConsumer,
+		actionFilter:      actionFilter}
+}
+
+func (y ExecutorBuilderFactory[T]) Create(logger entity.Logger, dryRun bool) []entity.ExecutorBuilder {
+	var (
+		actions  = y.actionsSupplier
+		builders = make([]entity.ExecutorBuilder, 0, len(actions))
+	)
+	for _, action := range actions {
+		var (
+			a    = action
+			name = a.Name
+		)
+		if !y.actionFilter.MatchString(name) {
+			continue
+		}
+		builders = append(builders,
+			entity.ExecutorBuilder{
+				Action:   name,
+				Priority: a.Priority,
+				ProcFn: func() (entity.Executor, error) {
+					executor, err := y.actionValConsumer(a.Val, logger, dryRun)
+					return executor, err
+				},
+			})
+	}
+	return builders
 }

@@ -7,14 +7,15 @@ import (
 	"github.com/kozmod/progen/internal/entity"
 )
 
-type (
-	actionFilter interface {
-		MatchString(s string) bool
-	}
-)
+type DummyActionFilter struct {
+}
 
-type ActionFilter struct {
-	skipFilter     actionFilter
+func (f DummyActionFilter) MatchString(_ string) bool {
+	return true
+}
+
+type FacadeActionFilter struct {
+	skipFilter     entity.ActionFilter
 	selectedGroups map[string]struct{}
 	groupsByAction map[string]map[string]struct{}
 	manualActions  map[string]struct{}
@@ -29,7 +30,7 @@ func NewActionFilter(
 	manualActionsSet map[string]struct{},
 	logger entity.Logger,
 
-) *ActionFilter {
+) *FacadeActionFilter {
 	selectedGroupsSet := entity.SliceSet(selectedGroups)
 	skipActions = slices.Compact(skipActions)
 
@@ -44,7 +45,7 @@ func NewActionFilter(
 		logger.Infof("manual actions will be skipped: [%s]", strings.Join(manualActions, entity.LogSliceSep))
 	}
 
-	return &ActionFilter{
+	return &FacadeActionFilter{
 		skipFilter:     entity.NewRegexpChain(skipActions...),
 		selectedGroups: selectedGroupsSet,
 		groupsByAction: groupsByAction,
@@ -53,7 +54,7 @@ func NewActionFilter(
 	}
 }
 
-func (f *ActionFilter) MatchString(action string) bool {
+func (f *FacadeActionFilter) MatchString(action string) bool {
 	if f.skipFilter.MatchString(action) {
 		f.logger.Infof("action will be skipped: [%s]", action)
 		return false
