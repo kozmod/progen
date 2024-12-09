@@ -43,6 +43,7 @@ func CreateFile(t *testing.T, path string, data []byte) {
 		assert.NoError(t, err)
 	}
 
+	//nolint:gosec
 	err := os.WriteFile(path, data, os.ModePerm)
 	assert.NoError(t, err)
 }

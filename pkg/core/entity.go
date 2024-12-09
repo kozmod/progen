@@ -5,7 +5,8 @@ import (
 )
 
 type (
-	Action interface {
+	// action is the common interface to adding actions to the engine.
+	action interface {
 		add(engin *Engin)
 	}
 
@@ -14,7 +15,8 @@ type (
 		Data []byte
 	}
 
-	Cmd entity.Command
+	Cmd      entity.Command
+	TargetFs entity.TargetFs
 )
 
 type Files entity.Action[[]File]
@@ -121,11 +123,11 @@ func RmAction(name string, rm ...string) Rm {
 	}
 }
 
-type Fs entity.Action[[]string]
+type FsModify entity.Action[[]string]
 
-func (f Fs) add(e *Engin) {
+func (f FsModify) add(e *Engin) {
 	if e != nil {
-		e.fs = append(e.fs, entity.Action[[]string]{
+		e.fsModify = append(e.fsModify, entity.Action[[]string]{
 			Name:     f.Name,
 			Val:      f.Val,
 			Priority: f.Priority,
@@ -133,13 +135,43 @@ func (f Fs) add(e *Engin) {
 	}
 }
 
-func (f Fs) WithPriority(priority int) Fs {
+func (f FsModify) WithPriority(priority int) FsModify {
 	f.Priority = priority
 	return f
 }
 
-func FsAction(name string, fs ...string) Fs {
-	return Fs{
+func FsModifyAction(name string, fs ...string) FsModify {
+	return FsModify{
+		Name: name,
+		Val:  fs,
+	}
+}
+
+type FsSave entity.Action[[]TargetFs]
+
+func (f FsSave) add(e *Engin) {
+	if e != nil {
+		fs := convert(f.Val, func(s TargetFs) entity.TargetFs {
+			return entity.TargetFs{
+				TargetDir: s.TargetDir,
+				Fs:        s.Fs,
+			}
+		})
+		e.fsSave = append(e.fsSave, entity.Action[[]entity.TargetFs]{
+			Name:     f.Name,
+			Val:      fs,
+			Priority: f.Priority,
+		})
+	}
+}
+
+func (f FsSave) WithPriority(priority int) FsSave {
+	f.Priority = priority
+	return f
+}
+
+func FsSaveAction(name string, fs ...TargetFs) FsSave {
+	return FsSave{
 		Name: name,
 		Val:  fs,
 	}

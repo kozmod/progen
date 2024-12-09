@@ -1,6 +1,9 @@
 package core
 
 import (
+	"flag"
+	"log"
+	"os"
 	"sync"
 
 	"golang.org/x/xerrors"
@@ -8,21 +11,25 @@ import (
 	"github.com/kozmod/progen/internal/entity"
 	"github.com/kozmod/progen/internal/exec"
 	"github.com/kozmod/progen/internal/factory"
-	"github.com/kozmod/progen/internal/flag"
+	engineFlags "github.com/kozmod/progen/internal/flag"
 )
 
 type Engin struct {
-	mx    sync.RWMutex
-	files []entity.Action[[]entity.UndefinedFile]
-	cmd   []entity.Action[[]entity.Command]
-	dirs  []entity.Action[[]string]
-	fs    []entity.Action[[]string]
-	rm    []entity.Action[[]string]
+	mx       sync.RWMutex
+	files    []entity.Action[[]entity.UndefinedFile]
+	cmd      []entity.Action[[]entity.Command]
+	dirs     []entity.Action[[]string]
+	fsModify []entity.Action[[]string]
+	fsSave   []entity.Action[[]entity.TargetFs]
+	rm       []entity.Action[[]string]
 
 	logger entity.Logger
+
+	flags engineFlags.DefaultFlags
 }
 
-func (e *Engin) AddActions(actions ...Action) *Engin {
+// AddActions adds action to the [Engin].
+func (e *Engin) AddActions(actions ...action) *Engin {
 	e.mx.Lock()
 	defer e.mx.Unlock()
 	for _, action := range actions {
@@ -31,11 +38,20 @@ func (e *Engin) AddActions(actions ...Action) *Engin {
 	return e
 }
 
+// Run all actions.
 func (e *Engin) Run() error {
 	var (
-		flags = flag.ParseDefault()
+		args    = os.Args
+		flagSet = flag.NewFlagSet(args[0], flag.ExitOnError)
+	)
+	err := e.flags.Parse(flagSet, args)
+	if err != nil {
+		log.Printf("parse flags failed: %v", err)
+		return err
+	}
 
-		logFatalSuffixFn = entity.NewAppendVPlusOrV(flags.PrintErrorStackTrace)
+	var (
+		logFatalSuffixFn = entity.NewAppendVPlusOrV(e.flags.PrintErrorStackTrace)
 		actionFilter     factory.DummyActionFilter
 	)
 
@@ -44,16 +60,15 @@ func (e *Engin) Run() error {
 
 	var logger entity.Logger
 	if e.logger == nil {
-		l, err := factory.NewLogger(flags.Verbose)
+		logger, err = factory.NewLogger(e.flags.Verbose)
 		if err != nil {
 			return xerrors.Errorf("failed to initialize logger: %w", err)
 		}
-		logger = l
 	}
 
 	procChain, err := factory.NewExecutorChainFactory(
 		logger,
-		flags.DryRun,
+		e.flags.DryRun,
 		func(executors []entity.Executor) entity.Executor {
 			return exec.NewChain(executors)
 		},
@@ -63,10 +78,18 @@ func (e *Engin) Run() error {
 			actionFilter,
 		),
 		factory.NewExecutorBuilderFactory(
-			e.fs,
-			factory.NewFsExecFactory(
-				flags.TemplateVars.Vars,
-				[]string{flags.MissingKey.String()},
+			e.fsModify,
+			factory.NewFsModifyExecFactory(
+				e.flags.TemplateVars.Vars,
+				[]string{e.flags.MissingKey.String()},
+			).Create,
+			actionFilter,
+		),
+		factory.NewExecutorBuilderFactory(
+			e.fsSave,
+			factory.NewFsSaveExecFactory(
+				e.flags.TemplateVars.Vars,
+				[]string{e.flags.MissingKey.String()},
 			).Create,
 			actionFilter,
 		),
@@ -78,8 +101,8 @@ func (e *Engin) Run() error {
 		factory.NewExecutorBuilderFactory(
 			e.files,
 			factory.NewFileExecutorFactory(
-				flags.TemplateVars.Vars,
-				[]string{flags.MissingKey.String()},
+				e.flags.TemplateVars.Vars,
+				[]string{e.flags.MissingKey.String()},
 			).Create,
 			actionFilter,
 		),

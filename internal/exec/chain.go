@@ -1,8 +1,9 @@
 package exec
 
 import (
-	"golang.org/x/xerrors"
 	"sync"
+
+	"golang.org/x/xerrors"
 
 	"github.com/kozmod/progen/internal/entity"
 )
@@ -72,7 +73,7 @@ func (p *Preprocessors) Get() []entity.Preprocessor {
 	if len(p.val) == 0 {
 		return nil
 	}
-	res := make([]entity.Preprocessor, len(p.val), len(p.val))
+	res := make([]entity.Preprocessor, len(p.val))
 	copy(res, p.val)
 	return res
 }

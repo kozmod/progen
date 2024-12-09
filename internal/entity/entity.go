@@ -1,6 +1,7 @@
 package entity
 
 import (
+	"io/fs"
 	"path/filepath"
 	"regexp"
 
@@ -47,6 +48,7 @@ const (
 	LogSliceSep = Comma + Space
 )
 
+//goland:noinspection SpellCheckingInspection
 type (
 	FileProducer interface {
 		Get() (DataFile, error)
@@ -116,6 +118,11 @@ type Action[T any] struct {
 func (a Action[T]) WithPriority(priority int) Action[T] {
 	a.Priority = priority
 	return a
+}
+
+type TargetFs struct {
+	TargetDir string
+	Fs        fs.FS
 }
 
 type UndefinedFile struct {

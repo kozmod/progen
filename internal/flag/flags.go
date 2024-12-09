@@ -43,7 +43,7 @@ type DefaultFlags struct {
 }
 
 type Flags struct {
-	DefaultFlags
+	*DefaultFlags
 
 	ConfigPath           string
 	Version              bool
@@ -70,43 +70,23 @@ func (f *Flags) FileLocationMessage() string {
 
 func Parse() Flags {
 	args := os.Args
-	var (
-		dFlags DefaultFlags
-	)
-
 	flagSet := flag.NewFlagSet(args[0], flag.ExitOnError)
-	err := parseDefaultFlags(&dFlags, flagSet)
-	if err != nil {
-		log.Fatalf("parse default flags: %v", err)
-	}
 
 	var (
 		flags = Flags{
-			DefaultFlags: dFlags,
+			DefaultFlags: NewDefaultFlags(flagSet),
 		}
 	)
 
-	err = parseAdditionalFlags(&flags, flagSet, args[1:])
+	err := flags.Parse(flagSet, args[1:])
 	if err != nil {
 		log.Fatalf("parse additioanl flags: %v", err)
 	}
 	return flags
 }
 
-func ParseDefault() DefaultFlags {
-	args := os.Args
-	var (
-		flags DefaultFlags
-	)
-	flagSet := flag.NewFlagSet(args[0], flag.ExitOnError)
-	err := parseDefaultFlags(&flags, flagSet)
-	if err != nil {
-		log.Fatalf("parse default flags: %v", err)
-	}
-	return flags
-}
-
-func parseDefaultFlags(f *DefaultFlags, fs *flag.FlagSet) error {
+func NewDefaultFlags(fs *flag.FlagSet) *DefaultFlags {
+	var f DefaultFlags
 	fs.BoolVar(
 		&f.Verbose,
 		flagKeyVarbose,
@@ -133,14 +113,21 @@ func parseDefaultFlags(f *DefaultFlags, fs *flag.FlagSet) error {
 			entity.MissingKeyError,
 		),
 	)
-	fs.Var(
-		&f.TemplateVars,
-		flagKeyTemplateVariables,
-		"template variables")
+	return &f
+}
+
+func (f *DefaultFlags) Parse(fs *flag.FlagSet, args []string) error {
+	err := fs.Parse(args)
+	if err != nil {
+		return xerrors.Errorf("parse args: %w", err)
+	}
 	return nil
 }
 
-func parseAdditionalFlags(f *Flags, fs *flag.FlagSet, args []string) error {
+func NewFlags(fs *flag.FlagSet) *Flags {
+	var (
+		f = Flags{DefaultFlags: NewDefaultFlags(fs)}
+	)
 	fs.StringVar(
 		&f.ConfigPath,
 		flagKeyConfigFile,
@@ -175,6 +162,11 @@ func parseAdditionalFlags(f *Flags, fs *flag.FlagSet, args []string) error {
 		flagKeyGroup,
 		"list of executing groups",
 	)
+
+	return &f
+}
+
+func (f *Flags) Parse(fs *flag.FlagSet, args []string) error {
 	err := fs.Parse(args)
 	if err != nil {
 		return xerrors.Errorf("parse args: %w", err)
@@ -189,6 +181,5 @@ func parseAdditionalFlags(f *Flags, fs *flag.FlagSet, args []string) error {
 			return xerrors.Errorf("%w", ErrDashFlagNotLast)
 		}
 	}
-
 	return nil
 }

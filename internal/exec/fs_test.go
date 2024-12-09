@@ -10,7 +10,7 @@ import (
 	"github.com/kozmod/progen/internal/entity"
 )
 
-func Test_FileSystemStrategy(t *testing.T) {
+func Test_FileSystemModifyStrategy(t *testing.T) {
 	SkipSLowTest(t)
 
 	const (
@@ -56,7 +56,7 @@ func Test_FileSystemStrategy(t *testing.T) {
 			CreateFile(t, pathTempB, dataB)
 			CreateFile(t, pathTempC, dataC)
 
-			str := FileSystemStrategy{
+			str := FileSystemModifyStrategy{
 				templateProcFn: func() entity.TemplateProc {
 					return entity.NewTemplateProc(templateData, nil, nil)
 				},
@@ -106,7 +106,7 @@ func Test_FileSystemStrategy(t *testing.T) {
 			CreateFile(t, pathTempB, dataB)
 			CreateFile(t, pathTempC, dataC)
 
-			str := NewFileSystemStrategy(templateData, nil, nil, mockLogger)
+			str := NewFileSystemModifyStrategy(templateData, nil, nil, mockLogger)
 
 			dir, err := str.Apply(tmpDir)
 			a.NoError(err)
@@ -122,7 +122,7 @@ func Test_FileSystemStrategy(t *testing.T) {
 	})
 }
 
-func Test_DryRunFileSystemStrategy(t *testing.T) {
+func Test_DryRunFileSystemModifyStrategy(t *testing.T) {
 	const (
 		dir = "some_dir"
 	)
@@ -133,7 +133,7 @@ func Test_DryRunFileSystemStrategy(t *testing.T) {
 			assert.Equal(t, []any{dir}, args)
 		},
 	}
-	res, err := NewDryRunFileSystemStrategy(mockLogger).Apply(dir)
+	res, err := NewDryRunFileSystemModifyStrategy(mockLogger).Apply(dir)
 	assert.NoError(t, err)
 	assert.Equal(t, dir, res)
 }

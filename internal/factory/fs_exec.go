@@ -1,26 +1,28 @@
 package factory
 
 import (
+	"slices"
+
 	"github.com/kozmod/progen/internal/entity"
 	"github.com/kozmod/progen/internal/exec"
 )
 
-type FsExecFactory struct {
+type FsModifyExecFactory struct {
 	templateData    map[string]any
 	templateOptions []string
 }
 
-func NewFsExecFactory(
+func NewFsModifyExecFactory(
 	templateData map[string]any,
 	templateOptions []string,
-) *FsExecFactory {
-	return &FsExecFactory{
+) *FsModifyExecFactory {
+	return &FsModifyExecFactory{
 		templateData:    templateData,
 		templateOptions: templateOptions,
 	}
 }
 
-func (f FsExecFactory) Create(
+func (f FsModifyExecFactory) Create(
 	dirs []string,
 	logger entity.Logger,
 	dryRun bool,
@@ -30,14 +32,14 @@ func (f FsExecFactory) Create(
 		return nil, nil
 	}
 
-	dirSet := entity.Unique(dirs)
+	dirSet := slices.Compact(dirs)
 
 	if dryRun {
-		return exec.NewDirExecutor(dirSet, []entity.DirStrategy{exec.NewDryRunFileSystemStrategy(logger)}), nil
+		return exec.NewDirExecutor(dirSet, []entity.DirStrategy{exec.NewDryRunFileSystemModifyStrategy(logger)}), nil
 	}
 
 	return exec.NewDirExecutor(dirSet, []entity.DirStrategy{
-		exec.NewFileSystemStrategy(
+		exec.NewFileSystemModifyStrategy(
 			f.templateData,
 			entity.TemplateFnsMap,
 			f.templateOptions,

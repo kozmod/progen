@@ -2,13 +2,13 @@ package main
 
 import (
 	"fmt"
-	"github.com/go-resty/resty/v2"
-	"github.com/kozmod/progen/internal/exec"
-	"github.com/kozmod/progen/internal/factory"
 	"log"
 	"os"
 	"time"
 
+	"github.com/go-resty/resty/v2"
+	"github.com/kozmod/progen/internal/exec"
+	"github.com/kozmod/progen/internal/factory"
 	"golang.org/x/xerrors"
 
 	"github.com/kozmod/progen/internal"
@@ -140,7 +140,7 @@ func main() {
 		),
 		factory.NewExecutorBuilderFactory(
 			conf.FsActions(),
-			factory.NewFsExecFactory(
+			factory.NewFsModifyExecFactory(
 				templateData,
 				templateOptions,
 			).Create,

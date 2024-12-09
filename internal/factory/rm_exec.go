@@ -1,6 +1,8 @@
 package factory
 
 import (
+	"slices"
+
 	"github.com/kozmod/progen/internal/entity"
 	"github.com/kozmod/progen/internal/exec"
 )
@@ -11,7 +13,7 @@ func NewRmExecutor(paths []string, logger entity.Logger, dryRun bool) (entity.Ex
 		return nil, nil
 	}
 
-	pathsSet := entity.Unique(paths)
+	pathsSet := slices.Compact(paths)
 
 	if dryRun {
 		return exec.NewRmAllExecutor(pathsSet, []entity.RmStrategy{exec.NewDryRmAllStrategy(logger)}), nil
