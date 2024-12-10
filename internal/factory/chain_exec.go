@@ -1,7 +1,9 @@
 package factory
 
 import (
+	"fmt"
 	"sort"
+	"strings"
 
 	"golang.org/x/xerrors"
 
@@ -49,6 +51,12 @@ func (f ExecutorChainFactory) Create() (entity.Executor, error) {
 	sort.Slice(allBuilders, func(i, j int) bool {
 		return allBuilders[i].Priority < allBuilders[j].Priority
 	})
+
+	actionNames := make([]string, len(allBuilders))
+	for i, builder := range allBuilders {
+		actionNames[i] = fmt.Sprintf("'%d':'%s'", builder.Priority, builder.Action)
+	}
+	f.logger.Infof("action is going to be execute ('priopiry':'name')[%s]", strings.Join(actionNames, ","))
 
 	executors := make([]entity.Executor, 0, len(allBuilders))
 	for _, builder := range allBuilders {
