@@ -9,7 +9,7 @@
 [![GitHub MIT license](https://img.shields.io/github/license/kozmod/progen)](https://github.com/kozmod/progen/blob/main/LICENSE)
 
 A flexible, language and frameworks agnostic tool that allows you to generate projects structure from templates based
-on `yaml` configuration (generate directories, files and execute commands).
+on `yaml` configuration (generate directories, files and execute commands) or use as library to build custom generator.
 ___
 
 ### Installation
@@ -23,27 +23,36 @@ go install github.com/kozmod/progen@latest
 ```shell
 make build
 ```
+### Use as `lib` [<sup>**ⓘ**</sup>](#lib_usage)
+```go
+module github.com/some/custom_gen
+
+go 1.22
+
+require github.com/kozmod/progen v0.1.8
+```
 
 ___
 
 ### Flags
 
-| Name                                            |   Type   |   Default    | Description                                                                                                                                                                            |
-|:------------------------------------------------|:--------:|:------------:|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `-f`[<sup>**ⓘ**</sup>](#config_file)            |  string  | `progen.yml` | specify configuration file path                                                                                                                                                        |
-| `-v`                                            |   bool   |   `false`    | verbose output                                                                                                                                                                         |
-| `-dr`[<sup>**ⓘ**</sup>](#dry_run)               |   bool   |   `false`    | `dry run` mode <br/>(to verbose output should be combine with`-v`)                                                                                                                     |
-| `-awd`[<sup>**ⓘ**</sup>](#awd)                  |  string  |     `.`      | application working directory                                                                                                                                                          |
-| `-printconf`[<sup>**ⓘ**</sup>](#print_config)   |   bool   |   `false`    | output processed config                                                                                                                                                                |
-| `-errtrace`[<sup>**ⓘ**</sup>](#print_err_trace) |   bool   |   `false`    | output errors stack trace                                                                                                                                                              |
-| `-pf`[<sup>**ⓘ**</sup>](#files_preprocessing)   |   bool   |    `true`    | `preprocessing files`: load and process all files <br/>(all files `actions`[<sup>**ⓘ**</sup>](#files_actio_desk)) as [text/template](https://pkg.go.dev/text/template) before creating |
-| `-tvar`[<sup>**ⓘ**</sup>](#tvar)                | []string |    `[ ]`     | [text/template](https://pkg.go.dev/text/template) variables <br/>(override config variables tree)                                                                                      |
-| `-missingkey`                                   | []string |   `error`    | set `missingkey`[text/template.Option](https://pkg.go.dev/text/template#Template.Option) execution option                                                                              |
-| `-skip`[<sup>**ⓘ**</sup>](#skip_actions)        | []string |    `[ ]`     | skip any `action` tag <br/>(regular expression)                                                                                                                                        |
-| `-gp`[<sup>**ⓘ**</sup>](#groups_of_actions)     | []string |    `[ ]`     | set of the action's groups to execution                                                                                                                                                |
-| `-version`                                      |   bool   |   `false`    | print version                                                                                                                                                                          |
-| `-help`                                         |   bool   |   `false`    | show flags                                                                                                                                                                             |
+| Name                                                                  |   Type   |   Default    | Description                                                                                                                                                                            |
+|:----------------------------------------------------------------------|:--------:|:------------:|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `-f`[<sup>**ⓘ**</sup>](#config_file) <sup>**✱**</sup>                 |  string  | `progen.yml` | specify configuration file path                                                                                                                                                        |
+| `-v` <sup>**✱**</sup>                                                 |   bool   |   `false`    | verbose output                                                                                                                                                                         |
+| `-dr`[<sup>**ⓘ**</sup>](#dry_run) <sup>**✱**</sup>                    |   bool   |   `false`    | `dry run` mode <br/>(to verbose output should be combine with`-v`)                                                                                                                     |
+| `-awd`[<sup>**ⓘ**</sup>](#awd)                                        |  string  |     `.`      | application working directory                                                                                                                                                          |
+| `-printconf`[<sup>**ⓘ**</sup>](#print_config)                         |   bool   |   `false`    | output processed config                                                                                                                                                                |
+| `-errtrace`[<sup>**ⓘ**</sup>](#print_err_trace) <sup>**✱**</sup>      |   bool   |   `false`    | output errors stack trace                                                                                                                                                              |
+| `-pf`[<sup>**ⓘ**</sup>](#files_preprocessing)                         |   bool   |    `true`    | `preprocessing files`: load and process all files <br/>(all files `actions`[<sup>**ⓘ**</sup>](#files_actio_desk)) as [text/template](https://pkg.go.dev/text/template) before creating |
+| `-tvar`[<sup>**ⓘ**</sup>](#tvar) <sup>**✱**</sup>                     | []string |    `[ ]`     | [text/template](https://pkg.go.dev/text/template) variables <br/>(override config variables tree)                                                                                      |
+| `-missingkey` <sup>**✱**</sup>                                        | []string |   `error`    | set `missingkey`[text/template.Option](https://pkg.go.dev/text/template#Template.Option) execution option                                                                              |
+| `-skip`[<sup>**ⓘ**</sup>](#skip_actions)                              | []string |    `[ ]`     | skip any `action` tag <br/>(regular expression)                                                                                                                                        |
+| `-gp`[<sup>**ⓘ**</sup>](#groups_of_actions)                           | []string |    `[ ]`     | set of the action's groups to execution                                                                                                                                                |
+| `-version`                                                            |   bool   |   `false`    | print version                                                                                                                                                                          |
+| `-help` <sup>**✱**</sup>                                              |   bool   |   `false`    | show flags                                                                                                                                                                             |
 
+<sup>**✱**</sup> flags accessible in the `lib`. 
 ___
 
 ### Actions and tags
@@ -764,6 +773,104 @@ rm:
 2024-02-09 22:50:51     INFO    rm: some_dir_3/file.txt
 2024-02-09 22:50:51     INFO    execution time: 350.149µs
 ```
+
+---
+
+### <a name="lib_usage"><a/>Lib
+
+To use `progen` for building custom generator based on `go` language, imports `pkg/core` package
+and implements required algorithm:
+```golang
+package main
+
+import (
+	"log"
+	"testing/fstest"
+
+	"github.com/kozmod/progen/pkg/core"
+)
+
+var fs = fstest.MapFS{
+	"1": {
+		Data: []byte("aaaa"),
+	},
+}
+
+func main() {
+	// Parse default config base on flags
+	c, err := core.ParseFlags()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var e core.Engin
+
+	// add actions
+	e.AddActions(
+		// create files actions
+		core.FilesAction(
+			"create_file",
+			core.File{Path: "./xx/1", Data: []byte("file_1")},
+			core.File{Path: "./xx/2", Data: []byte("file_2")},
+			core.File{Path: "./xx/rm_1", Data: []byte("file_rm")},
+		).WithPriority(1),
+		// rm actions
+		core.RmAction(
+			"rm",
+			"./rm_1",
+		).WithPriority(2),
+	)
+	e.AddActions(
+		// create file system action
+		core.FsSaveAction(
+			"fs_1",
+			core.TargetFs{
+				TargetDir: "./xx/fs",
+				Fs:        fs, // any [io/fs.FS] (from local system, embed, etc.)
+			},
+		).WithPriority(3),
+		
+		// cmd action
+		core.CmdAction(
+			"tree_1",
+			core.Cmd{
+				Cmd: "tree",
+				Dir: "./xx",
+			},
+		).WithPriority(4),
+	)
+
+	err = e.Run(c)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+```
+```console
+% go build .  
+% ./tmp -v  
+2024-12-10 21:56:55     INFO    action is going to be execute ('priopiry':'name')['1':'create_file','2':'rm','3':'fs_1','4':'tree_1']
+2024-12-10 21:56:55     INFO    file saved: xx/1
+2024-12-10 21:56:55     INFO    file saved: xx/2
+2024-12-10 21:56:55     INFO    file saved: xx/rm_1
+2024-12-10 21:56:55     INFO    rm: ./rm_1
+2024-12-10 21:56:55     INFO    dir created: xx/fs
+2024-12-10 21:56:55     INFO    file saved: xx/fs/1
+2024-12-10 21:56:55     INFO    execute [dir: ./xx]: tree
+out:
+.
+├── 1
+├── 2
+├── fs
+│   └── 1
+└── rm_1
+
+1 directory, 4 files
+
+```
+
+
 
 ---
 

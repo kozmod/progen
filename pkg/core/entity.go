@@ -37,6 +37,11 @@ func (c Files) add(e *Engin) {
 	}
 }
 
+func (c Files) WithPriority(priority int) Files {
+	c.Priority = priority
+	return c
+}
+
 func FilesAction(name string, files ...File) Files {
 	return Files{
 		Name: name,
