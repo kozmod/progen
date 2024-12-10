@@ -17,7 +17,7 @@ const (
 	defaultConfigFilePath = "progen.yml"
 
 	flagKeyConfigFile                  = "f"
-	flagKeyVarbose                     = "v"
+	flagKeyVerbose                     = "v"
 	flagKeyErrorStackTrace             = "errtrace"
 	flagKeyPrintConfig                 = "printconf"
 	flagKeyDryRun                      = "dr"
@@ -73,23 +73,21 @@ func Parse() Flags {
 	flagSet := flag.NewFlagSet(args[0], flag.ExitOnError)
 
 	var (
-		flags = Flags{
-			DefaultFlags: NewDefaultFlags(flagSet),
-		}
+		flags = NewFlags(flagSet)
 	)
 
 	err := flags.Parse(flagSet, args[1:])
 	if err != nil {
 		log.Fatalf("parse additioanl flags: %v", err)
 	}
-	return flags
+	return *flags
 }
 
 func NewDefaultFlags(fs *flag.FlagSet) *DefaultFlags {
 	var f DefaultFlags
 	fs.BoolVar(
 		&f.Verbose,
-		flagKeyVarbose,
+		flagKeyVerbose,
 		false,
 		"verbose output")
 	fs.BoolVar(
@@ -101,7 +99,7 @@ func NewDefaultFlags(fs *flag.FlagSet) *DefaultFlags {
 		&f.DryRun,
 		flagKeyDryRun,
 		false,
-		"dry run mode (can be combine with `-v`)")
+		`dry run mode (can be combine with "-v")`)
 	fs.Var(
 		&f.MissingKey,
 		flagKeyMissingKey,
@@ -114,14 +112,6 @@ func NewDefaultFlags(fs *flag.FlagSet) *DefaultFlags {
 		),
 	)
 	return &f
-}
-
-func (f *DefaultFlags) Parse(fs *flag.FlagSet, args []string) error {
-	err := fs.Parse(args)
-	if err != nil {
-		return xerrors.Errorf("parse args: %w", err)
-	}
-	return nil
 }
 
 func NewFlags(fs *flag.FlagSet) *Flags {

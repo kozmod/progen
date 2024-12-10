@@ -291,7 +291,7 @@ func Test_parseFlags(t *testing.T) {
 
 	//goland:noinspection SpellCheckingInspection
 	var (
-		v           = dashPrefixFn(flagKeyVarbose)
+		v           = dashPrefixFn(flagKeyVerbose)
 		errstack    = dashPrefixFn(flagKeyErrorStackTrace)
 		printconfig = dashPrefixFn(flagKeyPrintConfig)
 		dr          = dashPrefixFn(flagKeyDryRun)
