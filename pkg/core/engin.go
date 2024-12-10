@@ -1,9 +1,6 @@
 package core
 
 import (
-	"flag"
-	"log"
-	"os"
 	"sync"
 
 	"golang.org/x/xerrors"
@@ -11,7 +8,6 @@ import (
 	"github.com/kozmod/progen/internal/entity"
 	"github.com/kozmod/progen/internal/exec"
 	"github.com/kozmod/progen/internal/factory"
-	engineFlags "github.com/kozmod/progen/internal/flag"
 )
 
 type Engin struct {
@@ -24,8 +20,6 @@ type Engin struct {
 	rm       []entity.Action[[]string]
 
 	logger entity.Logger
-
-	flags engineFlags.DefaultFlags
 }
 
 // AddActions adds action to the [Engin].
@@ -39,28 +33,25 @@ func (e *Engin) AddActions(actions ...action) *Engin {
 }
 
 // Run all actions.
-func (e *Engin) Run() error {
-	var (
-		args    = os.Args
-		flagSet = flag.NewFlagSet(args[0], flag.ExitOnError)
-	)
-	err := e.flags.Parse(flagSet, args)
-	if err != nil {
-		log.Printf("parse flags failed: %v", err)
-		return err
+func (e *Engin) Run(config *Config) error {
+	if config == nil {
+		config = &Config{}
 	}
 
 	var (
-		logFatalSuffixFn = entity.NewAppendVPlusOrV(e.flags.PrintErrorStackTrace)
+		logFatalSuffixFn = entity.NewAppendVPlusOrV(config.PrintErrorStackTrace)
 		actionFilter     factory.DummyActionFilter
 	)
 
 	e.mx.RLock()
 	defer e.mx.RUnlock()
 
-	var logger entity.Logger
+	var (
+		logger entity.Logger
+		err    error
+	)
 	if e.logger == nil {
-		logger, err = factory.NewLogger(e.flags.Verbose)
+		logger, err = factory.NewLogger(config.Verbose)
 		if err != nil {
 			return xerrors.Errorf("failed to initialize logger: %w", err)
 		}
@@ -68,7 +59,7 @@ func (e *Engin) Run() error {
 
 	procChain, err := factory.NewExecutorChainFactory(
 		logger,
-		e.flags.DryRun,
+		config.DryRun,
 		func(executors []entity.Executor) entity.Executor {
 			return exec.NewChain(executors)
 		},
@@ -80,16 +71,16 @@ func (e *Engin) Run() error {
 		factory.NewExecutorBuilderFactory(
 			e.fsModify,
 			factory.NewFsModifyExecFactory(
-				e.flags.TemplateVars.Vars,
-				[]string{e.flags.MissingKey.String()},
+				config.TemplateVars.Vars,
+				[]string{config.MissingKey.String()},
 			).Create,
 			actionFilter,
 		),
 		factory.NewExecutorBuilderFactory(
 			e.fsSave,
 			factory.NewFsSaveExecFactory(
-				e.flags.TemplateVars.Vars,
-				[]string{e.flags.MissingKey.String()},
+				config.TemplateVars.Vars,
+				[]string{config.MissingKey.String()},
 			).Create,
 			actionFilter,
 		),
@@ -101,8 +92,8 @@ func (e *Engin) Run() error {
 		factory.NewExecutorBuilderFactory(
 			e.files,
 			factory.NewFileExecutorFactory(
-				e.flags.TemplateVars.Vars,
-				[]string{e.flags.MissingKey.String()},
+				config.TemplateVars.Vars,
+				[]string{config.MissingKey.String()},
 			).Create,
 			actionFilter,
 		),
