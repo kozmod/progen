@@ -817,7 +817,7 @@ func main() {
 		// rm actions
 		core.RmAction(
 			"rm",
-			"./rm_1",
+			"./xx/rm_1",
 		).WithPriority(2),
 	)
 	e.AddActions(
@@ -848,29 +848,25 @@ func main() {
 
 ```
 ```console
-% go build .  
+% go build .
 % ./tmp -v  
-2024-12-10 21:56:55     INFO    action is going to be execute ('priopiry':'name')['1':'create_file','2':'rm','3':'fs_1','4':'tree_1']
-2024-12-10 21:56:55     INFO    file saved: xx/1
-2024-12-10 21:56:55     INFO    file saved: xx/2
-2024-12-10 21:56:55     INFO    file saved: xx/rm_1
-2024-12-10 21:56:55     INFO    rm: ./rm_1
-2024-12-10 21:56:55     INFO    dir created: xx/fs
-2024-12-10 21:56:55     INFO    file saved: xx/fs/1
-2024-12-10 21:56:55     INFO    execute [dir: ./xx]: tree
+2024-12-11 10:16:17     INFO    action is going to be execute ('priopiry':'name')['1':'create_file','2':'rm','3':'fs_1','4':'tree_1']
+2024-12-11 10:16:17     INFO    file saved: xx/1
+2024-12-11 10:16:17     INFO    file saved: xx/2
+2024-12-11 10:16:17     INFO    file saved: xx/rm_1
+2024-12-11 10:16:17     INFO    rm: ./xx/rm_1
+2024-12-11 10:16:17     INFO    dir created: xx/fs
+2024-12-11 10:16:17     INFO    file saved: xx/fs/1
+2024-12-11 10:16:17     INFO    execute [dir: ./xx]: tree
 out:
 .
 ├── 1
 ├── 2
-├── fs
-│   └── 1
-└── rm_1
+└── fs
+    └── 1
 
-1 directory, 4 files
-
+1 directory, 3 files
 ```
-
-
 
 ---
 
